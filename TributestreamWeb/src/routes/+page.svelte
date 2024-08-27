@@ -12,7 +12,7 @@
     let slugifiedName = '';
     let isEditing = false;
     let tempSlugifiedName = '';
-
+ 
     const API_BASE_URL = 'https://tributestream.com/wp-json';
 
     function slugify(text) {
@@ -23,7 +23,9 @@
             .replace(/^-+/, '')
             .replace(/-+$/, '');
     }
-
+    function navigateToPage() {
+        window.location.href = `https://tributestream.com/tribute-to-34243434`;
+    }
     $: slugifiedName = slugify(lovedOneName);
 
     function isValidJWT(token) {
@@ -118,7 +120,7 @@
                     'X-WP-Nonce': nonce
                 },
                 body: JSON.stringify({
-                    title: `Tribute to ${lovedOneName}`,
+                    title: `${lovedOneName}`,
                     content: `This is a tribute page for ${lovedOneName}`,
                 })
             });
@@ -147,13 +149,27 @@
             const token = await loginUser(userName, generatedPassword);
             console.log('User logged in with token:', token);
             const pageId = await createPage(token);
+
+            const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
+            const page = await response.json();
+
             console.log('Page created:', pageId);
-            window.location.href = `https://tributestream.com/tribute/${pageId}`;
-        } catch (err) {
-            console.error('Process error:', err);
-            // Error handling remains the same
-        }
-    }
+
+            console.log('Fetched page data:', page);
+
+// Redirect to the page using the slug
+if (page.slug) {
+    window.location.href = `https://tributestream.com/${page.slug}`;
+} else {
+    console.error('Slug not found in page data');
+    error = 'Slug not found';
+}
+} catch (err) {
+console.error('Error in handleCreateLink:', err);
+error = 'An error occurred while creating the link';
+}
+}
+    
 
     function handleNextPage() {
         showSecondPage = true;
@@ -183,7 +199,59 @@
         showSecondPage = false;
     }
 </script>
+<style>
+      @import url('https://fonts.googleapis.com/css2?family=Harrington');
 
+/* Container for the bordered box */
+.box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 150px; /* Adjust to your desired size */
+  height: 150px; /* Adjust to your desired size */
+  border: 10px solid white; /* Thick border to match the image */
+  position: relative;
+}
+
+/* Stylized Letter T */
+.letter {
+  font-size: 130px; /* Large font size */
+  font-family: 'Harrington', serif;
+  font-weight: bold; /* Bold for the thickness of the letter */
+  color: white; /* Black color for the letter */
+  line-height: 1; /* Ensures the letter is centered vertically */
+  transform: scaleX(1.36726); /* Stretch the text by 136.726% */
+
+}
+
+    .glow-button {
+  background-color: #d4b075; /* Darker gold color */
+  border: 2px solid #fff; /* White border */
+  color: #000; /* Text color */
+  padding: 10px 20px;
+  font-size: 16px;
+  font-family: 'Times New Roman', serif; /* Adjust font if needed */
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  outline: none;
+}
+
+.glow-button:hover {
+  background-color: #f0c75e; /* Brighter gold color on hover */
+  color: #000; /* Maintain text color */
+  box-shadow: 0 0 20px #f0c75e, 0 0 30px #f0c75e, 0 0 40px #f0c75e; /* Glowing effect */
+  border-color: #f0c75e; /* Border glows too */
+}
+
+.glow-button:focus {
+  outline: none;
+}
+
+</style>
 <section class="relative bg-gray-900 text-white">
     <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0">
         <source src="../../videos/video.mp4" type="video/mp4" />
@@ -194,16 +262,17 @@
 
     <div class="relative z-20 flex flex-col items-center justify-center h-screen min-w-screen">
         <h1 class="text-4xl md:text-6xl font-bold text-center mb-4">
-            Tributestream
+            <div class="box">
+                <div class="letter">T</div>
+              </div>
         </h1>
-        <h2>Celebrating loved ones through time and space.</h2>
-        <br>
+   
        
         <p class="text-center mb-8 text-lg md:text-xl">
             {#if !showSecondPage}
-                Please enter your loved ones' name below to find or create a livestream.
+                Please type in the name of the person you wish to honor.
             {:else}
-                Your Loved Ones' Custom Link:
+                Your Loved One's Custom Link:
             {/if}
         </p>
        
@@ -211,21 +280,23 @@
             {#if !showSecondPage}
                 <input
                     type="text"
-                    placeholder="Enter loved ones' name"
+                    placeholder="Enter Your Loved One's Name Here"
                     class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
                     bind:value={lovedOneName}
                 />
                 <div class="flex space-x-4 justify-center">
-                    <button type="button" on:click={handleNextPage} class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md">
-                        Next
+                    <button type="button" on:click={handleNextPage} class="glow-button">
+                        Create Custom Link
                     </button>
-                    <button type="button" on:click={handleFindLivestream} class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-md">
+                  
+
+                    <button type="button" on:click={handleFindLivestream} class="glow-button">
                         Find Livestream
                     </button>
                 </div>
             {:else}
                 <div class="flex items-center justify-center mb-4">
-                    <span class="text-white">http://www.Tributestream.com/{#if isEditing}
+                    <span class="text-white">http://www.Tributestream.com/celebration-of-life-for-{#if isEditing}
                         <input
                             type="text"
                             class="px-2 py-1 text-gray-900 rounded-md"
@@ -281,3 +352,4 @@
         {/if}
     </div>
 </section>
+ 

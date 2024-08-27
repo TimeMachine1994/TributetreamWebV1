@@ -82,6 +82,9 @@ function custom_create_page($request) {
         'post_title' => $title,
         'post_content' => $content,
         'post_status' => 'publish',
+        'meta_input'   => array(
+            '_wp_page_template' => 'template-celebration.php', // Assigns this custom template
+        ),
     ));
 
     if (is_wp_error($page_id)) {

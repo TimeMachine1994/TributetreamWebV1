@@ -3,6 +3,26 @@
   <script src="https://tributestream.com/wp-includes/js/wp-api.min.js"></script>
 </svelte:head>
 
+<!-- CSS for Title and Buttons-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fanwood');
+
+ 
+
+.tributestream {
+  font-family: 'Great Vibes', 'Times New Roman', serif;
+  font-size: 48px;
+  letter-spacing: -1.5px; /* Adjust to make the letters touch */
+}
+
+.r-symbol {
+font-size: 0.4em;
+vertical-align: top;
+position: relative;
+top: -8px; /* Adjust this value */
+left: 5px; /* Adjust this value */
+}
+</style>   
 <script lang="ts">
     import '../app.postcss';
     import { AppShell, AppBar } from '@skeletonlabs/skeleton';
@@ -36,42 +56,27 @@
         <!-- App Bar -->
         <AppBar background="bg-black">
             <svelte:fragment slot="lead">
-                            <a href="https://tributestream.com" class="text-xl uppercase text-white hover:text-yellow-500 transition-colors duration-300">
-                                <strong>Tributestream</strong>
+              
+                            <a href="https://tributestream.com" class="text-xl text-white">  
+                              <span class="tributestream"><i>Tributestream</i><span class="r-symbol">®</span></span>
                             </a>
-                        </svelte:fragment>
+                        
+                          </svelte:fragment>
             <svelte:fragment slot="default">
-    <div class="flex-1 flex justify-center items-center">
-        <div class="flex space-x-4">
-            <a
-
-			class="btn btn-sm bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg hover:shadow-yellow-500/50 transition-all duration-300"
-                href=" "
-                target="_blank"
-                rel="noreferrer"
-            >
-                Connecting Families
-            </a>
-            <a
-                class="btn btn-sm bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg hover:shadow-yellow-500/50 transition-all duration-300"
-                href="https://tributestream.com/who-we-are/"
-                target="_blank"
-                rel="noreferrer"
-            >
-                Company Ethos
-            </a>
-            <a
-                class="btn btn-sm bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg hover:shadow-yellow-500/50 transition-all duration-3000"
-                href="https://tributestream.com/bookus/"
-                target="_blank"
-                rel="noreferrer"
-            >
-                Contact Tributestream
-            </a>
-        </div>
-    </div>
-</svelte:fragment>
+ 
+ </svelte:fragment>
 <svelte:fragment slot="trail">
+  <div class="flex-1 flex justify-center items-center text-white">
+    <div class="flex space-x-4">
+      <nav>
+          <ul class="flex space-x-4">
+              <li><a href="/why-tributestream" class="text-white hover:text-gray-300">Why Tributestream?</a></li>
+              <li><a href="/how-it-works" class="text-white hover:text-gray-300">How does it work?</a></li>
+              <li><a href="/contact" class="text-white hover:text-gray-300">Contact Us</a></li>
+              <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
+          </ul>
+      </nav>
+     </div>
     <div class="w-[150px] flex justify-end">
         <button on:click={handleAuthAction} class="btn btn-sm bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg hover:shadow-yellow-500/50 transition-all duration-300">
             {isLoggedIn ? 'Logout' : 'Login'}
