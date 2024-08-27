@@ -3,6 +3,7 @@ import type { Config } from 'tailwindcss'
 import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
 import { skeleton } from '@skeletonlabs/tw-plugin'
+import { TributeTheme } from './TributeTheme.ts'
 
 export default {
 	darkMode: 'false',
@@ -15,12 +16,9 @@ export default {
 		typography,
 		skeleton({
 			themes: {
-				preset: [
-					{
-						name: 'gold-nouveau',
-						enhancements: true,
-					},
-				],
+				custom: [
+					TributeTheme
+				]
 			},
 		}),
 	],
