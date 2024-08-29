@@ -266,18 +266,15 @@ error = 'An error occurred while creating the link';
         <source src="../../videos/video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
     </video>
-
-    <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
-
-  
+    <div class="absolute inset-0 bg-black opacity-50 z-10"></div>  
     <div class="relative z-20 flex flex-col items-center justify-start h-screen min-w-screen pt-8">
         <h1 class="text-4xl md:text-6xl font-bold text-center mb-4">
-       
+       Tributestream
         </h1> 
    
          <p class="text-center mb-8 text-lg md:text-xl">
             {#if !showSecondPage}
-            
+            <i>Connecting with Loved Ones In Heaven and On Earth</i>
             {:else}
                 Your Loved One's Custom Link:
             {/if}

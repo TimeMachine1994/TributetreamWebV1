@@ -65,22 +65,27 @@ left: 5px; /* Adjust this value */
             <svelte:fragment slot="default">
   
  </svelte:fragment>
-<svelte:fragment slot="trail">
+ <svelte:fragment slot="trail">
   <div class="flex-1 flex justify-center items-center text-white">
     <div class="flex space-x-4">
       <nav>
-          <ul class="flex space-x-4">
+          <ul class="flex space-x-4  items-center">
               <li><a href="/why-tributestream" class="text-white hover:text-gray-300">Why Tributestream?</a></li>
               <li><a href="/how-it-works" class="text-white hover:text-gray-300">How does it work?</a></li>
               <li><a href="/contact" class="text-white hover:text-gray-300">Contact Us</a></li>
-              <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
+              <li> <a href="/schedule" class="text-white hover:text-gray-300">Schedule Now </a></li>
+                <li> | </li>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              
           </ul>
       </nav>
-     </div>
-    <div class="w-[150px] flex justify-end">
-        <button on:click={handleAuthAction} class="btn btn-sm bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg hover:shadow-yellow-500/50 transition-all duration-300">
-            {isLoggedIn ? 'Logout' : 'Login'}
-        </button>
+ 
+      
+      <button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
+        {isLoggedIn ? 'Logout' : 'Login'}
+      </button>
     </div>
 </svelte:fragment>
 
@@ -96,8 +101,9 @@ left: 5px; /* Adjust this value */
         <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
           <!-- Logo and Description -->
           <div class="flex flex-col items-center md:items-start">
-            <img src="path_to_your_logo_image" alt="Tributestream Logo" class="mb-4">
-            <p class="text-sm">
+            <a href="https://tributestream.com" class="text-xl text-white">  
+              <span class="tributestream"><i>Tributestream</i><span class="r-symbol">®</span></span>
+            </a>            <p class="text-sm">
               Tributestream is a premier, affordable, and reliable livestreaming service to transport your families and friends to a celebration of life. We don't make videos, we make documentaries.
             </p>
           </div>
@@ -130,7 +136,7 @@ left: 5px; /* Adjust this value */
             <p class="text-sm mb-4">
               If you appreciated the service we provided you and your family, please consider leaving us a five-star review on Google!
             </p>
-            <button class="bg-yellow-600 text-black py-2 px-6 rounded-md hover:bg-yellow-700">
+            <button class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
               Review Us
             </button>
           </div>
