@@ -49,13 +49,13 @@
             }, 
             {
                 name: "Lohman Funeral Homes (Deltona)",
-                type: "Funeral Home", homeSVG, urnSVG, graveSVG,
+                type: "Funeral Home, Crematory, and Gravesite", homeSVG, urnSVG, graveSVG,
                 address:  "1423 Bellevue AVe. Daytona Beach FL, 32114",
                 website: "https://www.lohmanfuneralhomes.com/locations/daytona-beach"
             }, 
             {
                 name: "DeGusipe Funeral Home & Crematory (Maitland)",
-                type: "Funeral Home", homeSVG,
+                type: "Funeral Home and Crematory", homeSVG, urnSVG,
                 address:  "9001 Orlando Ave, Maitland, FL 32751",
                 website: "https://www.degusipefuneralhome.com/"
             }, 
@@ -78,90 +78,66 @@
   <svelte:head>
     <title>{pageTitle}</title>  
   </svelte:head>
-  
+
+
   <main>
+    
     {#if isLoading}
-      <p>Loading...</p>
+        <p>Loading...</p>
     {:else}
       <h1>{pageTitle}</h1>
-      <p> 
-        
-        </p>  
-        
-        <CardSteps steps={[
-            { title: "Step 1: Decide a Location", description: "Pick a location for the tribute." },
-            { title: "Step 2: Schedule Tributestream", description: "Choose a date and time for the service." },
-            { title: "Step 3: Go Live", description: "Once we broadcast the service, the link will stay live for at least a year." }
-          ]} />   
-          
-          <div class="card">
-            <header class="card-header">Official Tributestream Funeral Home Partners</header>
-            <section class="p-4">
-                
-<Accordion>
-	<AccordionItem close>
-		<svelte:fragment slot="lead">
-             <!--Add a home here-->
-          </svelte:fragment>
-		<svelte:fragment slot="summary">Funeral Homes</svelte:fragment>
-		<svelte:fragment slot="content">
-            <div class="table-container">
-                <table class="table table-hover">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Address</th>
-                        <th>Website</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each tableArr as row, i}
-                        <tr>
-                            <td>{row.name}</td>
-                                                    <td>
-                                                        {row.type}
-                                                        {#if row.homeSVG}
-                                                            {@html row.homeSVG}
-                                                        {/if}
-                                                        {#if row.urnSVG}
-                                                            {@html row.urnSVG}
-                                                        {/if}
-                                                        {#if row.graveSVG}
-                                                           {@html row.graveSVG}
-                                                    {/if}
-                                                    </td>
-                            <td>{row.address}</td>
-                            <td>{row.website}</td>
-                        </tr>
-                    {/each}
-                </tbody>
+      <p>   </p>
+    <CardSteps steps={[
+        { title: "Step 1: Decide a Location", description: "Pick a location for the tribute." },
+        { title: "Step 2: Schedule Tributestream", description: "Choose a date and time for the service." },
+        { title: "Step 3: Go Live", description: "Once we broadcast the service, the link will stay live for at least a year." }
+        ]} />   
+        <div class="card">
+            <header class="card-header">
+                <i>Pre-Qualified Tributestream Locations:</i>
+            </header>
+                <section class="p-4">
+                    <div class="table-container">
+                        <table class="table table-hover min-w-full">
+                            <thead class="bg-gray-100 text-left">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Address</th>
+                                    <th>Website</th>
+                                </tr>
+                            </thead>
+                         <tbody>
+                                {#each tableArr as row, i}
+                                    <tr>
+                                        <td >
+                                            {row.name}
+                                        </td>
+                                        <td>
+                                            {row.type}
+                                            {#if row.homeSVG}
+                                                {@html row.homeSVG}
+                                            {/if}
+                                            {#if row.urnSVG}
+                                                {@html row.urnSVG}
+                                            {/if}
+                                            {#if row.graveSVG}
+                                                {@html row.graveSVG}
+                                            {/if}
+                                        </td>
+                                        <td>{row.address}</td>
+                                        <td>{row.website}</td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+                 </section>   
+        </div>
+    {/if}
+</main>
 
-
-
-
-
-        
-        </svelte:fragment>
-	</AccordionItem>
-	<AccordionItem>
-		<svelte:fragment slot="lead">(icon)</svelte:fragment>
-		<svelte:fragment slot="summary">(summary)</svelte:fragment>
-		<svelte:fragment slot="content">(content)</svelte:fragment>
-	</AccordionItem>
- 
-    
-</Accordion>
-
-                <ul>
-                    <li>A Community Funeral Home and Sunset Cremations </li>
-                </ul>
-            </section>
-            <footer class="card-footer">(footer)</footer>
-        </div>{/if}
-  </main>
- 
-  <style>
+<style>       
     main {
       padding: 1rem;
       max-width: 800px;
