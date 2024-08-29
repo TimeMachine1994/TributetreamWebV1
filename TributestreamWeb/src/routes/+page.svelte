@@ -12,7 +12,9 @@
     let slugifiedName = '';
     let isEditing = false;
     let tempSlugifiedName = '';
- 
+    let isBlurred = false;
+
+
     const API_BASE_URL = 'https://tributestream.com/wp-json';
 
     function slugify(text) {
@@ -173,6 +175,8 @@ error = 'An error occurred while creating the link';
 
     function handleNextPage() {
         showSecondPage = true;
+        isBlurred = true;
+
     }
 
     async function handleFindLivestream() {
@@ -197,6 +201,7 @@ error = 'An error occurred while creating the link';
 
     function handleGoBack() {
         showSecondPage = false;
+        isBlurred = false;
     }
 </script>
 <style>
@@ -207,17 +212,17 @@ error = 'An error occurred while creating the link';
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 150px; /* Adjust to your desired size */
-  height: 150px; /* Adjust to your desired size */
-  border: 10px solid white; /* Thick border to match the image */
+  width: 55px; /* Adjust to your desired size */
+  height: 55px; /* Adjust to your desired size */
+  border: 3px solid white; /* Thick border to match the image */
   position: relative;
 }
 
 /* Stylized Letter T */
 .letter {
-  font-size: 130px; /* Large font size */
+  font-size: 45px; /* Large font size */
   font-family: 'Harrington', serif;
-  font-weight: bold; /* Bold for the thickness of the letter */
+   /* Bold for the thickness of the letter */
   color: white; /* Black color for the letter */
   line-height: 1; /* Ensures the letter is centered vertically */
   transform: scaleX(1.36726); /* Stretch the text by 136.726% */
@@ -251,48 +256,51 @@ error = 'An error occurred while creating the link';
   outline: none;
 }
 
+.blurred {
+        filter: blur(10px);
+        transition: filter 0.3s ease-in-out;
+    }
 </style>
 <section class="relative bg-gray-900 text-white">
-    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0">
+    <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
         <source src="../../videos/video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
     </video>
 
     <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
 
-    <div class="relative z-20 flex flex-col items-center justify-center h-screen min-w-screen">
+  
+    <div class="relative z-20 flex flex-col items-center justify-start h-screen min-w-screen pt-8">
         <h1 class="text-4xl md:text-6xl font-bold text-center mb-4">
-            <div class="box">
-                <div class="letter">T</div>
-              </div>
-        </h1>
-   
        
-        <p class="text-center mb-8 text-lg md:text-xl">
+        </h1> 
+   
+         <p class="text-center mb-8 text-lg md:text-xl">
             {#if !showSecondPage}
-                Please type in the name of the person you wish to honor.
+            
             {:else}
                 Your Loved One's Custom Link:
             {/if}
         </p>
-       
+  
         <form class="w-full max-w-md">
             {#if !showSecondPage}
                 <input
                     type="text"
                     placeholder="Enter Your Loved One's Name Here"
-                    class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
+                    class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center"
                     bind:value={lovedOneName}
                 />
                 <div class="flex space-x-4 justify-center">
-                    <button type="button" on:click={handleNextPage} class="glow-button">
-                        Create Custom Link
-                    </button>
+                    <button    on:click={handleNextPage}
+                    class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                        Create Tribute
+                      </button>
                   
 
-                    <button type="button" on:click={handleFindLivestream} class="glow-button">
-                        Find Livestream
-                    </button>
+                      <button class="bg-[#D5BA7F] text-black  py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                        Search Streams
+                      </button>
                 </div>
             {:else}
                 <div class="flex items-center justify-center mb-4">
@@ -350,6 +358,11 @@ error = 'An error occurred while creating the link';
         {#if error}
             <p class="text-red-500 mt-4">{error}</p>
         {/if}
-    </div>
-</section>
- 
+        
+ </div>
+ <div class="box">
+    <div class="letter">T</div>
+  </div>
+ </section>
+
+  

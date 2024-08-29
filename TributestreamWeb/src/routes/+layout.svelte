@@ -63,7 +63,7 @@ left: 5px; /* Adjust this value */
                         
                           </svelte:fragment>
             <svelte:fragment slot="default">
- 
+  
  </svelte:fragment>
 <svelte:fragment slot="trail">
   <div class="flex-1 flex justify-center items-center text-white">
