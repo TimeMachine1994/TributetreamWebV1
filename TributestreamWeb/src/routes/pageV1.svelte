@@ -17,13 +17,13 @@
 
 // Function to handle the search and redirect to the results page
  
-async function handleSearch() {
-        if (lovedOneName.trim()) {
-            // Redirect to the search results page with the query parameter
-            goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
+    async function handleSearch() {
+            if (searchQuery.trim()) {
+                // Redirect to the search results page with the query parameter
+                goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+            }
         }
-    }
- 
+    
     const API_BASE_URL = 'https://tributestream.com/wp-json';
 
     function slugify(text) {
@@ -188,7 +188,12 @@ error = 'An error occurred while creating the link';
 
     }
 
- 
+    // Modify the handleFindLivestream function to use the search functionality
+    async function handleFindLivestream() {
+        if (lovedOneName.trim()) {
+            searchQuery = lovedOneName;
+            await handleSearch();
+        }
 
     function handleEditName() {
         isEditing = true;
@@ -266,11 +271,20 @@ error = 'An error occurred while creating the link';
         filter: blur(10px);
         transition: filter 0.3s ease-in-out;
     }
-
 </style>
-
-<main> 
-
+ <div class="flex items-center space-x-2 mb-4">
+    <input
+        type="text"
+        placeholder="Search..."
+        bind:value={searchQuery}
+        class="border border-gray-300 rounded-lg p-2 w-full"
+    />
+    <button
+        on:click={handleSearch}
+        class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+        Search
+    </button>
+</div>
 <section class="relative bg-gray-900 text-white">
     <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
         <source src="../../videos/video.mp4" type="video/mp4" />
@@ -283,11 +297,8 @@ error = 'An error occurred while creating the link';
         </h1> 
    
          <p class="text-center mb-8 text-lg md:text-xl">
-            
             {#if !showSecondPage}
             <i>Connecting with Loved Ones In Heaven and On Earth</i>
-            
-
             {:else}
                 Your Loved One's Custom Link:
             {/if}
@@ -308,11 +319,9 @@ error = 'An error occurred while creating the link';
                       </button>
                   
 
-                      <button
-                      on:click={handleSearch}
-                      class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
-                      Search Streams
-                  </button> 
+                      <button on:click={handleSearch} class="bg-[#D5BA7F] text-black  py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                        Search Streams
+                      </button>
                 </div>
             {:else}
                 <div class="flex items-center justify-center mb-4">
@@ -371,10 +380,10 @@ error = 'An error occurred while creating the link';
             <p class="text-red-500 mt-4">{error}</p>
         {/if}
         
-        </div>
-        <div class="box">
-            <div class="letter">T</div>
-        </div>
-        </section>
+ </div>
+ <div class="box">
+    <div class="letter">T</div>
+  </div>
+ </section>
 
- </main>
+  
