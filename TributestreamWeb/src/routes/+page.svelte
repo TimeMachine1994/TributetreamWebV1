@@ -13,8 +13,12 @@
     let isEditing = false;
     let tempSlugifiedName = '';
     let isBlurred = false;
+    let searchQuery = '';
 
+// Function to handle the search and redirect to the results page
+ 
 
+    
     const API_BASE_URL = 'https://tributestream.com/wp-json';
 
     function slugify(text) {
@@ -203,6 +207,12 @@ error = 'An error occurred while creating the link';
         showSecondPage = false;
         isBlurred = false;
     }
+    async function handleSearch() {
+    if (searchQuery.trim()) {
+      // Redirect to the search results page with the query parameter
+      goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  }
 </script>
 <style>
       @import url('https://fonts.googleapis.com/css2?family=Harrington');
@@ -261,6 +271,19 @@ error = 'An error occurred while creating the link';
         transition: filter 0.3s ease-in-out;
     }
 </style>
+<div class="flex items-center space-x-2">
+    <input
+      type="text"
+      placeholder="Search..."
+      bind:value={searchQuery}
+      class="border border-gray-300 rounded-lg p-2 w-full"
+    />
+    <button
+      on:click={handleSearch}
+      class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">
+      Search
+    </button>
+  </div>
 <section class="relative bg-gray-900 text-white">
     <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
         <source src="../../videos/video.mp4" type="video/mp4" />
@@ -295,7 +318,7 @@ error = 'An error occurred while creating the link';
                       </button>
                   
 
-                      <button class="bg-[#D5BA7F] text-black  py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                      <button on:click={handleSearch} class="bg-[#D5BA7F] text-black  py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
                         Search Streams
                       </button>
                 </div>

@@ -122,19 +122,30 @@
                 <li><a href="/contact" class="text-white hover:text-gray-300">Contact Us</a></li>
                 <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
                 <li> | </li>
-                <!-- Cart button with an icon -->
-                <li><a href="/contact" class="text-white hover:text-gray-300">Shop</a></li>
-
-                <li>
-                  <button  on:click={openDrawer}>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </button>
-                </li>
+<li>
+                <button 
+                on:click={openDrawer} 
+                class="flex items-center space-x-2 bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:bg-[#CFCFCE]">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  stroke-width="1.5"
+                  class="w-6 h-6">
+                  <!-- Calendar icon base -->
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Schedule Livestream</span>
+              </button>
+            </li>
+                
               </ul>
             </nav>
-            
+                    
             <!-- Login/Logout button -->
             <button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
               {isLoggedIn ? 'Logout' : 'Login'} <!-- Display 'Logout' if logged in, otherwise 'Login' -->
