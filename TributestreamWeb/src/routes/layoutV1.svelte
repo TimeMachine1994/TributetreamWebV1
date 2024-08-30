@@ -24,11 +24,17 @@
 </style>
 
 <script lang="ts">
-  import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton';
-  import { onMount } from 'svelte'; /* Svelte lifecycle function */
+  import { Drawer, getDrawerStore } from '@skeletonlabs/skeleton';
+  import type { DrawerSettings, DrawerStore } from '@skeletonlabs/skeleton';
+  import { initializeStores} from '@skeletonlabs/skeleton';
+
+ 
+  /* Importing necessary components and functions from Skeleton UI library and other dependencies */
+  import CartDrawer from '$lib/components/CartDrawer.svelte'; /* Custom component for the cart drawer */
   import '../app.postcss'; /* Importing global styles */
   import { AppShell, AppBar } from '@skeletonlabs/skeleton';
-   import { page } from '$app/stores'; /* Svelte store for page data */
+  import { onMount } from 'svelte'; /* Svelte lifecycle function */
+  import { page } from '$app/stores'; /* Svelte store for page data */
   import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom'; /* Floating UI library for tooltip/pop-up positioning */
   import { storePopup } from '@skeletonlabs/skeleton'; /* Store for pop-up configurations */
   
@@ -37,20 +43,7 @@
 
   /* Setting up drawer store and pop-up positioning logic */
   const drawerStore = getDrawerStore();
-
-  /* Function to open the drawer with custom settings */
-  function openDrawer() {
-    const drawerSettings = {
-      id: 'cart',
-      bgDrawer: 'bg-white text-black',
-      bgBackdrop: 'bg-gray-900/50',
-      width: 'w-[300px]',
-      padding: 'p-4',
-      rounded: 'rounded-lg',
-      position: 'right'
-    };
-    drawerStore.open(drawerSettings);
-  }
+  storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
 
   /* Reactive variable to check login status */
   let isLoggedIn = false;
@@ -69,30 +62,13 @@
       // Implement login logic or navigation to login page
     }
   }
+
+ 
+  
 </script>
 
-<!-- Drawer component -->
-<Drawer>
-  {#if $drawerStore.id === 'cart'}
-    <!-- Drawer Content for 'example-drawer' -->
-    <div class="p-4">
-      <div class="card p-4 mb-4">You have nothing in your cart.</div>
-
-      <h2 class="text-2xl font-bold mb-4">Shop</h2>
-      <ul>
-        <li>Livestream Services</li>
-        <li>Slideshows</li>
-        <li>Livestream Services</li>
-        <li>Photo Restoration</li>
-        <li>Home Video Restoration</li>
-        <li>Audio / Visual Support </li>
-      </ul>
-      <button on:click={() => drawerStore.close()} class="mt-4 bg-red-500 text-white py-2 px-4 rounded">
-        Close
-      </button>
-    </div>
-  {/if}
-</Drawer>
+<!-- Drawer component for cart functionality -->
+<Drawer />
 
 <!-- AppShell component for structuring the app -->
 <AppShell>
@@ -123,16 +99,15 @@
                 <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
                 <li> | </li>
                 <!-- Cart button with an icon -->
-                <li><a href="/contact" class="text-white hover:text-gray-300">Shop</a></li>
-
                 <li>
-                  <button  on:click={openDrawer}>
+                  <button class="p-2 bg-transparent hover:bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" on:click={() => drawerStore.open(drawerSettings)}>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </button>
+                 
                 </li>
-              </ul>
+               </ul>
             </nav>
             
             <!-- Login/Logout button -->
@@ -192,7 +167,7 @@
           If you appreciated the service we provided you and your family, please consider leaving us a five-star review on Google!
         </p>
         <!-- Button for reviewing on Google -->
-        <button class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+        <button class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
           Review Us
         </button>
       </div>
