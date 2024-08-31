@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-
+    
+    // State variables
     let generatedPassword = '';
     let lovedOneName = '';
     let userName = '';
@@ -14,202 +15,255 @@
     let tempSlugifiedName = '';
     let isBlurred = false;
     let searchQuery = '';
+     let shouldSearch = false;
 
-// Function to handle the search and redirect to the results page
- 
-async function handleSearch() {
-        if (lovedOneName.trim()) {
-            // Redirect to the search results page with the query parameter
-            goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
-        }
-    }
- 
+    // API base URL
     const API_BASE_URL = 'https://tributestream.com/wp-json';
-
-    function slugify(text) {
-        return text.toString().toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-')
-            .replace(/^-+/, '')
-            .replace(/-+$/, '');
-    }
-    function navigateToPage() {
-        window.location.href = `https://tributestream.com/tribute-to-34243434`;
-    }
-    $: slugifiedName = slugify(lovedOneName);
-
-    function isValidJWT(token) {
-        if (!token) {
-            console.error('Token is null or undefined');
-            return false;
-        }
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-            console.error('Token does not have 3 parts:', parts.length);
-            return false;
-        }
-        return true;
-    }
-
-    function generateRandomPassword() {
-        return Math.random().toString(36).slice(-8);
-    }
-
-    async function registerUser() {
-        console.log('Registering user');
-        generatedPassword = generateRandomPassword();
-        try {
-            const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Registration failed');
-            }
-            const data = await response.json();
-            console.log('User registered successfully:', data);
-            // TODO: Send email with password to userEmail
-            return data;
-        } catch (err) {
-            console.error('Registration error:', err);
-            throw err;
-        }
-    }
-
-    async function loginUser(username, password) {
-        console.log('Logging in user');
-        try {
-            const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Login failed');
-            }
-            const data = await response.json();
-            console.log('Login response:', data);
-            let token = data.token || (data.data && data.data.token);
-            if (!token) {
-                throw new Error('Token not found in server response');
-            }
-            if (!isValidJWT(token)) {
-                throw new Error('Received invalid token format from server');
-            }
-            localStorage.setItem('jwtToken', token);
-            return token;
-        } catch (err) {
-            console.error('Login error:', err);
-            throw err;
-        }
-    }
-
-    async function createPage(token) {
-        console.log('Creating page');
-        if (!token || !isValidJWT(token)) {
-            throw new Error('Invalid authentication token. Please log in again.');
-        }
-        try {
-            const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const nonceData = await nonceResponse.json();
-            const nonce = nonceData.nonce;
-
-            const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'X-WP-Nonce': nonce
-                },
-                body: JSON.stringify({
-                    title: `${lovedOneName}`,
-                    content: `This is a tribute page for ${lovedOneName}`,
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data && data.page_id) {
-                console.log('Page created successfully with ID:', data.page_id);
-                return data.page_id;
-            } else {
-                throw new Error('Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error creating page:', error);
-            throw error;
-        }
-    }
-
-    async function handleCreateLink() {
-        console.log('Creating link');
-        error = '';
-        try {
-            await registerUser();
-            console.log('User registered');
-            const token = await loginUser(userName, generatedPassword);
-            console.log('User logged in with token:', token);
-            const pageId = await createPage(token);
-
-            const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
-            const page = await response.json();
-
-            console.log('Page created:', pageId);
-
-            console.log('Fetched page data:', page);
-
-// Redirect to the page using the slug
-if (page.slug) {
-    window.location.href = `https://tributestream.com/${page.slug}`;
-} else {
-    console.error('Slug not found in page data');
-    error = 'Slug not found';
-}
-} catch (err) {
-console.error('Error in handleCreateLink:', err);
-error = 'An error occurred while creating the link';
-}
-}
     
-
+    // Function to handle the search and redirect to the results page
+    async function handleSearch() {
+      console.log('handleSearch called with lovedOneName:', lovedOneName);
+      if (lovedOneName.trim()) {
+        console.log('Redirecting to search page with query:', lovedOneName);
+        goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
+      } else {
+        console.log('lovedOneName is empty, not redirecting');
+      }
+    }
+    
+    // Function to slugify text
+    function slugify(text) {
+      console.log('Slugifying text:', text);
+      const slugified = text.toString().toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+      console.log('Slugified result:', slugified);
+      return slugified;
+    }
+    
+    // Function to navigate to a specific page
+    function navigateToPage() {
+      console.log('Navigating to tribute page');
+      window.location.href = `https://tributestream.com/tribute-to-34243434`;
+    }
+    
+    // Reactive statement to update slugifiedName when lovedOneName changes
+    $: {
+      console.log('lovedOneName changed:', lovedOneName);
+      slugifiedName = slugify(lovedOneName);
+      console.log('Updated slugifiedName:', slugifiedName);
+    }
+    
+    // Function to validate JWT token
+    function isValidJWT(token) {
+      console.log('Validating JWT token');
+      if (!token) {
+        console.error('Token is null or undefined');
+        return false;
+      }
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('Token does not have 3 parts:', parts.length);
+        return false;
+      }
+      console.log('JWT token is valid');
+      return true;
+    }
+    
+    // Function to generate a random password
+    function generateRandomPassword() {
+      const password = Math.random().toString(36).slice(-8);
+      console.log('Generated random password:', password);
+      return password;
+    }
+    
+    // Function to register a user
+    async function registerUser() {
+      console.log('Registering user');
+      generatedPassword = generateRandomPassword();
+      try {
+        console.log('Sending registration request for:', userName, userEmail);
+        const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Registration failed:', errorData);
+          throw new Error(errorData.message || 'Registration failed');
+        }
+        const data = await response.json();
+        console.log('User registered successfully:', data);
+        // TODO: Send email with password to userEmail
+        return data;
+      } catch (err) {
+        console.error('Registration error:', err);
+        throw err;
+      }
+    }
+    
+    // Function to log in a user
+    async function loginUser(username, password) {
+      console.log('Logging in user:', username);
+      try {
+        const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Login failed:', errorData);
+          throw new Error(errorData.message || 'Login failed');
+        }
+        const data = await response.json();
+        console.log('Login response:', data);
+        let token = data.token || (data.data && data.data.token);
+        if (!token) {
+          console.error('Token not found in server response');
+          throw new Error('Token not found in server response');
+        }
+        if (!isValidJWT(token)) {
+          console.error('Received invalid token format from server');
+          throw new Error('Received invalid token format from server');
+        }
+        console.log('Storing JWT token in localStorage');
+        localStorage.setItem('jwtToken', token);
+        return token;
+      } catch (err) {
+        console.error('Login error:', err);
+        throw err;
+      }
+    }
+    
+    // Function to create a page
+    async function createPage(token) {
+      console.log('Creating page');
+      if (!token || !isValidJWT(token)) {
+        console.error('Invalid authentication token');
+        throw new Error('Invalid authentication token. Please log in again.');
+      }
+      try {
+        console.log('Fetching nonce');
+        const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const nonceData = await nonceResponse.json();
+        const nonce = nonceData.nonce;
+        console.log('Nonce received:', nonce);
+    
+        console.log('Creating page for:', lovedOneName);
+        const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-WP-Nonce': nonce
+          },
+          body: JSON.stringify({
+            title: `${lovedOneName}`,
+            content: `This is a tribute page for ${lovedOneName}`,
+          })
+        });
+        if (!response.ok) {
+          console.error('HTTP error when creating page:', response.status);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data && data.page_id) {
+          console.log('Page created successfully with ID:', data.page_id);
+          return data.page_id;
+        } else {
+          console.error('Unexpected response format:', data);
+          throw new Error('Unexpected response format');
+        }
+      } catch (error) {
+        console.error('Error creating page:', error);
+        throw error;
+      }
+    }
+    
+    // Function to handle creating a link
+    async function handleCreateLink() {
+      console.log('Creating link');
+      error = '';
+      try {
+        await registerUser();
+        console.log('User registered');
+        const token = await loginUser(userName, generatedPassword);
+        console.log('User logged in with token:', token);
+        const pageId = await createPage(token);
+    
+        console.log('Fetching created page data');
+        const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
+        const page = await response.json();
+    
+        console.log('Page created:', pageId);
+        console.log('Fetched page data:', page);
+    
+        // Redirect to the page using the slug
+        if (page.slug) {
+          console.log('Redirecting to:', `https://tributestream.com/${page.slug}`);
+          window.location.href = `https://tributestream.com/${page.slug}`;
+        } else {
+          console.error('Slug not found in page data');
+          error = 'Slug not found';
+        }
+      } catch (err) {
+        console.error('Error in handleCreateLink:', err);
+        error = 'An error occurred while creating the link';
+      }
+    }
+    
+    // Function to handle moving to the next page
     function handleNextPage() {
-        showSecondPage = true;
-        isBlurred = true;
-
+      console.log('Moving to second page');
+      showSecondPage = true;
+      isBlurred = true;
     }
-
- 
-
+    
+    // Function to handle editing the name
     function handleEditName() {
-        isEditing = true;
-        tempSlugifiedName = slugifiedName;
+      console.log('Editing name');
+      isEditing = true;
+      tempSlugifiedName = slugifiedName;
     }
-
+    
+    // Function to handle saving the name change
     function handleSaveNameChange() {
-        slugifiedName = tempSlugifiedName;
-        isEditing = false;
+      console.log('Saving name change');
+      slugifiedName = tempSlugifiedName;
+      isEditing = false;
     }
-
+    
+    // Function to handle discarding the name change
     function handleDiscardNameChange() {
-        isEditing = false;
+      console.log('Discarding name change');
+      isEditing = false;
     }
-
+    
+    // Function to handle going back to the first page
     function handleGoBack() {
-        showSecondPage = false;
-        isBlurred = false;
+      console.log('Going back to first page');
+      showSecondPage = false;
+      isBlurred = false;
     }
-  
-</script>
+    
+    // Lifecycle hook
+    onMount(() => {
+      console.log('Component mounted');
+    });
+    </script>
+    
+    <!-- The rest of your HTML remains unchanged -->
+    
 <style>
       @import url('https://fonts.googleapis.com/css2?family=Harrington');
 
@@ -309,8 +363,11 @@ error = 'An error occurred while creating the link';
                   
 
                       <button
-                      on:click={handleSearch}
-                      class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                                          on:click={() => {
+                                            handleSearch();
+                                            showSecondPage = true;
+                                          }}
+                                          class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
                       Search Streams
                   </button> 
                 </div>

@@ -31,7 +31,7 @@
    import { page } from '$app/stores'; /* Svelte store for page data */
   import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom'; /* Floating UI library for tooltip/pop-up positioning */
   import { storePopup } from '@skeletonlabs/skeleton'; /* Store for pop-up configurations */
-  
+  import { goto } from '$app/navigation'; /* Function to navigate to a new page */
   /* Initialize stores for Skeleton UI components */
   initializeStores();
 
@@ -62,13 +62,15 @@
 
   /* Function to handle authentication actions */
   function handleAuthAction() {
-    if (isLoggedIn) {
-      localStorage.removeItem('jwtToken'); /* Log out the user by removing JWT token */
-      isLoggedIn = false;
-    } else {
-      // Implement login logic or navigation to login page
-    }
+  if (isLoggedIn) {
+    // Navigate to account settings page
+    goto('/account-settings');
+  } else {
+    // Navigate to login page
+    goto('/login');
   }
+}
+
 </script>
 
 <!-- Drawer component -->
@@ -121,26 +123,28 @@
                 <li><a href="/how-it-works" class="text-white hover:text-gray-300">How does it work?</a></li>
                 <li><a href="/contact" class="text-white hover:text-gray-300">Contact Us</a></li>
                 <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
-                <li> | </li>
 <li>
-                <button 
-                on:click={openDrawer} 
-                class="flex items-center space-x-2 bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:bg-[#CFCFCE]">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor" 
-                  stroke-width="1.5"
-                  class="w-6 h-6">
-                  <!-- Calendar icon base -->
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span>Schedule Livestream</span>
-              </button>
+  {#if isLoggedIn}
+  <button
+    on:click={openDrawer}
+    class="flex items-center space-x-2 bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:bg-[#CFCFCE]">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="1.5"
+      class="w-6 h-6">
+      <!-- Calendar icon base -->
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Schedule Livestream</span>
+  </button>
+{/if}
+
             </li>
                 
               </ul>
@@ -148,8 +152,9 @@
                     
             <!-- Login/Logout button -->
             <button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
-              {isLoggedIn ? 'Logout' : 'Login'} <!-- Display 'Logout' if logged in, otherwise 'Login' -->
+              {isLoggedIn ? 'Account Settings' : 'Login'}
             </button>
+            
           </div>
         </div>
       </svelte:fragment>
