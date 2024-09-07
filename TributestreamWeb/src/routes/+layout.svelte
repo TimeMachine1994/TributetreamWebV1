@@ -35,22 +35,7 @@
   /* Initialize stores for Skeleton UI components */
   initializeStores();
 
-  /* Setting up drawer store and pop-up positioning logic */
-  const drawerStore = getDrawerStore();
-
-  /* Function to open the drawer with custom settings */
-  function openDrawer() {
-    const drawerSettings = {
-      id: 'cart',
-      bgDrawer: 'bg-white text-black',
-      bgBackdrop: 'bg-gray-900/50',
-      width: 'w-[300px]',
-      padding: 'p-4',
-      rounded: 'rounded-lg',
-      position: 'right'
-    };
-    drawerStore.open(drawerSettings);
-  }
+ 
 
   /* Reactive variable to check login status */
   let isLoggedIn = false;
@@ -73,28 +58,7 @@
 
 </script>
 
-<!-- Drawer component -->
-<Drawer>
-  {#if $drawerStore.id === 'cart'}
-    <!-- Drawer Content for 'example-drawer' -->
-    <div class="p-4">
-      <div class="card p-4 mb-4">You have nothing in your cart.</div>
 
-      <h2 class="text-2xl font-bold mb-4">Shop</h2>
-      <ul>
-        <li>Livestream Services</li>
-        <li>Slideshows</li>
-        <li>Livestream Services</li>
-        <li>Photo Restoration</li>
-        <li>Home Video Restoration</li>
-        <li>Audio / Visual Support </li>
-      </ul>
-      <button on:click={() => drawerStore.close()} class="mt-4 bg-red-500 text-white py-2 px-4 rounded">
-        Close
-      </button>
-    </div>
-  {/if}
-</Drawer>
 
 <!-- AppShell component for structuring the app -->
 <AppShell>
@@ -125,35 +89,22 @@
                 <li><a href="/schedule" class="text-white hover:text-gray-300">Schedule Now</a></li>
 <li>
   {#if isLoggedIn}
-  <button
-    on:click={openDrawer}
-    class="flex items-center space-x-2 bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:bg-[#CFCFCE]">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="1.5"
-      class="w-6 h-6">
-      <!-- Calendar icon base -->
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>Schedule Livestream</span>
-  </button>
+  
+    <!-- Login/Logout button -->
+    <button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
+      {isLoggedIn ? 'Account Settings' : 'Login'}
+    </button>
 {/if}
-
-            </li>
-                
-              </ul>
-            </nav>
+{#if !isLoggedIn}
+  
+<!-- Login/Logout button -->
+<button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
+  {isLoggedIn ? 'Account Settings' : 'Login'}
+</button>
+{/if}
+           
                     
-            <!-- Login/Logout button -->
-            <button on:click={handleAuthAction} class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
+         
             
           </div>
         </div>

@@ -1,4 +1,7 @@
 <script lang="ts">
+ 
+ 
+
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     
@@ -44,11 +47,7 @@
       return slugified;
     }
     
-    // Function to navigate to a specific page
-    function navigateToPage() {
-      console.log('Navigating to tribute page');
-      window.location.href = `https://tributestream.com/tribute-to-34243434`;
-    }
+   
     
     // Reactive statement to update slugifiedName when lovedOneName changes
     $: {
@@ -80,6 +79,38 @@
       return password;
     }
     
+
+
+ // Function to call the WordPress plugin endpoint to send an email
+ async function sendRegistrationEmail(username, email, password) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          email: email,
+          password: password
+        }),
+        mode: 'cors', // Ensure CORS is handled
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send email');
+      }
+
+      const result = await response.json();
+      console.log('Email sent successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending email:', error);
+    }
+  }
+
+
     // Function to register a user
     async function registerUser() {
       console.log('Registering user');
@@ -89,7 +120,9 @@
         const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword })
+          body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
+          mode: 'cors'
+
         });
         if (!response.ok) {
           const errorData = await response.json();
@@ -98,12 +131,13 @@
         }
         const data = await response.json();
         console.log('User registered successfully:', data);
-        // TODO: Send email with password to userEmail
+
+         
         return data;
       } catch (err) {
         console.error('Registration error:', err);
         throw err;
-      }
+      } 
     }
     
     // Function to log in a user
@@ -197,6 +231,11 @@
       try {
         await registerUser();
         console.log('User registered');
+
+            // Send registration email
+        await sendRegistrationEmail(userName, userEmail, generatedPassword);
+        console.log('Registration email sent');
+
         const token = await loginUser(userName, generatedPassword);
         console.log('User logged in with token:', token);
         const pageId = await createPage(token);
@@ -207,7 +246,7 @@
     
         console.log('Page created:', pageId);
         console.log('Fetched page data:', page);
-    
+      
         // Redirect to the page using the slug
         if (page.slug) {
           console.log('Redirecting to:', `https://tributestream.com/${page.slug}`);
@@ -260,6 +299,36 @@
     onMount(() => {
       console.log('Component mounted');
     });
+
+
+
+  // Example usage: sendEmail('testuser', 'test@example.com', 'password123');
+
+
+
+    // Add a new function to send the registration email
+  //   async function sendRegistrationEmail(username, email, password) {
+  // try {
+  //   const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ username: username, email: email, password: password }), // Use the parameters here
+  //     credentials: 'include', // Include credentials like cookies if needed
+  //     mode: 'cors' // Ensure CORS is handled
+  //   });
+
+  //   // Handle the response
+  //   if (!response.ok) {
+  //     throw new Error('Failed to send registration email');
+  //   }
+
+  //   const result = await response.json();
+  //   console.log('Registration email sent:', result);
+  // } catch (error) {
+  //   console.error('Error sending registration email:', error);
+//   // }
+// }
+
     </script>
     
     <!-- The rest of your HTML remains unchanged -->
@@ -434,4 +503,5 @@
         </div>
         </section>
 
+ 
  </main>
