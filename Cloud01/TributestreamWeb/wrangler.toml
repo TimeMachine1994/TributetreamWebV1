@@ -1,5 +1,5 @@
  #:schema node_modules/wrangler/config-schema.json
-name = "TributestreamWeb"
+name = "tributestream"
 compatibility_date = "2024-09-09"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
