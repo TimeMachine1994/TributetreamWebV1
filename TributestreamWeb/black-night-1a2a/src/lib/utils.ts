@@ -1,6 +1,4 @@
-// src/lib/utils.ts
-export function getPageUrl(path: string): string {
-    return path.replace('http://localhost', 'https://tributestream.com');
+export function getPageUrl(url: string): string {
+    if (!url) return '';
+    return url.replace(/https?:\/\/localhost/, 'https://tributestream.com');
   }
-  
- 
