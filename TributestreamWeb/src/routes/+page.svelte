@@ -396,7 +396,7 @@
 
 <section class="relative bg-gray-900 text-white">
     <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
-        <source src="tributestream.com/wp-content/video.mp4" type="video/mp4" />
+        <source src="https://www.tributestream.com/wp-content/video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
     </video>
     <div class="absolute inset-0 bg-black opacity-50 z-10"></div>  
