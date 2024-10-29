@@ -1,2 +1,3 @@
-name = "my-sveltekit-app"
-pages_build_output_dir = "build"
+name = "tributestreamwebv1"
+
+pages_build_output_dir = ".svelte-kit/cloudflare"
