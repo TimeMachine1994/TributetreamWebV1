@@ -19,6 +19,7 @@
   let nameError = '';
   let emailError = '';
   let phoneError = '';
+  let fullName = '';
 
   // API base URL
   const API_BASE_URL = 'https://tributestream.com/wp-json';
