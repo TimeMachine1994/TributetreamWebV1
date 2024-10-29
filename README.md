@@ -90,6 +90,9 @@ x Redo the template for the custom link page
 Current status report log:
 **************************
 
+10-28-2024
+Fixed template, need to fine tune error logging and other pages...but MVP is working and can be launched. Template is 80% there. 
+
 10-15-2024
 Successfully migrated wordpress from old server to VPS server. 
 
