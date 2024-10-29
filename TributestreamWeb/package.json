@@ -51,6 +51,7 @@
   "dependencies": {
     "@floating-ui/dom": "1.6.10",
     "fortawesome": "^0.0.1-security",
+    "glob": "^9.3.5",
     "rimraf": "^4.4.1"
   },
   "engines": {
