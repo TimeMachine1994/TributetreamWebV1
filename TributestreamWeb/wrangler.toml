@@ -1,4 +1,4 @@
-name = "TributestreamWeb_v1"
+name = "TributestreamWebv1"
 
 [build]
 command = "npm run build"
