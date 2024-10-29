@@ -24,6 +24,8 @@
 </style>
 
 <script lang="ts">
+import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
   import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte'; /* Svelte lifecycle function */
   import '../app.postcss'; /* Importing global styles */
@@ -34,8 +36,8 @@
   import { goto } from '$app/navigation'; /* Function to navigate to a new page */
   /* Initialize stores for Skeleton UI components */
   initializeStores();
+  injectSpeedInsights();
 
- 
 
   /* Reactive variable to check login status */
   let isLoggedIn = false;
@@ -62,6 +64,7 @@
 
 <!-- AppShell component for structuring the app -->
 <AppShell>
+  
   <svelte:fragment slot="header">
     <!-- AppBar for the top navigation bar -->
     <AppBar background="bg-black">
