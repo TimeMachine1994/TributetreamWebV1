@@ -50,10 +50,10 @@
   "type": "module",
   "dependencies": {
     "@floating-ui/dom": "1.6.10",
-    "fortawesome": "^0.0.1-security"
+    "fortawesome": "^0.0.1-security",
+    "rimraf": "^4.4.1"
   },
   "engines": {
-  "node": ">=18.18.0"
-}
-  
+    "node": ">=18.18.0"
+  }
 }
