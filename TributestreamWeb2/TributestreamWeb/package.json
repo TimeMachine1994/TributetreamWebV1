@@ -54,6 +54,7 @@
     "@fortawesome/free-brands-svg-icons": "^6.6.0",
     "@fortawesome/free-regular-svg-icons": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@sveltejs/adapter-vercel": "^5.4.6",
     "backbone": "^1.6.0",
     "dotenv": "^16.4.5",
     "font-awesome": "^4.7.0",
