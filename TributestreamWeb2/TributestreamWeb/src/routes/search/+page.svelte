@@ -1,131 +1,168 @@
-<script lang="ts">
-    import { onMount } from 'svelte';
-    import { page } from '$app/stores';
-     
-    export let data;
-    let searchQuery = '';
-    let searchResults = [];
-    let isLoading = false;
-    let currentPage = 1;
-    let totalPages = 1;
-    let errorMessage = '';
+// src/routes/search/+page.server.ts
+import { error } from '@sveltejs/kit';
+import { WORDPRESS_API_URL } from '$env/static/private';
 
-    onMount(() => {
-        searchQuery = $page.url.searchParams.get('q') || '';
-        if (searchQuery) {
-            performSearch();
-        }
-    });
+export const config = {
+    runtime: 'edge'
+};
 
-    async function performSearch() {
-    isLoading = true;
-    errorMessage = '';
+/** @type {import('./$types').PageServerLoad} */
+export async function load({ url, fetch }) {
+    const searchQuery = url.searchParams.get('q') || '';
+    const page = parseInt(url.searchParams.get('page') || '1');
+    
+    if (!searchQuery) {
+        return {
+            query: '',
+            results: [],
+            currentPage: 1,
+            totalPages: 0,
+            totalItems: 0
+        };
+    }
+
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeout = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(
-            `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
+            `${WORDPRESS_API_URL}/wp-json/wp/v2/search?` + 
+            new URLSearchParams({
+                search: searchQuery,
+                page: page.toString(),
+                per_page: '10',
+                _embed: 'true'
+            }),
             {
                 headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
+                    'Accept': 'application/json'
                 },
-                mode: 'no-cors',
-                credentials: 'same-origin'
+                signal: controller.signal
             }
         );
 
-        clearTimeout(timeoutId);
+        clearTimeout(timeout);
 
         if (!response.ok) {
-            throw new Error(`Search failed: ${response.status}`);
+            throw error(response.status, `Search failed with status ${response.status}`);
         }
 
-        const items = await response.json();
+        const results = await response.json();
         const totalItems = parseInt(response.headers.get('X-WP-Total') || '0');
-        totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
+        const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
 
-        searchResults = items.map(item => ({
-            title: { rendered: item.title },
-            excerpt: { rendered: item.excerpt || '' },
-            url: item.url,
-            link: item.link,
-            id: item.id
-        }));
+        return {
+            query: searchQuery,
+            results: results.map(item => ({
+                id: item.id,
+                title: { rendered: item.title },
+                excerpt: { rendered: item.excerpt || '' },
+                url: item.url || item.link,
+                type: item.type,
+                subtype: item.subtype
+            })),
+            currentPage: page,
+            totalPages,
+            totalItems
+        };
 
-    } catch (error) {
-        errorMessage = error.name === 'AbortError'
-            ? 'Search request timed out. Please try again.'
-            : error.message;
-        searchResults = [];
-    } finally {
-        isLoading = false;
+    } catch (err) {
+        console.error('Search error:', err);
+        if (err.name === 'AbortError') {
+            throw error(504, 'Search request timed out. Please try again.');
+        }
+        throw error(500, 'Failed to fetch search results');
     }
 }
 
+// src/routes/search/+page.svelte
+<script lang="ts">
+    import { page } from '$app/stores';
+    import { goto } from '$app/navigation';
+    import { enhance } from '$app/forms';
+    
+    /** @type {import('./$types').PageData} */
+    export let data;
 
-    function handleSubmit(event: Event) {
-        event.preventDefault();
-        currentPage = 1;
-        performSearch();
+    let isSubmitting = false;
+
+    $: searchQuery = data.query;
+    $: results = data.results;
+    $: currentPage = data.currentPage;
+    $: totalPages = data.totalPages;
+
+    function handleSubmit(event: SubmitEvent) {
+        const form = event.target as HTMLFormElement;
+        const searchInput = form.querySelector('input[name="q"]') as HTMLInputElement;
+        
+        if (!searchInput.value.trim()) {
+            event.preventDefault();
+            return;
+        }
+
+        isSubmitting = true;
+        goto(`?q=${encodeURIComponent(searchInput.value)}&page=1`, {
+            replaceState: true
+        }).finally(() => {
+            isSubmitting = false;
+        });
     }
 
-    function changePage(newPage: number) {
+    async function changePage(newPage: number) {
         if (newPage >= 1 && newPage <= totalPages) {
-            currentPage = newPage;
-            performSearch();
+            await goto(`?q=${encodeURIComponent(searchQuery)}&page=${newPage}`, {
+                keepFocus: true
+            });
         }
     }
 </script>
 
 <svelte:head>
-    <title>Search Results - Tributestream</title>
+    <title>Search {searchQuery ? `- ${searchQuery}` : ''} - Tributestream</title>
 </svelte:head>
 
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">Search Results</h1>
 
-    <form on:submit={handleSubmit} class="mb-8">
+    <form 
+        method="GET"
+        action="/search"
+        on:submit|preventDefault={handleSubmit}
+        class="mb-8"
+    >
         <div class="flex gap-4">
             <input
                 type="search"
-                bind:value={searchQuery}
+                name="q"
+                value={searchQuery}
                 placeholder="Refine your search..."
                 class="flex-1 p-2 border border-gray-300 rounded-md"
             />
             <button
-                type="submit"  
-                class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
+                type="submit"
+                disabled={isSubmitting}
+                class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg 
+                       hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out
+                       disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Search
+                {isSubmitting ? 'Searching...' : 'Search'}
             </button>
         </div>
     </form>
 
-    {#if errorMessage}
-        <div class="text-red-500 text-center mb-4">
-            {errorMessage}
-        </div>
-    {/if}
-
-    {#if isLoading}
-        <div class="text-center">
-            <p class="text-lg">Loading results...</p>
-        </div>
-    {:else if searchResults.length > 0}
+    {#if results.length > 0}
         <ul class="space-y-4">
-            {#each searchResults as result}
+            {#each results as result (result.id)}
                 <li class="border-b pb-4">
                     <a
-                        href={result.url || result.link}
+                        href={result.url}
                         class="text-xl font-semibold text-blue-600 hover:underline"
                     >
-                        {@html result.title.rendered || result.title}
+                        {@html result.title.rendered}
                     </a>
                     {#if result.excerpt}
                         <p class="mt-2 text-gray-600">
-                            {@html result.excerpt.rendered || result.excerpt}
+                            {@html result.excerpt.rendered}
                         </p>
                     {/if}
                 </li>
