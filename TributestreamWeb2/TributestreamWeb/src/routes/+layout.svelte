@@ -2,6 +2,13 @@
 
 <!-- Head Section -->
 <svelte:head>
+  <script>
+    window.wpApiSettings = {
+      root: 'https://tributestream.com/wp-json/',
+      nonce: '',
+      versionString: 'wp/v2/'
+    };
+  </script>
   <!-- Importing external JavaScript libraries for Backbone.js and WordPress API -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
   <script src="https://tributestream.com/wp-includes/js/wp-api.min.js"></script>
