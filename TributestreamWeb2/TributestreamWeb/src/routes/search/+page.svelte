@@ -19,45 +19,52 @@
     });
 
     async function performSearch() {
-        isLoading = true;
-        errorMessage = '';
-        try {
-            const response = await fetch(
-                `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
-                {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    },
-                    mode: 'cors',
-                    credentials: 'same-origin'
-                }
-            );
+    isLoading = true;
+    errorMessage = '';
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-            if (!response.ok) {
-                throw new Error(`Search failed: ${response.status}`);
+        const response = await fetch(
+            `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
+            {
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                mode: 'cors',
+                credentials: 'same-origin'
             }
+        );
 
-            const items = await response.json();
-            const totalItems = parseInt(response.headers.get('X-WP-Total') || '0');
-            totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
+        clearTimeout(timeoutId);
 
-            searchResults = items.map(item => ({
-                title: { rendered: item.title },
-                excerpt: { rendered: item.excerpt || '' },
-                url: item.url,
-                link: item.link,
-                id: item.id
-            }));
-
-        } catch (error) {
-            console.error('Search error:', error);
-            errorMessage = error.message;
-            searchResults = [];
-        } finally {
-            isLoading = false;
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.status}`);
         }
+
+        const items = await response.json();
+        const totalItems = parseInt(response.headers.get('X-WP-Total') || '0');
+        totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
+
+        searchResults = items.map(item => ({
+            title: { rendered: item.title },
+            excerpt: { rendered: item.excerpt || '' },
+            url: item.url,
+            link: item.link,
+            id: item.id
+        }));
+
+    } catch (error) {
+        errorMessage = error.name === 'AbortError'
+            ? 'Search request timed out. Please try again.'
+            : error.message;
+        searchResults = [];
+    } finally {
+        isLoading = false;
     }
+}
+
 
     function handleSubmit(event: Event) {
         event.preventDefault();
