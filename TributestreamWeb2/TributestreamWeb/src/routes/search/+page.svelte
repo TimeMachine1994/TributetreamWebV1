@@ -32,7 +32,7 @@
                     'Accept': 'application/json',
                     'Cache-Control': 'no-cache'
                 },
-                mode: 'cors',
+                mode: 'no-cors',
                 credentials: 'same-origin'
             }
         );
