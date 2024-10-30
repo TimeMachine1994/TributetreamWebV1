@@ -1,116 +1,115 @@
- 
 <script lang="ts">
-    import { goto } from '$app/navigation';
-    
-    /** @type {import('./$types').PageData} */
-    export let data;
+	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
 
-    let isLoading = false;
+	// Search query and results store
+	let query = '';
+	let isLoading = writable(false);
+	let error = writable<string | null>(null);
+	let results = writable<any[]>([]);
 
-    async function handleSubmit(event: SubmitEvent) {
-        event.preventDefault();
-        const form = event.target as HTMLFormElement;
-        const searchInput = form.querySelector('input[name="q"]') as HTMLInputElement;
-        
-        if (!searchInput.value.trim()) return;
-        
-        isLoading = true;
-        await goto(`?q=${encodeURIComponent(searchInput.value)}&page=1`);
-        isLoading = false;
-    }
+	// Base URL for Tributestream API
+	const API_URL = 'https://tributestream.com/wp-json/wp/v2/pages';
 
-    async function changePage(newPage: number) {
-        if (newPage >= 1 && newPage <= data.totalPages) {
-            isLoading = true;
-            await goto(`?q=${encodeURIComponent(data.query)}&page=${newPage}`);
-            isLoading = false;
-        }
-    }
+	// Function to fetch data from Tributestream API
+	async function fetchPages(searchQuery: string) {
+		isLoading.set(true);
+		error.set(null);
+		try {
+			const response = await fetch(`${API_URL}?search=${encodeURIComponent(searchQuery)}`);
+			if (!response.ok) {
+				throw new Error('Error fetching data');
+			}
+			const data = await response.json();
+			results.set(data);
+		} catch (err: any) {
+			error.set(err.message || 'Unknown error');
+		} finally {
+			isLoading.set(false);
+		}
+	}
+
+	// Trigger search when the form is submitted
+	function handleSearch(event: Event) {
+		event.preventDefault();
+		if (query.trim()) {
+			fetchPages(query);
+		}
+	}
+
+	// Fetch initial data on page load (optional)
+	onMount(() => {
+		fetchPages(''); // Optionally fetch all pages if empty search is allowed
+	});
 </script>
 
-<svelte:head>
-    <title>Search {data.query ? `- ${data.query}` : ''} - Tributestream</title>
-</svelte:head>
+<style>
+	/* Simple styling for the form and results */
+	.search-form {
+		display: flex;
+		margin-bottom: 1em;
+	}
+	.search-input {
+		flex: 1;
+		padding: 0.5em;
+		font-size: 1em;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+	}
+	.search-button {
+		padding: 0.5em 1em;
+		margin-left: 0.5em;
+		font-size: 1em;
+		cursor: pointer;
+	}
+	.results {
+		margin-top: 1em;
+	}
+	.result-item {
+		padding: 0.75em;
+		margin: 0.5em 0;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+	}
+	.error {
+		color: red;
+		font-weight: bold;
+		margin-top: 1em;
+	}
+	.loading {
+		margin-top: 1em;
+	}
+</style>
 
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Search</h1>
+<!-- HTML for the search form and displaying results -->
+<form class="search-form" on:submit={handleSearch}>
+	<input
+		type="text"
+		class="search-input"
+		bind:value={query}
+		placeholder="Search pages..."
+	/>
+	<button type="submit" class="search-button">Search</button>
+</form>
 
-    <form 
-        on:submit={handleSubmit}
-        class="mb-8"
-    >
-        <div class="flex gap-4">
-            <input
-                type="search"
-                name="q"
-                value={data.query}
-                placeholder="Search Tributestream..."
-                class="flex-1 p-2 border border-gray-300 rounded-md"
-                aria-label="Search query"
-            />
-            <button
-                type="submit"
-                disabled={isLoading}
-                class="bg-[#D5BA7F] text-black font-bold py-2 px-4 rounded-lg
-                       hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {isLoading ? 'Searching...' : 'Search'}
-            </button>
-        </div>
-    </form>
+{#if $isLoading}
+	<p class="loading">Loading...</p>
+{/if}
 
-    {#if data.results.length > 0}
-        <div class="space-y-6">
-            {#each data.results as result (result.id)}
-                <article class="border-b pb-4">
-                    <a
-                        href={result.url}
-                        class="text-xl font-semibold hover:text-[#D5BA7F] transition-colors"
-                    >
-                        {@html result.title.rendered || result.title}
-                    </a>
-                </article>
-            {/each}
-        </div>
+{#if $error}
+	<p class="error">Error: {$error}</p>
+{/if}
 
-        {#if data.totalPages > 1}
-            <div class="mt-8 flex justify-center gap-2">
-                <button
-                    on:click={() => changePage(data.currentPage - 1)}
-                    disabled={data.currentPage === 1 || isLoading}
-                    class="px-4 py-2 border rounded-lg hover:bg-[#D5BA7F] hover:text-black transition-colors
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Previous
-                </button>
-                
-                {#each Array(data.totalPages) as _, i}
-                    {#if i + 1 === 1 || i + 1 === data.totalPages || (i + 1 >= data.currentPage - 1 && i + 1 <= data.currentPage + 1)}
-                        <button
-                            on:click={() => changePage(i + 1)}
-                            class="px-4 py-2 border rounded-lg 
-                                   {data.currentPage === i + 1 ? 'bg-[#D5BA7F] text-black' : 'hover:bg-[#D5BA7F] hover:text-black'} 
-                                   transition-colors"
-                        >
-                            {i + 1}
-                        </button>
-                    {:else if i + 1 === data.currentPage - 2 || i + 1 === data.currentPage + 2}
-                        <span class="px-2 py-2">...</span>
-                    {/if}
-                {/each}
-                
-                <button
-                    on:click={() => changePage(data.currentPage + 1)}
-                    disabled={data.currentPage === data.totalPages || isLoading}
-                    class="px-4 py-2 border rounded-lg hover:bg-[#D5BA7F] hover:text-black transition-colors
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Next
-                </button>
-            </div>
-        {/if}
-    {:else if data.query}
-        <p class="text-center text-lg">No results found for "{data.query}"</p>
-    {/if}
-</div>
+{#if $results.length > 0}
+	<div class="results">
+		{#each $results as result}
+			<div class="result-item">
+				<h2>{result.title.rendered}</h2>
+				<p>{@html result.excerpt.rendered}</p>
+				<a href={result.link} target="_blank" rel="noopener noreferrer">Read More</a>
+			</div>
+		{/each}
+	</div>
+{:else if !isLoading && !$error && query}
+	<p>No results found for "{query}"</p>
+{/if}
