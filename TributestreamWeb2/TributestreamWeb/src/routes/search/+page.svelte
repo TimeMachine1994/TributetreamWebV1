@@ -21,7 +21,7 @@
         try {
             // Use WordPress REST API search endpoint
             const response = await fetch(
-                `/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
+                `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
                 {
                     headers: {
                         'Accept': 'application/json',
@@ -66,8 +66,7 @@
     }
 </script>
 
-<!-- Rest of your template remains the same -->
-
+ 
 <svelte:head>
     <title>Search Results - Tributestream</title>
 </svelte:head>
