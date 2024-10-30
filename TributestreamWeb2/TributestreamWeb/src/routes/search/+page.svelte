@@ -1,6 +1,4 @@
-// src/routes/search/+page.server.ts
-import { error } from '@sveltejs/kit';
-
+ 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ url, fetch }) {
     const query = url.searchParams.get('q') || '';
