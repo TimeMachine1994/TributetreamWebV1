@@ -1,44 +1,4 @@
  
-/** @type {import('./$types').PageServerLoad} */
-export async function load({ url, fetch }) {
-    const query = url.searchParams.get('q') || '';
-    const page = parseInt(url.searchParams.get('page') || '1');
-    
-    if (!query) {
-        return { query: '', results: [], currentPage: 1, totalPages: 0 };
-    }
-
-    try {
-        const response = await fetch(
-            `https://tributestream.com/wp-json/wp/v2/search?` + 
-            new URLSearchParams({
-                search: query,
-                page: page.toString(),
-                per_page: '10',
-                _embed: 'true'
-            })
-        );
-
-        if (!response.ok) {
-            throw error(response.status, 'Failed to fetch search results');
-        }
-
-        const results = await response.json();
-        const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
-
-        return {
-            query,
-            results,
-            currentPage: page,
-            totalPages
-        };
-    } catch (err) {
-        console.error('Search error:', err);
-        throw error(500, 'Failed to fetch search results');
-    }
-}
-
-// src/routes/search/+page.svelte
 <script lang="ts">
     import { goto } from '$app/navigation';
     
