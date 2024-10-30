@@ -19,19 +19,31 @@
     async function performSearch() {
         isLoading = true;
         try {
+            // Use WordPress REST API search endpoint
             const response = await fetch(
-                `/api/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}`
+                `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                }
             );
             
             if (!response.ok) throw new Error('Search failed');
             
-            const data = await response.json();
-            searchResults = data.results.map(result => ({
-                ...result,
-                url: getPageUrl(result.url),
-                link: getPageUrl(result.link)
+            const items = await response.json();
+            const totalItems = parseInt(response.headers.get('X-WP-Total') || '0');
+            totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '1');
+
+            // Transform the results
+            searchResults = items.map(item => ({
+                title: { rendered: item.title },
+                excerpt: { rendered: item.excerpt || '' },
+                url: item.url,
+                link: item.link,
+                id: item.id
             }));
-            totalPages = data.totalPages;
+
         } catch (error) {
             console.error('Search error:', error);
             searchResults = [];
@@ -52,6 +64,8 @@
         }
     }
 </script>
+
+<!-- Rest of your template remains the same -->
 
 <svelte:head>
     <title>Search Results - Tributestream</title>
