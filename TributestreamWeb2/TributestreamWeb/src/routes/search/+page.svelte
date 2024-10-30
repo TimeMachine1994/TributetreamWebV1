@@ -21,10 +21,11 @@
         try {
             // Use WordPress REST API search endpoint
             const response = await fetch(
-                `https://tributestream.com/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
+                `/wp-json/wp/v2/search?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&per_page=10&_embed=true`,
                 {
                     headers: {
                         'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
                     }
                 }
             );
