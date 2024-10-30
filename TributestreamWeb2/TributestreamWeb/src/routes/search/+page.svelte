@@ -9,7 +9,7 @@
 	let results = writable<any[]>([]);
 
 	// Base URL for Tributestream API
-	const API_URL = 'https://tributestream.com/wp-json/wp/v2/pages';
+	const API_URL = 'https://tributestream.com/wp-json/wp/v2/search';
 
 	// Function to fetch data from Tributestream API
 	async function fetchPages(searchQuery: string) {
