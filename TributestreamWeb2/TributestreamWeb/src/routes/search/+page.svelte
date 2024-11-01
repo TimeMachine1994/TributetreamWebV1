@@ -1,4 +1,8 @@
-<script lang="ts">
+<head>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Fanwood+Text:ital@0;1&display=swap" rel="stylesheet">
+ </head><script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
@@ -53,6 +57,20 @@
 
 <style>
 	@import "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css";
+
+
+  /* Scrollbar customizations */
+  .fanwood-text-regular {
+  font-family: "Fanwood Text", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.fanwood-text-regular-italic {
+  font-family: "Fanwood Text", serif;
+  font-weight: 400;
+  font-style: italic;
+}
 </style>
 
 <div class="min-h-screen bg-[#CFCFCE] flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
