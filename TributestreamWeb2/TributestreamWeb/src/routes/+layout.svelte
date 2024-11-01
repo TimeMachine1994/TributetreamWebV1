@@ -4,7 +4,7 @@
 <svelte:head>
   <script>
     window.wpApiSettings = {
-      root: 'https://tributestream.com/wp-json/',
+      root: 'https://wp.tributestream.com/wp-json/',
       nonce: '',
       versionString: 'wp/v2/'
     };
