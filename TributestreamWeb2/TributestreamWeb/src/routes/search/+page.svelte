@@ -9,20 +9,36 @@
 	let results = writable<any[]>([]);
 
 	// Base URL for Tributestream API
-	const API_URL = 'https://tributestream.com/wp-json/wp/v2/search';
+	const API_URL = 'https://wp.tributestream.com/wp-json/wp/v2/pages';
 
 	// Function to fetch data from Tributestream API
 	async function fetchPages(searchQuery: string) {
 		isLoading.set(true);
 		error.set(null);
 		try {
-			const response = await fetch(`${API_URL}?search=${encodeURIComponent(searchQuery)}`);
+			const response = await fetch(`${API_URL}?search=${encodeURIComponent(searchQuery)}`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				mode: "cors"  // Enable CORS
+			});
 			if (!response.ok) {
-				throw new Error('Error fetching data');
+				throw new Error(`Error fetching data: ${response.status} ${response.statusText}`);
 			}
+
+			// Parse response data
 			const data = await response.json();
-			results.set(data);
+			// Map to ensure required fields are safely accessed
+			const formattedData = data.map((item: any) => ({
+				title: item.title?.rendered || "Untitled",
+				excerpt: item.excerpt?.rendered || item.content?.rendered || "No description available.",
+				link: item.link || "#"
+			}));
+
+			results.set(formattedData);
 		} catch (err: any) {
+			console.error("Fetch error:", err); // Log detailed error
 			error.set(err.message || 'Unknown error');
 		} finally {
 			isLoading.set(false);
@@ -104,12 +120,12 @@
 	<div class="results">
 		{#each $results as result}
 			<div class="result-item">
-				<h2>{result.title.rendered}</h2>
-				<p>{@html result.excerpt.rendered}</p>
+				<h2>{result.title}</h2>
+				<p>{@html result.excerpt}</p>
 				<a href={result.link} target="_blank" rel="noopener noreferrer">Read More</a>
 			</div>
 		{/each}
 	</div>
-{:else if !isLoading && !$error && query}
+{:else if !$isLoading && !$error && query}
 	<p>No results found for "{query}"</p>
 {/if}
