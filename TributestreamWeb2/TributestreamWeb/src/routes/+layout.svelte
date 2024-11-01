@@ -11,8 +11,10 @@
   </script>
   <!-- Importing external JavaScript libraries for Backbone.js and WordPress API -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
-  <script src="https://tributestream.com/wp-includes/js/wp-api.min.js"></script>
-  
+  <script src="https://wp.tributestream.com/wp-includes/js/wp-api.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fanwood+Text:ital@0;1&display=swap" rel="stylesheet">
 </svelte:head>
 
 <!-- Styles -->
@@ -37,7 +39,17 @@
   }
 
   /* Scrollbar customizations */
- 
+  .fanwood-text-regular {
+  font-family: "Fanwood Text", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.fanwood-text-regular-italic {
+  font-family: "Fanwood Text", serif;
+  font-weight: 400;
+  font-style: italic;
+}
   
 </style>
 
