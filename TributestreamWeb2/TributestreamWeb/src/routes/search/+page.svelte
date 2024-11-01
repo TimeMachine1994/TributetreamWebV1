@@ -38,7 +38,7 @@
 
 			results.set(formattedData);
 		} catch (err: any) {
-			console.error("Fetch error:", err); // Log detailed error
+			console.error("Fetch error:", err);
 			error.set(err.message || 'Unknown error');
 		} finally {
 			isLoading.set(false);
@@ -60,72 +60,52 @@
 </script>
 
 <style>
-	/* Simple styling for the form and results */
-	.search-form {
-		display: flex;
-		margin-bottom: 1em;
-	}
-	.search-input {
-		flex: 1;
-		padding: 0.5em;
-		font-size: 1em;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-	}
-	.search-button {
-		padding: 0.5em 1em;
-		margin-left: 0.5em;
-		font-size: 1em;
-		cursor: pointer;
-	}
-	.results {
-		margin-top: 1em;
-	}
-	.result-item {
-		padding: 0.75em;
-		margin: 0.5em 0;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-	}
-	.error {
-		color: red;
-		font-weight: bold;
-		margin-top: 1em;
-	}
-	.loading {
-		margin-top: 1em;
-	}
+	@import "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css";
 </style>
 
-<!-- HTML for the search form and displaying results -->
-<form class="search-form" on:submit={handleSearch}>
-	<input
-		type="text"
-		class="search-input"
-		bind:value={query}
-		placeholder="Search pages..."
-	/>
-	<button type="submit" class="search-button">Search</button>
-</form>
+<div class="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+	<h1 class="text-4xl font-extrabold text-gray-900 mb-6">Search Pages</h1>
+	<form on:submit={handleSearch} class="w-full max-w-lg flex mb-8">
+		<input
+			type="text"
+			bind:value={query}
+			placeholder="Search pages..."
+			class="flex-grow py-3 px-4 rounded-l-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+		/>
+		<button
+			type="submit"
+			class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+		>
+			Search
+		</button>
+	</form>
 
-{#if $isLoading}
-	<p class="loading">Loading...</p>
-{/if}
+	{#if $isLoading}
+		<p class="text-lg text-gray-700 animate-pulse">Loading...</p>
+	{/if}
 
-{#if $error}
-	<p class="error">Error: {$error}</p>
-{/if}
+	{#if $error}
+		<p class="text-lg text-red-600 font-semibold">Error: {$error}</p>
+	{/if}
 
-{#if $results.length > 0}
-	<div class="results">
-		{#each $results as result}
-			<div class="result-item">
-				<h2>{result.title}</h2>
-				<p>{@html result.excerpt}</p>
-				<a href={result.link} target="_blank" rel="noopener noreferrer">Read More</a>
+	{#if $results.length > 0}
+		<div class="w-full max-w-2xl space-y-4">
+			{#each $results as result}
+			<div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-200">
+				<h2 class="text-xl font-bold text-gray-800 mb-2">{result.title}</h2>
+				<p class="text-gray-600 mb-4">{@html result.excerpt}</p>
+				<a
+					href={result.link}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-indigo-600 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+				>
+					Read More
+				</a>
 			</div>
 		{/each}
-	</div>
-{:else if !$isLoading && !$error && query}
-	<p>No results found for "{query}"</p>
-{/if}
+		</div>
+	{:else if !$isLoading && !$error && query}
+		<p class="text-lg text-gray-500">No results found for "<span class="font-semibold">{query}</span>"</p>
+	{/if}
+</div>
