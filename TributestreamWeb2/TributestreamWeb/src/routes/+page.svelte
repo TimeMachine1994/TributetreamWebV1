@@ -22,7 +22,7 @@
   let fullName = '';
 
   // API base URL
-  const API_BASE_URL = 'https://tributestream.com/wp-json';
+  const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
 
   //*************/ END import statements and variables /**************/
 
