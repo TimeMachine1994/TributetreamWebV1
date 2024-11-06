@@ -1,11 +1,10 @@
 <!-- src/routes/[slug]/+page.svelte -->
 <script>
-    export let wpUrl;
+    export let html;
 </script>
 
-{#if wpUrl}
-    <iframe src="{wpUrl}" width="100%" height="100%" style="border: none;"></iframe>
+{#if html}
+    <div>{@html html}</div>
 {:else}
-    <!-- Render other Svelte content if not matching WordPress slugs -->
-    <p>Content not found</p>
+    <p>Content not found or could not be loaded from WordPress.</p>
 {/if}
