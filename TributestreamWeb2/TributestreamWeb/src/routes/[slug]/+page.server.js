@@ -1,23 +1,16 @@
 // src/routes/[slug]/+page.server.js
 export async function load({ params }) {
     const { slug } = params;
-    
+
     // Check if slug matches criteria
     if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
         // Construct the WordPress URL
         const wpUrl = `https://wp.tributestream.com/${slug}`;
-        
-        // Fetch the content from WordPress
-        const response = await fetch(wpUrl);
-        
-        if (response.ok) {
-            const html = await response.text();
-            return { html };
-        } else {
-            throw new Error("Page not found on WordPress.");
-        }
+
+        // Return the URL to be embedded
+        return { wpUrl };
     }
-    
-    // If no match, handle as usual
+
+    // Handle other routes as usual
     return { /* other data here */ };
 }
