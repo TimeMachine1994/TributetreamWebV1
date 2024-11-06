@@ -1,0 +1,15 @@
+{
+    "redirects": [
+      {
+        "source": "/celebration-of-life-for-:slug",
+        "destination": "https://wp.tributestream.com/celebration-of-life-for-:slug",
+        "permanent": true
+      },
+      {
+        "source": "/tributestream-for-:slug",
+        "destination": "https://wp.tributestream.com/tributestream-for-:slug",
+        "permanent": true
+      }
+    ]
+  }
+  
