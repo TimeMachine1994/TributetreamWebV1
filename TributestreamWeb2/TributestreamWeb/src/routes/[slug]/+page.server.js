@@ -9,8 +9,13 @@ export async function load({ params }) {
         
         try {
             // Fetch content from WordPress
-            const response = await fetch(wpUrl);
-
+            const response = await fetch(wpUrl, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+                    "Accept": "text/html",
+                },
+            });
+            
             // Check if the fetch was successful
             if (!response.ok) {
                 console.error(`Failed to fetch from WordPress: ${response.status} ${response.statusText}`);
