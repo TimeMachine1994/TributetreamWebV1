@@ -6,11 +6,14 @@ export async function load({ params, url }) {
     if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
         const wpUrl = `https://wp.tributestream.com/${slug}`;
 
-        // Return a redirect response
+        // Return a redirect response with CORS headers
         return {
             status: 302,
             headers: {
                 location: wpUrl,
+                "Access-Control-Allow-Origin": "*", // Allows any origin; adjust if needed for security
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS", // Allow specific methods
+                "Access-Control-Allow-Headers": "Content-Type, Authorization", // Allow these headers
             },
         };
     }
