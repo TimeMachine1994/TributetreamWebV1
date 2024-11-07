@@ -61,15 +61,24 @@
 //*************/  START register user  /*************/
 
 //Function to register a user
+
   async function registerUser(): Promise<string> {
+
+    
     const generatedPassword = generateRandomPassword();
     try {
+      console.log('Registration payload:', {
+    username: userName,
+    email: userEmail,
+    password: generatedPassword
+});
       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
         mode: 'cors',
       });
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Registration failed');
