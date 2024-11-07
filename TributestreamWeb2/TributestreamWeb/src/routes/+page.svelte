@@ -133,16 +133,21 @@
 
 //*************/ START generate user name /**************/
 
- // Function to generate username from full name
- function generateUserName(fullName: string): string {
-    const nameParts = fullName.trim().split(/\s+/);  // Split the full name by spaces
-    if (nameParts.length >= 2) {
-      const lastName = nameParts[nameParts.length - 1]; // Last word is assumed to be the last name
-      const firstInitial = nameParts[0][0];            // First initial of the first word
-      return `${lastName}${firstInitial}`.toLowerCase();  // Combine them and convert to lowercase
+function generateUserName(email: string): string {
+    // Remove any whitespace and convert to lowercase
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Remove any special characters except for alphanumeric, dots, and underscores
+    const validUsername = cleanEmail.replace(/[^a-z0-9._]/g, '');
+    
+    // If the email is empty after cleaning, return empty string
+    if (!validUsername) {
+        return '';
     }
-    return '';  // Return empty if the name doesn't have at least two words
-  }
+    
+    return validUsername;
+}
+//*************/ END generate user name /**************/
 
   // Function to check if username exists on the server
   async function checkUserNameAvailability(userName: string): Promise<string> {
@@ -178,15 +183,15 @@
     return data.exists;
   }
 
-  // Reactive statement to update username when fullName changes
-  $: if (fullName) {
-    const generatedName = generateUserName(fullName);
+// The reactive statement to use email instead of fullName
+$: if (userEmail) {
+    const generatedName = generateUserName(userEmail);
     if (generatedName) {
-      checkUserNameAvailability(generatedName).then((availableUserName) => {
-        userName = availableUserName;
-      });
+        checkUserNameAvailability(generatedName).then((availableUserName) => {
+            userName = availableUserName;
+        });
     }
-  }
+}
 
 //*************/ END generate user name /**************/
 
