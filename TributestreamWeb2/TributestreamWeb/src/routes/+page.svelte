@@ -3,8 +3,7 @@
   //*************/ START import statements and variables /**************/
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { addPage } from '$lib/updatePagesJson';
-
+ 
   // State variables
   let lovedOneName = '';
   let userName = '';
