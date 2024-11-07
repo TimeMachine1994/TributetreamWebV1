@@ -145,16 +145,20 @@ function generateUserName(email: string): string {
     // Remove any whitespace and convert to lowercase
     const cleanEmail = email.trim().toLowerCase();
     
-    // Remove any special characters except for alphanumeric, dots, and underscores
-    const validUsername = cleanEmail.replace(/[^a-z0-9._]/g, '');
+    // Get only the part before the @ symbol
+    const localPart = cleanEmail.split('@')[0];
     
-    // If the email is empty after cleaning, return empty string
+    // Remove any special characters except for alphanumeric and underscores
+    const validUsername = localPart.replace(/[^a-z0-9_]/g, '');
+    
+    // If the username is empty after cleaning, return empty string
     if (!validUsername) {
         return '';
     }
     
     return validUsername;
 }
+
 //*************/ END generate user name /**************/
 
   // Function to check if username exists on the server
@@ -271,7 +275,11 @@ $: if (userEmail) {
     const password = await registerUser();  // Register the user
     const token = await loginUser(userName, password);  // Log the user in and get token
     const pageId = await createPage(token);  // Create the tribute page
-
+    console.log('Pre-registration validation:', {
+        username: userName,
+        email: userEmail,
+        password: generatedPassword
+    });
     // Fetch created page data
     const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
     const page = await response.json();
