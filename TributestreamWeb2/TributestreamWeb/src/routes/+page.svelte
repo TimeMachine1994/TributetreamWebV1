@@ -247,7 +247,7 @@
   }
 
   // Function to handle creating a link
-  async function handleCreateLink() {
+async function handleCreateLink() {
   // Reset error states
   nameError = '';
   emailError = '';

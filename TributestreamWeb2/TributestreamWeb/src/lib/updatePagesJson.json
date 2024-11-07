@@ -1,0 +1,24 @@
+import fs from 'fs';
+import path from 'path';
+
+// Function to add a new page to pages.json
+export function addPage(slug, isV2) {
+  const dataFilePath = path.join(process.cwd(), 'data', 'pages.json');
+
+  try {
+    // Read the current pages.json file
+    const data = fs.readFileSync(dataFilePath, 'utf8');
+    const pages = JSON.parse(data);
+
+    // Add the new page
+    pages.push({
+      slug: slug,
+      v2page: isV2
+    });
+
+    // Write the updated data back to pages.json
+    fs.writeFileSync(dataFilePath, JSON.stringify(pages, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Error updating JSON file:', error);
+  }
+}
