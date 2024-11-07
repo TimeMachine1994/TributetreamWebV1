@@ -251,26 +251,12 @@ $: if (userEmail) {
       throw err;
     }
   }
-
-  // Function to handle creating a link
-async function handleCreateLink() {
+  async function handleCreateLink() {
   // Reset error states
   nameError = '';
   emailError = '';
   phoneError = '';
   error = '';  // General error message
-
-  // Validate form fields before submission
-  if (!validateFields()) {
-    // Trigger shake animation for invalid fields
-    setTimeout(() => {
-      nameError = emailError = phoneError = '';  // Clear individual field errors
-      setTimeout(() => {
-        validateFields();  // Revalidate to show errors
-      }, 10);
-    }, 0);
-    return;
-  }
 
   isLoading = true; // Set loading state to true while processing
   try {
@@ -282,16 +268,19 @@ async function handleCreateLink() {
     const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
     const page = await response.json();
 
-      // Use the page.slug to add it to your JSON file
-      if (page.slug) {
-        // Update JSON to mark the newly created page as a "v2" page
-        addPage(page.slug, true);
+    if (page.slug) {
+      // Call API endpoint to add the page to the JSON file
+      await fetch('/api/add-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: page.slug, isV2: true })
+      });
 
-        // Redirect to the new page
-        window.location.href = `https://tributestream.com/${page.slug}`;
-      } else {
-        error = 'Slug not found';  // Set general error if slug is not found
-      }
+      // Redirect to the new page
+      window.location.href = `https://tributestream.com/${page.slug}`;
+    } else {
+      error = 'Slug not found';  // Set general error if slug is not found
+    }
   } catch (err) {
     // Parse specific errors and display meaningful messages
     if (err.message && err.message.includes('email')) {
