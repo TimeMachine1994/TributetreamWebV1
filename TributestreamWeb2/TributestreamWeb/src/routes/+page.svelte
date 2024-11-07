@@ -3,6 +3,7 @@
   //*************/ START import statements and variables /**************/
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { addPage } from '$lib/updatePagesJson';
 
   // State variables
   let lovedOneName = '';
@@ -276,13 +277,16 @@ async function handleCreateLink() {
     const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
     const page = await response.json();
 
-    // Redirect to the page using the slug
-    if (page.slug) {
-      window.location.href = `https://tributestream.com/${page.slug}`;
-    } else {
-      error = 'Slug not found';  // Set general error if slug is not found
-    }
+      // Use the page.slug to add it to your JSON file
+      if (page.slug) {
+        // Update JSON to mark the newly created page as a "v2" page
+        addPage(page.slug, true);
 
+        // Redirect to the new page
+        window.location.href = `https://tributestream.com/${page.slug}`;
+      } else {
+        error = 'Slug not found';  // Set general error if slug is not found
+      }
   } catch (err) {
     // Parse specific errors and display meaningful messages
     if (err.message && err.message.includes('email')) {
