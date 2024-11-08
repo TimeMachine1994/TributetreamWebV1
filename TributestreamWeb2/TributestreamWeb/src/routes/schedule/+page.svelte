@@ -65,8 +65,8 @@
                     title: lovedOneName,
                     slug: pageSlug,
                     status: 'publish',
-                    template: 'celebration-template.php'
-                })
+                    template: '/wp-content/plugins/custom-user-registration/celebration-template.php'
+                  })
             });
 
             // Redirect to new celebration page
