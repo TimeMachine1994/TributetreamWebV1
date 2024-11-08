@@ -20,15 +20,120 @@
   let emailError = '';
   let phoneError = '';
   let fullName = '';
-
   // API base URL
   const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
 
-  //*************/ END import statements and variables /**************/
+  // ******** START reactive statements /**************/
+  // Reactive statement to update slugifiedName when lovedOneName changes
 
-  //*************/ START slugify text /**************/
+  $: slugifiedName = slugify(lovedOneName);
+
+  
+// The reactive statement to use email instead of fullName
+$: if (userEmail) {
+    const generatedName = generateUserName(userEmail);
+    if (generatedName) {
+        checkUserNameAvailability(generatedName).then((availableUserName) => {
+            userName = availableUserName;
+        });
+    }
+}
+    //*************/ START base utility functions /**************/
 
   // Function to slugify text
+
+  // Function to handle moving to the next page
+  let isInvalid = false;
+
+function handleNextPage() {
+  if (lovedOneName.trim()) {
+    showSecondPage = true;
+    isBlurred = true;
+    isInvalid = false;
+    error = '';
+  } else {
+    isInvalid = true;
+    error = "Please enter your loved one's name";
+    // Trigger shake animation
+    setTimeout(() => {
+      isInvalid = false;
+      setTimeout(() => {
+        isInvalid = true;
+      }, 10);
+    }, 0);
+  }
+}
+
+
+  // Function to handle editing the name
+  function handleEditName() {
+    isEditing = true;
+    tempSlugifiedName = slugifiedName;
+  }
+
+  // Function to handle saving the name change
+  function handleSaveNameChange() {
+    slugifiedName = tempSlugifiedName;
+    isEditing = false;
+  }
+
+  // Function to handle discarding the name change
+  function handleDiscardNameChange() {
+    isEditing = false;
+  }
+
+  // Function to handle going back to the first page
+  function handleGoBack() {
+    showSecondPage = false;
+    isBlurred = false;
+  }
+    //*************/ END handle form data input/**************/
+
+    function validateFields() {
+  let isValid = true;
+
+  if (!userName.trim()) {
+    nameError = 'Please enter your name';
+    isValid = false;
+  } else {
+    nameError = '';
+  }
+
+  if (!userEmail.trim()) {
+    emailError = 'Please enter your email address';
+    isValid = false;
+  } else {
+    emailError = '';
+  }
+
+  if (!userPhone.trim()) {
+    phoneError = 'Please enter your phone number';
+    isValid = false;
+  } else {
+    phoneError = '';
+  }
+
+  return isValid;
+}
+
+
+  // Function to handle the search and redirect to the results page
+  function handleSearch() {
+    if (lovedOneName.trim()) {
+      goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
+    }
+  }
+  
+  // Function to generate a random password
+  function generateRandomPassword(): string {
+    return Math.random().toString(36).slice(-8);
+  }
+
+  // Function to validate JWT token
+  function isValidJWT(token: string): boolean {
+    return token && token.split('.').length === 3;
+  } 
+
   function slugify(text: string): string {
     return text
     .toString()
@@ -39,29 +144,9 @@
     .replace(/^-+/, '')
     .replace(/-+$/, '');
   }
-
-  // Reactive statement to update slugifiedName when lovedOneName changes
-  $: slugifiedName = slugify(lovedOneName);
-
-
-  //*************/ END slugify text /**************/
-
-
-  //*************/ START generate password and validate JWT token function and register user function /**************/
-
-  // Function to generate a random password
-  function generateRandomPassword(): string {
-    return Math.random().toString(36).slice(-8);
-  }
-
-  // Function to validate JWT token
-  function isValidJWT(token: string): boolean {
-    return token && token.split('.').length === 3;
-  } 
 //*************/  START register user  /*************/
 
 //Function to register a user
-
   async function registerUser(): Promise<string> {
 
     
@@ -91,7 +176,6 @@
       throw err;
     }
   }
-
   // Function to send a registration email
   async function sendRegistrationEmail(username: string, email: string, password: string) {
     try {
@@ -111,7 +195,6 @@
       throw err;
     }
   }
-
   // Function to log in a user
   async function loginUser(username: string, password: string): Promise<string> {
     try {
@@ -136,11 +219,6 @@
       throw err;
     }
   }
-
-  //*************/ END generate password and validate JWT token function /**************/
-
-//*************/ START generate user name /**************/
-
 function generateUserName(email: string): string {
     // Remove any whitespace and convert to lowercase
     const cleanEmail = email.trim().toLowerCase();
@@ -158,9 +236,6 @@ function generateUserName(email: string): string {
     
     return validUsername;
 }
-
-//*************/ END generate user name /**************/
-
   // Function to check if username exists on the server
   async function checkUserNameAvailability(userName: string): Promise<string> {
     try {
@@ -187,40 +262,12 @@ function generateUserName(email: string): string {
       return userName;  // Fallback to original username in case of an error
     }
   }
-
   // Helper function to check username existence (used in the loop)
   async function doesUsernameExist(userName: string): Promise<boolean> {
     const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
     const data = await response.json();
     return data.exists;
   }
-
-// The reactive statement to use email instead of fullName
-$: if (userEmail) {
-    const generatedName = generateUserName(userEmail);
-    if (generatedName) {
-        checkUserNameAvailability(generatedName).then((availableUserName) => {
-            userName = availableUserName;
-        });
-    }
-}
-
-//*************/ END generate user name /**************/
-
-
-  //*************/ START handle serarch and redirect to the results page /**************/
-
-  // Function to handle the search and redirect to the results page
-  function handleSearch() {
-    if (lovedOneName.trim()) {
-      goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
-    }
-  }
-  
-  //*************/ END handle search and redirect to the results page /**************/
-
-  //*************/ START create page and link /**************/
-
 
   // Function to create a page
   async function createPage(token: string): Promise<number> {
@@ -317,80 +364,6 @@ $: if (userEmail) {
 
   
   //*************/ START handle form data input /**************/
-
-  // Function to handle moving to the next page
-  let isInvalid = false;
-
-function handleNextPage() {
-  if (lovedOneName.trim()) {
-    showSecondPage = true;
-    isBlurred = true;
-    isInvalid = false;
-    error = '';
-  } else {
-    isInvalid = true;
-    error = "Please enter your loved one's name";
-    // Trigger shake animation
-    setTimeout(() => {
-      isInvalid = false;
-      setTimeout(() => {
-        isInvalid = true;
-      }, 10);
-    }, 0);
-  }
-}
-
-
-  // Function to handle editing the name
-  function handleEditName() {
-    isEditing = true;
-    tempSlugifiedName = slugifiedName;
-  }
-
-  // Function to handle saving the name change
-  function handleSaveNameChange() {
-    slugifiedName = tempSlugifiedName;
-    isEditing = false;
-  }
-
-  // Function to handle discarding the name change
-  function handleDiscardNameChange() {
-    isEditing = false;
-  }
-
-  // Function to handle going back to the first page
-  function handleGoBack() {
-    showSecondPage = false;
-    isBlurred = false;
-  }
-    //*************/ END handle form data input/**************/
-
-    function validateFields() {
-  let isValid = true;
-
-  if (!userName.trim()) {
-    nameError = 'Please enter your name';
-    isValid = false;
-  } else {
-    nameError = '';
-  }
-
-  if (!userEmail.trim()) {
-    emailError = 'Please enter your email address';
-    isValid = false;
-  } else {
-    emailError = '';
-  }
-
-  if (!userPhone.trim()) {
-    phoneError = 'Please enter your phone number';
-    isValid = false;
-  } else {
-    phoneError = '';
-  }
-
-  return isValid;
-}
 
 
 
