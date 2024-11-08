@@ -1,23 +1,40 @@
 // src/routes/[slug]/+page.server.js
-export async function load({ params, url }) {
+export async function load({ params }) {
     const { slug } = params;
 
-    // Check if slug matches the criteria for redirection
-    if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
-        const wpUrl = `https://wp.tributestream.com/${slug}`;
+    // First check if this is a new Svelte-created page
+    try {
+        const response = await fetch('/api/check-page-type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug })
+        });
+        
+        const pageData = await response.json();
+        
+        if (pageData.isV2) {
+            // Load Svelte template
+            return {
+                template: 'celebration-v2',
+                slug: slug
+            };
+        }
+    } catch (error) {
+        console.log('Error checking page type:', error);
+    }
 
-        // Return a redirect response with CORS headers
+    // If not a V2 page, handle legacy WordPress redirect
+    if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
         return {
             status: 302,
             headers: {
-                location: wpUrl,
-                "Access-Control-Allow-Origin": "*", // Allows any origin; adjust if needed for security
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS", // Allow specific methods
-                "Access-Control-Allow-Headers": "Content-Type, Authorization", // Allow these headers
+                location: `https://wp.tributestream.com/${slug}`,
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
             },
         };
     }
 
-    // If slug doesn't match, continue as normal (or handle as a 404 if appropriate)
     return { status: 404, body: "Content not found" };
 }

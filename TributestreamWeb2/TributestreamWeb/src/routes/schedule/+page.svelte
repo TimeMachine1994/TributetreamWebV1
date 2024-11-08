@@ -68,6 +68,10 @@
                     template: '/wp-content/plugins/custom-user-registration/celebration-template.php'
                   })
             });
+// After successful page creation
+const pagesData = JSON.parse(fs.readFileSync('src/lib/pages.json', 'utf-8'));
+pagesData.pages.push(pageSlug);
+fs.writeFileSync('src/lib/pages.json', JSON.stringify(pagesData, null, 2));
 
             // Redirect to new celebration page
             goto(`/celebration-of-life-for-${pageSlug}`);
@@ -75,6 +79,8 @@
     } catch (err) {
         error = err.message;
     }
+
+    
 }
 
 
