@@ -15,9 +15,10 @@
     async function handleSubmit() {
     const password = generateRandomPassword();
     const username = email.split('@')[0];
+    const pageSlug = slugify(lovedOneName);
     
     try {
-        // Register the user
+        // Register user
         const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -34,28 +35,39 @@
         });
 
         if (registerResponse.ok) {
-            // Log the user in
+            // Login and get JWT token
             const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    password
-                })
+                body: JSON.stringify({ username, password })
             });
 
             const tokenData = await loginResponse.json();
-            
-            // Store the token
             localStorage.setItem('jwtToken', tokenData.token);
-            
-            // Redirect to dashboard or desired page
-            goto('/dashboard');
+
+            // Create celebration page
+            const pageResponse = await fetch('https://wp.tributestream.com/wp-json/wp/v2/pages', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokenData.token}`
+                },
+                body: JSON.stringify({
+                    title: lovedOneName,
+                    slug: pageSlug,
+                    status: 'publish',
+                    template: 'celebration-template.php'
+                })
+            });
+
+            // Redirect to new celebration page
+            goto(`/celebration-of-life-for-${pageSlug}`);
         }
     } catch (err) {
         error = err.message;
     }
 }
+
 
   </script>
   
