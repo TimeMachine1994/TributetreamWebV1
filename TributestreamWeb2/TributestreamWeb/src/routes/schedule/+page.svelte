@@ -13,7 +13,7 @@
       const password = generateRandomPassword();
       
       try {
-        const response = await fetch('https://your-wordpress-site.com/wp-json/my-plugin/v1/register', {
+        const response = await fetch('https://tributestream.com/wp-json/my-plugin/v1/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
