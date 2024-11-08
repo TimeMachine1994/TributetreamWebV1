@@ -10,35 +10,50 @@
     }
   
     async function handleSubmit() {
-      const password = generateRandomPassword();
-      
-      try {
-        const response = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: email.split('@')[0], // Create username from email
-            email: email,
-            password: password,
-            meta: {
-              full_name: fullName,
-              loved_one_name: lovedOneName,
-              phone: phone
-            }
-          })
+    const password = generateRandomPassword();
+    const username = email.split('@')[0];
+    
+    try {
+        // Register the user
+        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                email,
+                password,
+                meta: {
+                    full_name: fullName,
+                    loved_one_name: lovedOneName,
+                    phone: phone
+                }
+            })
         });
-  
-        if (!response.ok) {
-          throw new Error('Registration failed');
+
+        if (registerResponse.ok) {
+            // Log the user in
+            const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username,
+                    password
+                })
+            });
+
+            const tokenData = await loginResponse.json();
+            
+            // Store the token
+            localStorage.setItem('jwtToken', tokenData.token);
+            
+            // Redirect to dashboard or desired page
+            goto('/dashboard');
         }
-  
-        // Handle successful registration
-        const data = await response.json();
-        // You can redirect or show success message here
-      } catch (err) {
+    } catch (err) {
         error = err.message;
-      }
     }
+}
+
   </script>
   
   <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6">
