@@ -117,7 +117,7 @@
     // Function to register a user
     async function registerUser() {
       console.log('Registering user');
-      generatedPassword = generateRandomPassword();
+      const generatedPassword = generateRandomPassword();
       try {
         console.log('Sending registration request for:', userName, userEmail);
         const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
