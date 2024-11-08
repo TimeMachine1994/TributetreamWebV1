@@ -182,7 +182,7 @@ function handleNextPage() {
       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username: username, email: email, password: password }),
         mode: 'cors',
       });
       if (!response.ok) {
