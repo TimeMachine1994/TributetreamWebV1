@@ -1,19 +1,32 @@
-// src/routes/api/update-pages/+server.js
-
-import { json } from '@sveltejs/kit';
-
 export async function POST({ request }) {
     const { slug } = await request.json();
-    const token = request.headers.get('Authorization'); // Extract the token
 
-    const wpApiUrl = 'https://wp.tributestream.com/wp-json/wp/v2/posts/{9047}'; // Replace {post_id} with the actual post ID
+    const user = 'Slug_Creator';
+    const SLUG_USER_PASS = process.env.SLUG_USER_PASS;
+
+    // Login to get the JWT token
+    const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: SLUG_USER_PASS })
+    });
+
+    if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        console.error('Login failed:', errorData);
+        return { status: 401, body: 'Unauthorized' };
+    }
+
+    const tokenData = await loginResponse.json();
+
+    const wpApiUrl = 'https://wp.tributestream.com/wp-json/wp/v2/posts/9047'; // Use the actual post ID
 
     try {
         const response = await fetch(wpApiUrl, {
-            method: 'POST',
+            method: 'PUT', // Use PUT for updating an existing post
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': token // Use the token for authentication
+                'Authorization': `Bearer ${tokenData.token}` // Use the token for authentication
             },
             body: JSON.stringify({
                 fields: {
@@ -25,12 +38,12 @@ export async function POST({ request }) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Error updating WordPress:', errorData);
-            return json({ success: false, error: 'Failed to update WordPress' }, { status: 500 });
+            return { status: 500, body: 'Failed to update WordPress' };
         }
 
-        return json({ success: true });
+        return { status: 200, body: 'Slug updated successfully' };
     } catch (error) {
         console.error('Unexpected error:', error);
-        return json({ success: false, error: 'Unexpected server error' }, { status: 500 });
+        return { status: 500, body: 'Unexpected server error' };
     }
 }
