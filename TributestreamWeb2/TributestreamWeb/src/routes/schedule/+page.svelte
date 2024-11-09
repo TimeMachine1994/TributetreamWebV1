@@ -57,7 +57,7 @@
             // Create celebration page
             const pageResponse = await fetch('https://wp.tributestream.com/wp-json/wp/v2/pages', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${tokenData.token}`
                 },
@@ -66,12 +66,15 @@
                     slug: pageSlug,
                     status: 'publish',
                     template: '/wp-content/plugins/custom-user-registration/celebration-template.php'
-                  })
+                })
             });
-// After successful page creation
-const pagesData = JSON.parse(fs.readFileSync('src/lib/pages.json', 'utf-8'));
-pagesData.pages.push(pageSlug);
-fs.writeFileSync('src/lib/pages.json', JSON.stringify(pagesData, null, 2));
+
+            // Update pages.json through API endpoint
+            await fetch('/api/update-pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug: pageSlug })
+            });
 
             // Redirect to new celebration page
             goto(`/celebration-of-life-for-${pageSlug}`);
@@ -79,8 +82,6 @@ fs.writeFileSync('src/lib/pages.json', JSON.stringify(pagesData, null, 2));
     } catch (err) {
         error = err.message;
     }
-
-    
 }
 
 
