@@ -1,91 +1,77 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-
-
-    let lovedOneName = '';
-    let fullName = '';
-    let email = '';
-    let phone = '';
-    let error = '';
-    function slugify(text: string): string {
-    return text
-    .toString()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-  }
-    function generateRandomPassword(): string {
-      return Math.random().toString(36).slice(-8);
-    }
   
-    async function handleSubmit() {
-    const password = generateRandomPassword();
-    const username = email.split('@')[0];
-    const pageSlug = slugify(lovedOneName);
-    
-    try {
-        // Register user
-        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username,
-                email,
-                password,
-                meta: {
-                    full_name: fullName,
-                    loved_one_name: lovedOneName,
-                    phone: phone
-                }
-            })
-        });
-
-        if (registerResponse.ok) {
-            // Login and get JWT token
-            const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            const tokenData = await loginResponse.json();
-            localStorage.setItem('jwtToken', tokenData.token);
-
-            // Create celebration page
-            const pageResponse = await fetch('https://wp.tributestream.com/wp-json/wp/v2/pages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${tokenData.token}`
-                },
-                body: JSON.stringify({
-                    title: lovedOneName,
-                    slug: pageSlug,
-                    status: 'publish',
-                    template: '/wp-content/plugins/custom-user-registration/celebration-template.php'
-                })
-            });
-
-            // Update pages.json through API endpoint
-            await fetch('/api/update-pages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug: pageSlug })
-            });
-
-            // Redirect to new celebration page
-            goto(`/celebration-of-life-for-${pageSlug}`);
-        }
-    } catch (err) {
-        error = err.message;
-    }
-}
-
-
+  let lovedOneName = '';
+  let fullName = '';
+  let email = '';
+  let phone = '';
+  let error = '';
+  
+  function slugify(text: string): string {
+      return text
+          .toString()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
+  }
+  
+  function generateRandomPassword(): string {
+      return Math.random().toString(36).slice(-8);
+  }
+  
+  async function handleSubmit() {
+      const password = generateRandomPassword();
+      const username = email.split('@')[0];
+      const pageSlug = slugify(lovedOneName);
+  
+      try {
+          // Register user
+          const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  username,
+                  email,
+                  password,
+                  meta: {
+                      full_name: fullName,
+                      loved_one_name: lovedOneName,
+                      phone: phone
+                  }
+              })
+          });
+  
+          if (registerResponse.ok) {
+              // Login and get JWT token
+              const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, password })
+              });
+  
+              const tokenData = await loginResponse.json();
+              localStorage.setItem('jwtToken', tokenData.token);
+  
+              // Update pages.json through API endpoint
+              await fetch('/api/update-pages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ slug: pageSlug })
+              });
+  
+              // Redirect to new celebration page
+              goto(`/celebration-of-life-for-${pageSlug}`);
+          }
+      } catch (err) {
+          error = err.message;
+      }
+  }
   </script>
+  
+ 
   
   <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6">
     <div class="space-y-4">
