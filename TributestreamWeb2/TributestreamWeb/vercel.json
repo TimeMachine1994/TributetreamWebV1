@@ -1,4 +1,4 @@
-{
+ /*  {
     "redirects": [
       {
         "source": "/celebration-of-life-for-:slug",
@@ -13,3 +13,5 @@
     ]
   }
   
+We are using SvelteKit routing, so we no logner need this vercel redirect.
+  */
