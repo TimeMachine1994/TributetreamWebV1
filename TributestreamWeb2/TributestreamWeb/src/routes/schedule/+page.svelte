@@ -61,6 +61,11 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ slug: pageSlug })
         });
+        const updateResponse = await fetch('/api/update-pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: pageSlug })
+        });
 
         const updateData = await updateResponse.json();
         if (updateData.success) {
@@ -70,8 +75,11 @@
         }
 
         // Redirect to new celebration page
-        goto(`/celebration-of-life-for-${pageSlug}`)
-
+        goto(`/celebration-of-life-for-${pageSlug}`);
+    } catch (err) {
+        error = err.message;
+    }
+}
   </script>
   
  
