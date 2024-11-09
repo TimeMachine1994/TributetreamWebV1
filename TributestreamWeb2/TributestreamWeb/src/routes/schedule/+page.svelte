@@ -31,12 +31,8 @@
         // Register user
         const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
             method: 'POST',
-            headers: { 
-        'Content-Type': 'application/json',
-        'Origin': 'https://tributestream.com',
-        'Access-Control-Allow-Origin': '*'
-    },       
-         body: JSON.stringify({
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 username,
                 email,
                 password,
