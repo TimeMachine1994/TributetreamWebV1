@@ -55,21 +55,22 @@
             const tokenData = await loginResponse.json();
             localStorage.setItem('jwtToken', tokenData.token);
 
-            // Update pages.json through API endpoint
-            await fetch('/api/update-pages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug: pageSlug })
-            });
+        // Update pages.json through API endpoint
+        const updateResponse = await fetch('/api/update-pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: pageSlug })
+        });
 
-            // Updated redirect with proper URL structure
-            const celebrationUrl = `/celebration-of-life-for-${pageSlug}`;
-            goto(celebrationUrl);
+        const updateData = await updateResponse.json();
+        if (updateData.success) {
+            console.log('Page slug successfully added to JSON:', pageSlug);
+        } else {
+            console.error('Failed to update JSON:', updateData.error);
         }
-    } catch (err) {
-        error = err.message;
-    }
-}
+
+        // Redirect to new celebration page
+        goto(`/celebration-of-life-for-${pageSlug}`)
 
   </script>
   
