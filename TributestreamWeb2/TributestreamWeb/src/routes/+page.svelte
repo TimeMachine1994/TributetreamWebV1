@@ -335,7 +335,9 @@ function generateUserName(email: string): string {
       // Call API endpoint to add the page to the JSON file
       await fetch('/api/add-page', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ slug: page.slug, isV2: true })
       });
 
