@@ -6,7 +6,11 @@
   let email = '';
   let phone = '';
   let error = '';
-  
+// Example function to retrieve token
+function getToken() {
+    return localStorage.getItem('jwtToken');
+}
+
   function slugify(text: string): string {
       return text
           .toString()
@@ -21,61 +25,73 @@
   function generateRandomPassword(): string {
       return Math.random().toString(36).slice(-8);
   }
-  
-  async function handleSubmit() {
-      const password = generateRandomPassword();
-      const username = email.split('@')[0];
-      const pageSlug = slugify(lovedOneName);
-  
-      try {
-          // Register user
-          const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  username,
-                  email,
-                  password,
-                  meta: {
-                      full_name: fullName,
-                      loved_one_name: lovedOneName,
-                      phone: phone
-                  }
-              })
-          });
-  
-          if (registerResponse.ok) {
-              // Login and get JWT token
-              const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ username, password })
-              });
-  
-              const tokenData = await loginResponse.json();
-              localStorage.setItem('jwtToken', tokenData.token);
-  
-              // Update pages.json through API endpoint
-              const updateResponse = await fetch('/api/update-pages', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ slug: pageSlug })
-              });
-  
-              const updateData = await updateResponse.json();
-              if (updateData.success) {
-                  console.log('Page slug successfully added to JSON:', pageSlug);
-              } else {
-                  console.error('Failed to update JSON:', updateData.error);
-              }
-  
-              // Redirect to new celebration page
-              goto(`/celebration-of-life-for-${pageSlug}`);
-          }
-      } catch (err) {
-          error = err.message;
-      }
-  }
+  async function updateSlug(slug) {
+    const token = getToken(); // Retrieve the token from local storage
+
+    const response = await fetch('/api/update-pages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Include the token in the request
+        },
+        body: JSON.stringify({ slug })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to update slug');
+    }
+
+    return data;
+}async function handleSubmit() {
+    const password = generateRandomPassword();
+    const username = email.split('@')[0];
+    const pageSlug = slugify(lovedOneName);
+
+    try {
+        // Register user
+        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                email,
+                password,
+                meta: {
+                    full_name: fullName,
+                    loved_one_name: lovedOneName,
+                    phone: phone
+                }
+            })
+        });
+
+        if (registerResponse.ok) {
+            // Login and get JWT token
+            const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const tokenData = await loginResponse.json();
+            localStorage.setItem('jwtToken', tokenData.token);
+
+            // Update slug through API endpoint
+            const updateData = await updateSlug(pageSlug);
+            if (updateData.success) {
+                console.log('Page slug successfully added to JSON:', pageSlug);
+            } else {
+                console.error('Failed to update JSON:', updateData.error);
+            }
+
+            // Redirect to new celebration page
+            goto(`/celebration-of-life-for-${pageSlug}`);
+        }
+    } catch (err) {
+        error = err.message;
+    }
+}
+
   </script>
   
   <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6">

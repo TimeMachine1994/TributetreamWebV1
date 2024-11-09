@@ -1,32 +1,31 @@
 // src/routes/api/update-pages/+server.js
 
 import { json } from '@sveltejs/kit';
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
 
 export async function POST({ request }) {
     const { slug } = await request.json();
-    const pagesJsonPath = join(process.cwd(), 'src', 'data', 'pages.json');
+    const token = request.headers.get('Authorization'); // Extract the token
+
+    const wpApiUrl = 'https://wp.tributestream.com/wp-json/wp/v2/posts/{9047}'; // Replace {post_id} with the actual post ID
 
     try {
-        // Read the existing JSON file
-        let pagesData = { pages: [] };
-        try {
-            pagesData = JSON.parse(readFileSync(pagesJsonPath, 'utf-8'));
-        } catch (error) {
-            console.error('Error reading JSON file:', error);
-            return json({ success: false, error: 'Failed to read JSON file' }, { status: 500 });
-        }
+        const response = await fetch(wpApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token // Use the token for authentication
+            },
+            body: JSON.stringify({
+                fields: {
+                    new_slug: slug
+                }
+            })
+        });
 
-        // Add the new slug
-        pagesData.pages.push(slug);
-
-        // Write the updated data back to the JSON file
-        try {
-            writeFileSync(pagesJsonPath, JSON.stringify(pagesData, null, 2));
-        } catch (error) {
-            console.error('Error writing to JSON file:', error);
-            return json({ success: false, error: 'Failed to write to JSON file' }, { status: 500 });
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error updating WordPress:', errorData);
+            return json({ success: false, error: 'Failed to update WordPress' }, { status: 500 });
         }
 
         return json({ success: true });
