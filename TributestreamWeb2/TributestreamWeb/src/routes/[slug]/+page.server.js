@@ -1,13 +1,20 @@
+async function fetchContentFromDatabase(slug) {
+    const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch content from the database');
+    }
+    return response.json();
+}
+
 export async function load({ params }) {
     const { slug } = params;
 
     try {
-        // First check if this is a tribute in our database
-        const tributeResponse = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
-        const tributeData = await tributeResponse.json();
+        // Fetch content from the database
+        const tributeData = await fetchContentFromDatabase(slug);
 
         // If we find the tribute in our database, return the data
-        if (tributeResponse.ok) {
+        if (tributeData) {
             return {
                 tribute: tributeData
             };
@@ -28,7 +35,7 @@ export async function load({ params }) {
 
         // If neither in database nor WordPress pattern, return 404
         return { status: 404, body: "Content not found" };
-       
+
     } catch (error) {
         console.error('Unexpected error:', error);
         return { status: 500, body: 'Internal Server Error' };
