@@ -25,8 +25,13 @@ function getToken() {
       return Math.random().toString(36).slice(-8);
   }
   async function updateSlug(slug) {
-    console.log('Password being used:', process.env.SLUG_CREATOR_LOGIN.slice(0,1) + '*****');
-
+// Add this debug log before the fetch
+console.log('Environment variable status:', {
+    exists: !!process.env.SLUG_CREATOR_LOGIN,
+    value: process.env.SLUG_CREATOR_LOGIN ? 
+        process.env.SLUG_CREATOR_LOGIN.slice(0,1) + '*****' : 
+        'not set'
+});
 
 
     const response = await fetch('/api/update-pages', {
