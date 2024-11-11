@@ -28,7 +28,7 @@
     // API call to update slug
     async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
       try {
-        const response = await fetch('/wp-json/myplugin/v1/add-slug', {
+        const response = await fetch('/wp-json/custom-user-registration/v1/add-slug', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
