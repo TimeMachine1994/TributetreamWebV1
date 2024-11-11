@@ -87,7 +87,7 @@
             },
             body: JSON.stringify({
                 loved_one_name: lovedOneName,
-                slug: pageSlug
+                slug: slug
           })
       });
         return await response.json();
