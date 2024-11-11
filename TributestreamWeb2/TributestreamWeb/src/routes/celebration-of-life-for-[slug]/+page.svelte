@@ -1,15 +1,14 @@
 <script>
     export let data;
     const { tribute } = data;
+    console.log('Tribute data:', tribute); // Let's see what we're getting
 </script>
 
-<template>
+<main class="min-w-screen min-h-screen overflow-y-auto">
     {#if tribute}
-        <!-- Display tribute data -->
-        <h1>{tribute.title}</h1>
-        <p>{tribute.description}</p>
-        <!-- Add any other details you want to show -->
+        <h1>{tribute.loved_one_name}</h1>
+        <p>{tribute.slug}</p>
     {:else}
-        <p>Tribute not found.</p>
+        <p>Loading tribute data...</p>
     {/if}
-</template>
+</main>
