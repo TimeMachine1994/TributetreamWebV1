@@ -105,7 +105,7 @@
 
     return payload.user_id;
 }
-    async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean }> {
+    async function updateSlug(slug: string, userId: number):  Promise<{ message: string, success?: boolean, tribute?: any }> {
     try {
       console.log('JWT Token:', getToken());
       
@@ -126,8 +126,8 @@
             throw new Error('Failed to create tribute');
         }
 
-        return { message: 'Tribute created successfully', success: true };
-    } catch (error) {
+        return { message: 'Tribute created successfully', tribute: result.tribute };
+      } catch (error) {
         console.error('Error creating tribute:', error);
         return { message: 'Error creating tribute', success: false };
     }
