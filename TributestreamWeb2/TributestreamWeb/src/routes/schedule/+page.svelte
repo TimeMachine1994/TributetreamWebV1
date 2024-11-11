@@ -43,7 +43,7 @@ function getToken() {
     }
 
     return data;
-}async function handleSubmit() {
+}async function handleSubmit() {``
     const password = generateRandomPassword();
     const username = email.split('@')[0];
     const pageSlug = slugify(lovedOneName);
