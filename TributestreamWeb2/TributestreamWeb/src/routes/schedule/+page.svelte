@@ -5,6 +5,7 @@
     let email = '';
     let phone = '';
     let error = '';
+    let user_id = '';
     import { writable } from 'svelte/store';
 
     import { userIdStore } from '$lib/stores/userStore'; // Import the store
@@ -59,7 +60,7 @@
         const registerData = await registerResponse.json();
 
         if (registerResponse.ok) {
-        const userId = registerData.user_id;
+        userId = registerData.user_id;
         console.log('Registered User ID:', userId);
 
         // Update the store with the user ID
@@ -79,7 +80,7 @@
         localStorage.setItem('jwtToken', tokenData.token);
   
         // Update slug through API endpoint
-        const updateData = await updateSlug(pageSlug);
+        const updateData = await updateSlug(pageSlug, userId);
         if (updateData.success) {
           console.log('Page slug successfully added:', pageSlug);
         } else {
@@ -104,7 +105,7 @@
 
     return payload.user_id;
 }
-    async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
+    async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean }> {
     try {
       console.log('JWT Token:', getToken());
       
@@ -115,7 +116,7 @@
                 'Authorization': `Bearer ${getToken()}`
             },
             body: JSON.stringify({
-                user_id: userIdStore,
+                user_id: userId,
                 loved_one_name: lovedOneName,
                 slug: slug
             })
