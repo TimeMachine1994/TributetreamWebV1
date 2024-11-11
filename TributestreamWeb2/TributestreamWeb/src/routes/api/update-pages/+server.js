@@ -2,13 +2,13 @@ export async function POST({ request }) {
     const { slug } = await request.json();
 
     const user = 'Slug_Creator';
-    const SLUG_USER_PASS = process.env.SLUG_USER_PASS;
+    
 
     // Login to get the JWT token
     const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, password: SLUG_USER_PASS })
+        body: JSON.stringify({ username: user, password: process.env.SLUG_CREATOR_LOGIN })
     });
 
     if (!loginResponse.ok) {
