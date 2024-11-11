@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  
+  import { SLUG_CREATOR_LOGIN } from '$env/static/private';
   let lovedOneName = '';
   let fullName = '';
   let email = '';
@@ -26,13 +26,20 @@ function getToken() {
       return Math.random().toString(36).slice(-8);
   }
   async function updateSlug(slug) {
-    const token = getToken(); // Retrieve the token from local storage
+     
 
+
+    const loginResponse2 = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'Slug_Creator', password: SLUG_CREATOR_LOGIN })
+            });
+            const tokenData2 = await loginResponse2.json();
     const response = await fetch('/api/update-pages', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Include the token in the request
+            'Authorization': `Bearer ${tokenData2.token}` // Include the token in the request
         },
         body: JSON.stringify({ slug })
     });
@@ -43,7 +50,7 @@ function getToken() {
     }
 
     return data;
-}async function handleSubmit() {``
+}async function handleSubmit() {
     const password = generateRandomPassword();
     const username = email.split('@')[0];
     const pageSlug = slugify(lovedOneName);
