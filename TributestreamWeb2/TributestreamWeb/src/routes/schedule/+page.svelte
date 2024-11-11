@@ -75,7 +75,7 @@
         error = err.message;
       }
     }
-    function getUserId(): number {
+    function getUserId() {
     const token = getToken();
     if (!token) return null;
     
