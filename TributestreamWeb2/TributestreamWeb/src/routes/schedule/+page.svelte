@@ -25,7 +25,9 @@ function getToken() {
       return Math.random().toString(36).slice(-8);
   }
   async function updateSlug(slug) {
-     
+    console.log('Password being used:', process.env.SLUG_CREATOR_LOGIN.slice(0,1) + '*****');
+
+
 
     const response = await fetch('/api/update-pages', {
         method: 'POST',
