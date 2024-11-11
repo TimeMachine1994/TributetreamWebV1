@@ -3,6 +3,8 @@
   //*************/ START import statements and variables /**************/
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { createCelebrationPage } from '$lib/authHelpers.js';
+ 
  
   // State variables
   let lovedOneName = '';
@@ -27,6 +29,9 @@
   // Reactive statement to update slugifiedName when lovedOneName changes
 
   $: slugifiedName = slugify(lovedOneName);
+  import { createCelebrationPage } from './authHelpers';
+
+ 
 
   
 // The reactive statement to use email instead of fullName
@@ -144,222 +149,229 @@ function handleNextPage() {
     .replace(/^-+/, '')
     .replace(/-+$/, '');
   }
+
+  async function handleSubmit() {
+    await createCelebrationPage(email, fullName, lovedOneName, phone);
+  }
 //*************/  START register user  /*************/
 
-//Function to register a user
-  async function registerUser(): Promise<string> {
+// //Function to register a user
+//   async function registerUser(): Promise<string> {
 
     
-    const generatedPassword = generateRandomPassword();
-    try {
-      console.log('Registration payload:', {
-    username: userName,
-    email: userEmail,
-    password: generatedPassword
-});
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
-        mode: 'cors',
-      });
+//     const generatedPassword = generateRandomPassword();
+
+//             try {
+//               console.log('Registration payload:', {
+//             username: userName,
+//             email: userEmail,
+//             password: generatedPassword
+//         });
+//         const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
+//           method: 'POST',
+//           headers: { 'Content-Type': 'application/json' },
+//           body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
+//           mode: 'cors',
+//         });
+        
+//         if (!response.ok) {
+//           const errorData = await response.json();
+//           throw new Error(errorData.message || 'Registration failed');
+//         }
+//         // Send registration email
+//         await sendRegistrationEmail(userName, userEmail, generatedPassword);
+//         return generatedPassword;
+//       } catch (err) {
+//         error = 'Registration failed';
+//         throw err;
+//       }
+//     }
+
+
+//   // Function to send a registration email
+//   async function sendRegistrationEmail(username: string, email: string, password: string) {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ username: username, email: email, password: password }),
+//         mode: 'cors',
+//       });
+//       if (!response.ok) {
+//         const errorData = await response.json();
+//         throw new Error(errorData.message || 'Failed to send email');
+//       }
+//       return await response.json();
+//     } catch (err) {
+//       error = 'Failed to send email';
+//       throw err;
+//     }
+//   }
+//   // Function to log in a user
+//   async function loginUser(username: string, password: string): Promise<string> {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ username, password }),
+//       });
+//       if (!response.ok) {
+//         const errorData = await response.json();
+//         throw new Error(errorData.message || 'Login failed');
+//       }
+//       const data = await response.json();
+//       const token = data.token || (data.data && data.data.token);
+//       if (!token || !isValidJWT(token)) {
+//         throw new Error('Invalid token received');
+//       }
+//       localStorage.setItem('jwtToken', token);
+//       return token;
+//     } catch (err) {
+//       error = 'Login failed';
+//       throw err;
+//     }
+//   }
+// function generateUserName(email: string): string {
+//     // Remove any whitespace and convert to lowercase
+//     const cleanEmail = email.trim().toLowerCase();
+    
+//     // Get only the part before the @ symbol
+//     const localPart = cleanEmail.split('@')[0];
+    
+//     // Remove any special characters except for alphanumeric and underscores
+//     const validUsername = localPart.replace(/[^a-z0-9_]/g, '');
+    
+//     // If the username is empty after cleaning, return empty string
+//     if (!validUsername) {
+//         return '';
+//     }
+    
+//     return validUsername;
+// }
+//   // Function to check if username exists on the server
+//   async function checkUserNameAvailability(userName: string): Promise<string> {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
+//       const data = await response.json();
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
-      // Send registration email
-      await sendRegistrationEmail(userName, userEmail, generatedPassword);
-      return generatedPassword;
-    } catch (err) {
-      error = 'Registration failed';
-      throw err;
-    }
-  }
-  // Function to send a registration email
-  async function sendRegistrationEmail(username: string, email: string, password: string) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, email: email, password: password }),
-        mode: 'cors',
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send email');
-      }
-      return await response.json();
-    } catch (err) {
-      error = 'Failed to send email';
-      throw err;
-    }
-  }
-  // Function to log in a user
-  async function loginUser(username: string, password: string): Promise<string> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
-      const data = await response.json();
-      const token = data.token || (data.data && data.data.token);
-      if (!token || !isValidJWT(token)) {
-        throw new Error('Invalid token received');
-      }
-      localStorage.setItem('jwtToken', token);
-      return token;
-    } catch (err) {
-      error = 'Login failed';
-      throw err;
-    }
-  }
-function generateUserName(email: string): string {
-    // Remove any whitespace and convert to lowercase
-    const cleanEmail = email.trim().toLowerCase();
-    
-    // Get only the part before the @ symbol
-    const localPart = cleanEmail.split('@')[0];
-    
-    // Remove any special characters except for alphanumeric and underscores
-    const validUsername = localPart.replace(/[^a-z0-9_]/g, '');
-    
-    // If the username is empty after cleaning, return empty string
-    if (!validUsername) {
-        return '';
-    }
-    
-    return validUsername;
-}
-  // Function to check if username exists on the server
-  async function checkUserNameAvailability(userName: string): Promise<string> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
-      const data = await response.json();
-      
-      // If the username exists, append an iterative number (_1, _2, etc.)
-      if (data.exists) {
-        let suffix = 1;
-        let newUserName = `${userName}_${suffix}`;
+//       // If the username exists, append an iterative number (_1, _2, etc.)
+//       if (data.exists) {
+//         let suffix = 1;
+//         let newUserName = `${userName}_${suffix}`;
 
-        // Keep checking for availability until we find a unique username
-        while (await doesUsernameExist(newUserName)) {
-          suffix++;
-          newUserName = `${userName}_${suffix}`;
-        }
+//         // Keep checking for availability until we find a unique username
+//         while (await doesUsernameExist(newUserName)) {
+//           suffix++;
+//           newUserName = `${userName}_${suffix}`;
+//         }
 
-        return newUserName;
-      }
+//         return newUserName;
+//       }
 
-      return userName;  // If the username is available, return it
-    } catch (err) {
-      console.error("Error checking username availability", err);
-      return userName;  // Fallback to original username in case of an error
-    }
-  }
-  // Helper function to check username existence (used in the loop)
-  async function doesUsernameExist(userName: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
-    const data = await response.json();
-    return data.exists;
-  }
+//       return userName;  // If the username is available, return it
+//     } catch (err) {
+//       console.error("Error checking username availability", err);
+//       return userName;  // Fallback to original username in case of an error
+//     }
+//   }
+//   // Helper function to check username existence (used in the loop)
+//   async function doesUsernameExist(userName: string): Promise<boolean> {
+//     const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
+//     const data = await response.json();
+//     return data.exists;
+//   }
 
-  // Function to create a page
-  async function createPage(token: string): Promise<number> {
-    if (!isValidJWT(token)) {
-      throw new Error('Invalid authentication token. Please log in again.');
-    }
-    try {
-      // Fetch nonce
-      const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const nonceData = await nonceResponse.json();
-      const nonce = nonceData.nonce;
+//   // Function to create a page
+//   async function createPage(token: string): Promise<number> {
+//     if (!isValidJWT(token)) {
+//       throw new Error('Invalid authentication token. Please log in again.');
+//     }
+//     try {
+//       // Fetch nonce
+//       const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
+//         method: 'GET',
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       const nonceData = await nonceResponse.json();
+//       const nonce = nonceData.nonce;
 
-      // Create page
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'X-WP-Nonce': nonce,
-        },
-        body: JSON.stringify({
-          title: lovedOneName,
-          content: `This is a tribute page for ${lovedOneName}`,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data && data.page_id) {
-        return data.page_id;
-      } else {
-        throw new Error('Unexpected response format');
-      }
-    } catch (err) {
-      error = 'Error creating page';
-      throw err;
-    }
-  }
-  async function handleCreateLink() {
-  // Reset error states
-  nameError = '';
-  emailError = '';
-  phoneError = '';
-  error = '';  // General error message
+//       // Create page
+//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           Authorization: `Bearer ${token}`,
+//           'X-WP-Nonce': nonce,
+//         },
+//         body: JSON.stringify({
+//           title: lovedOneName,
+//           content: `This is a tribute page for ${lovedOneName}`,
+//         }),
+//       });
+//       if (!response.ok) {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//       const data = await response.json();
+//       if (data && data.page_id) {
+//         return data.page_id;
+//       } else {
+//         throw new Error('Unexpected response format');
+//       }
+//     } catch (err) {
+//       error = 'Error creating page';
+//       throw err;
+//     }
+//   }
+//   async function handleCreateLink() {
+//   // Reset error states
+//   nameError = '';
+//   emailError = '';
+//   phoneError = '';
+//   error = '';  // General error message
 
-  isLoading = true; // Set loading state to true while processing
-  try {
-    const password = await registerUser();  // Register the user
-    const token = await loginUser(userName, password);  // Log the user in and get token
-    const pageId = await createPage(token);  // Create the tribute page
-    console.log('Pre-registration validation:', {
-        username: userName,
-        email: userEmail,
-        password: generatedPassword
-    });
-    // Fetch created page data
-    const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
-    const page = await response.json();
+//   isLoading = true; // Set loading state to true while processing
+//   try {
+//     const password = await registerUser();  // Register the user
+//     const token = await loginUser(userName, password);  // Log the user in and get token
+//     const pageId = await createPage(token);  // Create the tribute page
+//     console.log('Pre-registration validation:', {
+//         username: userName,
+//         email: userEmail,
+//         password: generatedPassword
+//     });
+//     // Fetch created page data
+//     const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
+//     const page = await response.json();
 
-    if (page.slug) {
-      // Call API endpoint to add the page to the JSON file
-      await fetch('/api/add-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ slug: page.slug, isV2: true })
-      });
+//     if (page.slug) {
+//       // Call API endpoint to add the page to the JSON file
+//       await fetch('/api/add-page', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify({ slug: page.slug, isV2: true })
+//       });
 
-      // Redirect to the new page
-      window.location.href = `https://tributestream.com/${page.slug}`;
-    } else {
-      error = 'Slug not found';  // Set general error if slug is not found
-    }
-  } catch (err) {
-    // Parse specific errors and display meaningful messages
-    if (err.message && err.message.includes('email')) {
-      emailError = 'This email is already registered. Please use another email or log in.';
-    } else if (err.message && err.message.includes('username')) {
-      nameError = 'This username is already taken. Please choose another username.';
-    } else {
-      // Fallback for generic errors
-      error = err.message || 'An error occurred while creating the link';
-    }
-  } finally {
-    isLoading = false;  // Set loading state to false after processing
-  }
-}
+//       // Redirect to the new page
+//       window.location.href = `https://tributestream.com/${page.slug}`;
+//     } else {
+//       error = 'Slug not found';  // Set general error if slug is not found
+//     }
+//   } catch (err) {
+//     // Parse specific errors and display meaningful messages
+//     if (err.message && err.message.includes('email')) {
+//       emailError = 'This email is already registered. Please use another email or log in.';
+//     } else if (err.message && err.message.includes('username')) {
+//       nameError = 'This username is already taken. Please choose another username.';
+//     } else {
+//       // Fallback for generic errors
+//       error = err.message || 'An error occurred while creating the link';
+//     }
+//   } finally {
+//     isLoading = false;  // Set loading state to false after processing
+//   }
+// }
 
 
   //*************/ END create page and link /**************/
@@ -367,7 +379,7 @@ function generateUserName(email: string): string {
   
   //*************/ START handle form data input /**************/
 
-
+//*******NEW Code moved over*/
 
   // Lifecycle hook
   onMount(() => {
