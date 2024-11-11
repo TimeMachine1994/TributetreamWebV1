@@ -1,288 +1,191 @@
 <!-- +index.svelte -->
 
-<!-- Head Section -->
-<svelte:head>
-  <script>
-    window.wpApiSettings = {
-      root: 'https://wp.tributestream.com/wp-json/',
-      nonce: '',
-      versionString: 'wp/v2/'
-    };
-  </script>
-  <!-- Importing external JavaScript libraries for Backbone.js and WordPress API -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
-  <script src="https://wp.tributestream.com/wp-includes/js/wp-api.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fanwood+Text:ital@0;1&display=swap" rel="stylesheet">
-</svelte:head>
-
-<!-- Styles -->
-<style>
-  /* Importing Google Font 'Fanwood' */
-  @import url('https://fonts.googleapis.com/css2?family=Fanwood');
-
-  /* Custom styles for the Tributestream title */
-  .tributestream {
-    font-family: 'Great Vibes', 'Times New Roman', serif; /* Setting font family */
-    font-size: 48px; /* Setting font size */
-    letter-spacing: -1.5px; /* Adjusting letter spacing to make letters touch */
-  }
-
-  /* Styles for the registered trademark symbol */
-  .r-symbol {
-    font-size: 0.4em; /* Smaller font size for the symbol */
-    vertical-align: top; /* Aligning symbol to the top */
-    position: relative; /* Relative positioning for fine-tuning */
-    top: -8px; /* Adjusting vertical position */
-    left: 5px; /* Adjusting horizontal position */
-  }
-
-  /* Scrollbar customizations */
-  .fanwood-text-regular {
-  font-family: "Fanwood Text", serif;
-  font-weight: 400;
-  font-style: normal;
-}
-
-.fanwood-text-regular-italic {
-  font-family: "Fanwood Text", serif;
-  font-weight: 400;
-  font-style: italic;
-}
-  
-</style>
-
 <script lang="ts">
-    /* Importing necessary functions and components */
-    import { onMount } from 'svelte'; /* Svelte lifecycle function */
-    import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton'; /* Skeleton UI components */
-    import type { DrawerSettings } from '@skeletonlabs/skeleton'; /* Type-only import for DrawerSettings */
-    import { goto } from '$app/navigation'; /* Function to navigate to a new page */
-    import '../app.postcss'; /* Importing global styles */
-    import '@fortawesome/fontawesome-free/css/all.min.css'
+  import { onMount } from 'svelte';
+  import { writable } from 'svelte/store';
+  import { goto } from '$app/navigation';
+  import { userIdStore } from '$lib/stores/userStore';
 
-/*********** START Intialize stores and drawer ***********/
-    initializeStores();
+  // State variables
+  let lovedOneName = '';
+  let fullName = '';
+  let email = '';
+  let phone = '';
+  let error = '';
+  let showSecondPage = false;
+  let slugifiedName = '';
+  let isEditing = false;
+  let tempSlugifiedName = '';
+  let isInvalid = false;
 
-    const drawerStore = getDrawerStore();
+  // User ID and token management
+  let userId;
+  let isLoading = false;
 
-    function openDrawer() { 
-        drawerStore.open() 
-    }
-
-    function closeDrawer() { 
-        drawerStore.close() 
-    }
-/*********** END Intialize stores and drawer ***********/
-
-/*********** START Handle Authentication Actions ***********/
-  /* Reactive variable to check login status */
-  let isLoggedIn = false;
-
-  /* onMount lifecycle function to check if the user is logged in */
-  onMount(() => {
-    /* Checks if a JWT token exists in localStorage */
-    isLoggedIn = !!localStorage.getItem('jwtToken');
+  // Subscribe to the store to get the user ID
+  userIdStore.subscribe(value => {
+      userId = value;
   });
 
-  /* Function to handle authentication actions */
-  function handleAuthAction() {
-    if (isLoggedIn) {
-      // If the user is logged in, navigate to account settings page
-      goto('/account-settings');
-    } else {
-      // If the user is not logged in, navigate to login page
-      goto('/login');
-    }
+  // Get JWT Token from local storage
+  function getToken() {
+      return localStorage.getItem('jwtToken');
   }
-/*********** END Handle Authentication Actions **********/
 
+  // Function to slugify the loved one's name
+  function slugify(text: string): string {
+      return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+  }
 
+  // Generate random password
+  function generateRandomPassword(): string {
+      return Math.random().toString(36).slice(-8);
+  }
 
+  // Function to handle the first page submit and navigate to the second page
+  function handleNextPage() {
+      if (lovedOneName.trim()) {
+          showSecondPage = true;
+          slugifiedName = slugify(lovedOneName);
+          error = '';
+      } else {
+          isInvalid = true;
+          error = "Please enter your loved one's name";
+          setTimeout(() => {
+              isInvalid = false;
+          }, 500);
+      }
+  }
 
+  async function handleSubmit() {
+      const password = generateRandomPassword();
+      const username = email.split('@')[0];
+      const pageSlug = slugify(lovedOneName);
+
+      isLoading = true;
+      try {
+          // Register user
+          const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, email, password, meta: { full_name: fullName, loved_one_name: lovedOneName, phone: phone } })
+          });
+          const registerData = await registerResponse.json();
+
+          if (registerResponse.ok) {
+              userId = registerData.user_id;
+              userIdStore.set(userId);
+
+              // Login and get JWT token
+              const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, password })
+              });
+              const tokenData = await loginResponse.json();
+              localStorage.setItem('jwtToken', tokenData.token);
+
+              // Update slug through API endpoint
+              await updateSlug(pageSlug, userId);
+
+              // Redirect to new celebration page
+              goto(`/celebration-of-life-for-${pageSlug}`);
+          } else {
+              error = registerData.message;
+          }
+      } catch (err) {
+          error = err.message;
+      } finally {
+          isLoading = false;
+      }
+  }
+
+  async function updateSlug(slug: string, userId: number) {
+      const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+          body: JSON.stringify({ user_id: userId, loved_one_name: lovedOneName, slug: slug })
+      });
+
+      if (!response.ok) {
+          throw new Error('Failed to create tribute');
+      }
+
+      return await response.json();
+  }
 </script>
-    
-<!--*********** START Drawer Component Logic **********-->
 
-<!-- Drawer Component for Mobile Navigation -->
-<Drawer>
-  
-      <!-- Drawer Contents -->
-      <div class="p-4">
-        <!-- Close Button -->
-        <button class="focus:outline-none mb-4" on:click={closeDrawer}>
-          <!-- Close Icon SVG -->
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-        <!-- Navigation Menu Items -->
-        <ul class="space-y-4">
-          <li>
-            <a href="/why-tributestream" class="text-black hover:text-gray-700" on:click={closeDrawer}>
-              Why Tributestream?
-            </a>
-          </li>
-          <li>
-            <a href="/how-it-works" class="text-black hover:text-gray-700" on:click={closeDrawer}>
-              How does it work?
-            </a>
-          </li>
-          <li>
-            <a href="/contact" class="text-black hover:text-gray-700" on:click={closeDrawer}>
-              Contact Us
-            </a>
-          </li>
-          <li>
-            <a href="/schedule" class="text-black hover:text-gray-700" on:click={closeDrawer}>
-              Schedule Now
-            </a>
-          </li>
-          <li>
-            <!-- Login/Account Settings Button -->
-            <button
-              on:click={() => { handleAuthAction(); closeDrawer; }}
-              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
-            >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
-          </li>
-        </ul>
+<main class="overflow-hidden">
+  <section class="relative bg-gray-900 text-white">
+      <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0">
+          <source src="https://pub-f5d8194fe58b4bb69fc710f4fecb334f.r2.dev/video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+      </video>
+      <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
+
+      <!-- Hero Header -->
+      <div class="relative z-20 flex flex-col items-center justify-start h-screen pt-8 font-['Fanwood_Text']">
+          <h1 class="text-4xl md:text-6xl text-center mb-4">We Connect Families, One Link at a Time.</h1>
+          <p class="text-center mb-8 text-lg md:text-xl">
+              Tributestream broadcasts high-quality audio and video of your loved one's celebration of life.
+          </p>
+
+          <!-- First Page Form -->
+          {#if !showSecondPage}
+              <form on:submit|preventDefault={handleNextPage} class="flex flex-col items-center">
+                  <input type="text" placeholder="Loved One's Name Here" class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center max-w-md" class:invalid-input={isInvalid} class:shake={isInvalid} bind:value={lovedOneName} />
+                  {#if error}
+                      <p class="text-red-500">{error}</p>
+                  {/if}
+                  <div class="flex space-x-4 justify-center">
+                      <button type="submit" class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border rounded-lg">Create Tribute</button>
+                      <button type="button" on:click={() => { /* Search logic here */ }} class="bg-[#D5BA7F] text-black py-2 px-4 border rounded-lg">Search Streams</button>
+                  </div>
+              </form>
+          {:else}
+              <!-- Second Page Form -->
+              <div class="text-white">Your Loved One's Custom Link:</div>
+              <div class="flex items-center justify-center mb-4">
+                  <span class="text-white">http://www.Tributestream.com/celebration-of-life-for-</span>
+                  {#if isEditing}
+                      <input type="text" class="px-2 py-1 text-gray-900 rounded-md" bind:value={tempSlugifiedName} />
+                      <button class="ml-2 text-green-500" on:click={() => { slugifiedName = tempSlugifiedName; isEditing = false; }}>Save</button>
+                      <button class="ml-2 text-red-500" on:click={() => { isEditing = false; }}>Cancel</button>
+                  {:else}
+                      <span class="text-white">{slugifiedName}</span>
+                      <button class="ml-2 text-white" on:click={() => { isEditing = true; tempSlugifiedName = slugifiedName; }}>Edit</button>
+                  {/if}
+              </div>
+              <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6 space-y-4">
+                  <input id="fullName" type="text" bind:value={fullName} placeholder="Your Full Name" class="w-full px-4 py-2 rounded-md" required />
+                  <input id="email" type="email" bind:value={email} placeholder="Email Address" class="w-full px-4 py-2 rounded-md" required />
+                  <input id="phone" type="tel" bind:value={phone} placeholder="Phone Number" class="w-full px-4 py-2 rounded-md" required />
+                  {#if error}
+                      <p class="text-red-500">{error}</p>
+                  {/if}
+                  <div class="flex justify-between">
+                      <button type="button" on:click={() => { showSecondPage = false; }} class="bg-gray-600 text-white py-2 px-4 rounded-md">Back</button>
+                      <button type="submit" class="bg-[#D5BA7F] text-black font-bold py-2 px-4 rounded-lg">{isLoading ? 'Loading...' : 'See Custom Link'}</button>
+                  </div>
+              </form>
+          {/if}
       </div>
-</Drawer>
-
-<!--*********** END Drawer Component Logic **********-->
-
- 
-<!-- Header Section -->
-<header class="bg-black text-white">
-    <div class="container mx-auto flex justify-between items-center py-4 px-4">
-      <!-- Logo -->
-      <a href="https://tributestream.com" class="text-xl text-white">
-        <span class="tributestream">
-          <i>Tributestream</i><span class="r-symbol">®</span>
-        </span>
-      </a>
-      <!-- Navigation Menu -->
-      <!-- On larger screens, show the menu items -->
-      <nav class="hidden md:block">
-        <ul class="flex space-x-4 items-center">
-          <!-- Navigation Links -->
-          <li>
-            <a href="/why-tributestream" class="text-white hover:text-gray-300">
-              Why Tributestream?
-            </a>
-          </li>
-          <li>
-            <a href="/how-it-works" class="text-white hover:text-gray-300">
-              How does it work?
-            </a>
-          </li>
-          <li>
-            <a href="/contact" class="text-white hover:text-gray-300">
-              Contact Us
-            </a>
-          </li>
-          <li>
-            <a href="/schedule" class="text-white hover:text-gray-300">
-              Schedule Now
-            </a>
-          </li>
-          <li>
-            <!-- Login/Account Settings Button -->
-            <button
-              on:click={handleAuthAction}
-              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
-            >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
-          </li>
-        </ul>
-      </nav>
-      <!-- On smaller screens, show the hamburger menu -->
-      <button class="md:hidden focus:outline-none" on:click={openDrawer}>
-        <!-- Hamburger Icon SVG -->
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
-    </div>
-</header>
-
-
-     <!-- Main Content -->
-<main class="min-w-screen min-h-screen overflow-y-auto">
-<!-- Slot for rendering the content of the current page route -->
-  <slot />
+  </section>
 </main>
-   <!-- Footer Section -->
-  <footer class="bg-black text-white py-12">
-    <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
-      <!-- Logo and Brief Description -->
-      <div class="flex flex-col items-center md:items-start">
-        <!-- Logo -->
-        <a href="https://tributestream.com" class="text-xl text-white">
-          <span class="tributestream">
-            <i>Tributestream</i><span class="r-symbol">®</span>
-          </span>
-        </a>
-        <!-- Brief Description -->
-        <p class="text-sm mt-4">
-          Tributestream is a premier, affordable, and reliable livestreaming service to transport your families and friends to a celebration of life. We don't make videos, we make documentaries.
-        </p>
-      </div>
-  
-      <!-- Coverage Locations List -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">COVERAGE LOCATIONS</h3>
-        <p class="text-sm">
-          Orange, Lake, Osceola, Seminole, Marion, Sumter, Volusia, Flagler, and Brevard counties.
-        </p>
-        <p class="text-sm mt-4">Please call if your location is not listed:</p>
-        <p class="text-sm">+1 (407) 221-5922</p>
-        <p class="text-sm">Contact@tributestream.com</p>
-      </div>
-  
-      <!-- Office Hours -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Office Hours</h3>
-        <p class="text-sm">
-          Monday – Friday:<br>10:00AM – 5:00PM EST
-        </p>
-        <p class="text-sm mt-4">
-          Saturday – Sunday:<br>12:00PM – 5:00PM EST
-        </p>
-        <h3 class="text-lg font-semibold mt-8 mb-4">After Hours</h3>
-        <p class="text-sm">
-          If you need to contact us after hours, feel free to reach out via text or email.
-        </p>
-      </div>
-  
-      <!-- Review Us on Google Section -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">REVIEW US ON GOOGLE</h3>
-        <p class="text-sm mb-4">
-          If you appreciated the service we provided you and your family, please consider leaving us a five-star review on Google!
-        </p>
-        <!-- Button for Reviewing on Google -->
-        <button
-          class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-        >
-          Review Us
-        </button>
-      </div>
-    </div>
-  
-    <!-- Footer Copyright -->
-    <div class="border-t border-gray-700 mt-8 pt-4">
-      <p class="text-center text-sm text-gray-500">
-        © 2019-2024 All rights reserved | Tributestream is a Registered Trademark
-      </p>
-    </div>
-  </footer>
- 
+
+<style>
+  /* Custom styles for animations and invalid input */
+  .invalid-input {
+      border: 2px solid red;
+  }
+
+  .shake {
+      animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+  }
+</style>
