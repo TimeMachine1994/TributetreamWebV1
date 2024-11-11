@@ -83,11 +83,14 @@
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(window.atob(base64));
-    
+    console.log('Decoded JWT Payload:', payload);
+
     return payload.user_id;
 }
     async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
     try {
+      console.log('JWT Token:', getToken());
+      const userId = getUserId();
         const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
             method: 'POST',
             headers: {
@@ -95,7 +98,7 @@
                 'Authorization': `Bearer ${getToken()}`
             },
             body: JSON.stringify({
-                user_id: getUserId(),
+                user_id: userId,
                 loved_one_name: lovedOneName,
                 slug: slug
             })
