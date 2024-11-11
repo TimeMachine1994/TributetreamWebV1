@@ -1,24 +1,33 @@
 export async function load({ params, fetch }) {
     const { slug } = params;
-
+    console.log(slug);
+    
     try {
-        // Fetch tribute data from the REST API
-        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
+        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
- 
-        // Parse the JSON data from the response
         const tributeData = await response.json();
 
-        // Return the tribute data to be used in the Svelte page
+        if (!tributeData) {
+            return {
+                status: 404,
+                error: new Error('Tribute not found')
+            };
+        }
+
         return {
-            props: {
-                tribute: tributeData
-            }
+            tribute: tributeData
         };
 
     } catch (error) {
-        // Log any unexpected errors and return a 500 status
-        console.error('Unexpected error:', error);
-        return { status: 500, error: new Error('Internal Server Error') };
+        console.error('Error fetching tribute:', error);
+        return {
+            status: 500,
+            error: new Error('Failed to load tribute data')
+        };
     }
 }
