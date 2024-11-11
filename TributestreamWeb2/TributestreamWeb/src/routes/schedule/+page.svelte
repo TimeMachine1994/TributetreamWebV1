@@ -105,10 +105,10 @@
 
     return payload.user_id;
 }
-    async function updateSlug(slug: string, userId: number):  Promise<{ message: string, success?: boolean, tribute?: any }> {
+async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean, tribute?: any }> {
     try {
-      console.log('JWT Token:', getToken());
-      
+        console.log('JWT Token:', getToken());
+        
         const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
             method: 'POST',
             headers: {
@@ -126,12 +126,22 @@
             throw new Error('Failed to create tribute');
         }
 
-        return { message: 'Tribute created successfully', tribute: result.tribute };
-      } catch (error) {
+        const result = await response.json();
+        console.log('Server response:', result);
+
+        return { 
+            message: result.message,
+            success: true,
+            tribute: {
+                id: result.id
+            }
+        };
+    } catch (error) {
         console.error('Error creating tribute:', error);
         return { message: 'Error creating tribute', success: false };
     }
 }
+
 
   
 
