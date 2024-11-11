@@ -1,34 +1,19 @@
-// src/routes/[slug]/+page.server.js
-
-import { json } from '@sveltejs/kit';
-
 export async function load({ params }) {
     const { slug } = params;
 
-    // WordPress REST API endpoint to query posts with the custom field
-    const wpApiUrl = `https://wp.tributestream.com/wp-json/wp/v2/posts?meta_key=new_slug&meta_value=${slug}`;
-
     try {
-        const response = await fetch(wpApiUrl);
+        // First check if this is a tribute in our database
+        const tributeResponse = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
+        const tributeData = await tributeResponse.json();
 
-        if (!response.ok) {
-            console.error('Error fetching from WordPress:', await response.text());
-            return { status: 500, body: 'Internal Server Error' };
-        }
-
-        const posts = await response.json();
-
-        // Check if the slug exists in the response
-        if (posts.length > 0) {
-            // Slug exists, render the page with the template
+        // If we find the tribute in our database, return the data
+        if (tributeResponse.ok) {
             return {
-                template: 'celebration-v2',
-                slug: slug,
-                // Add any other data you want to pass to the template
+                tribute: tributeData
             };
         }
 
-        // Handle specific slug patterns for redirection
+        // If not in our database, check if it's a WordPress pattern to redirect
         if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
             return {
                 status: 302,
@@ -41,8 +26,9 @@ export async function load({ params }) {
             };
         }
 
-        // Slug not found, return 404
+        // If neither in database nor WordPress pattern, return 404
         return { status: 404, body: "Content not found" };
+        
     } catch (error) {
         console.error('Unexpected error:', error);
         return { status: 500, body: 'Internal Server Error' };

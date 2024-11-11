@@ -24,25 +24,7 @@
     function generateRandomPassword(): string {
       return Math.random().toString(36).slice(-8);
     }
-  
-    // API call to update slug
-    async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
-      try {
-        const response = await fetch('/wp-json/custom-user-registration/v1/add-slug', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ slug }),
-        });
-  
-        return await response.json();
-      } catch (error) {
-        console.error('Error updating slug:', error);
-        return { message: 'Error updating slug' };
-      }
-    }
-  
+
     async function handleSubmit() {
       const password = generateRandomPassword();
       const username = email.split('@')[0];
@@ -93,6 +75,29 @@
         error = err.message;
       }
     }
+
+    // API call to update slug
+    async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
+      try {
+      // Create tribute
+        const response = await fetch('/wp-json/tributestream/v1/tribute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                loved_one_name: lovedOneName,
+                slug: pageSlug
+          })
+      });
+        return await response.json();
+      } catch (error) {
+        console.error('Error updating slug:', error);
+        return { message: 'Error updating slug' };
+      }
+    }
+  
+
   </script>
   
   <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6">
