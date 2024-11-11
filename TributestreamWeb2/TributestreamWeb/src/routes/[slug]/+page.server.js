@@ -11,6 +11,8 @@ async function fetchContentFromDatabase(slug) {
 
 export async function load({ params }) {
     const { slug } = params;
+    console.log(`Fetching tribute with slug: ${slug}`);
+
 
     try {
         // Fetch content from the database
