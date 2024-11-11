@@ -13,9 +13,9 @@
   async function loadRelatedContent() {
       // Fetch memories, photos, and events using our API endpoints
       const [memoriesData, photosData, eventsData] = await Promise.all([
-          fetch(`/wp-json/tributestream/v1/memories/${tribute.id}`).then(r => r.json()),
-          fetch(`/wp-json/tributestream/v1/photos/${tribute.id}`).then(r => r.json()),
-          fetch(`/wp-json/tributestream/v1/events/${tribute.id}`).then(r => r.json())
+          fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/memories/${tribute.id}`).then(r => r.json()),
+          fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/photos/${tribute.id}`).then(r => r.json()),
+          fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/events/${tribute.id}`).then(r => r.json())
       ]);
 
       memories = memoriesData;

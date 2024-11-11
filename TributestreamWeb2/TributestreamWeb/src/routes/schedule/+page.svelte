@@ -80,7 +80,7 @@
     async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
       try {
       // Create tribute
-        const response = await fetch('/wp-json/tributestream/v1/tribute', {
+        const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
