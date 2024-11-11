@@ -13,8 +13,9 @@
 
     // Subscribe to the store to get the user ID
     userIdStore.subscribe(value => {
-        userId = value;
-    });
+    console.log('User ID from store:', value);
+    userId = value;
+});
     function getToken() {
       return localStorage.getItem('jwtToken');
     }
@@ -114,7 +115,7 @@
                 'Authorization': `Bearer ${getToken()}`
             },
             body: JSON.stringify({
-                user_id: {userIdStore},
+                user_id: userIdStore,
                 loved_one_name: lovedOneName,
                 slug: slug
             })
