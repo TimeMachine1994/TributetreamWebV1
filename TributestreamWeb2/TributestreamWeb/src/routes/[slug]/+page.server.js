@@ -1,8 +1,11 @@
 async function fetchContentFromDatabase(slug) {
     const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
+     
     if (!response.ok) {
         throw new Error('Failed to fetch content from the database');
     }
+    console.log(response);
+
     return response.json();
 }
 
