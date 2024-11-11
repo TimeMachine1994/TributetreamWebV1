@@ -1,25 +1,34 @@
 <script lang="ts">
   export let data;
-
-  // Destructure tribute data for easy access
-  const { loved_one_name } = data.tribute;
+  const { tribute } = data;
 </script>
 
-<div class="tribute-page">
-  <header class="tribute-header">
-    <h1>Celebrating the Life of {loved_one_name}</h1>
-  </header>
+<div class="tribute-container">
+  <h1>Tribute Details</h1>
+  <pre>{JSON.stringify(tribute, null, 2)}</pre>
+  
+  <div class="tribute-info">
+      <h2>{tribute.loved_one_name}</h2>
+      <p>Created by user: {tribute.user_id}</p>
+      <p>Tribute ID: {tribute.id}</p>
+  </div>
 </div>
 
 <style>
-  .tribute-page {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 2rem;
-    text-align: center;
+  .tribute-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
   }
 
-  .tribute-header {
-    margin-bottom: 2rem;
+  .tribute-info {
+      margin-top: 2rem;
+      line-height: 1.6;
+  }
+
+  pre {
+      background: #f4f4f4;
+      padding: 1rem;
+      border-radius: 4px;
   }
 </style>

@@ -28,7 +28,7 @@ export async function load({ params }) {
 
         // If neither in database nor WordPress pattern, return 404
         return { status: 404, body: "Content not found" };
-        
+       
     } catch (error) {
         console.error('Unexpected error:', error);
         return { status: 500, body: 'Internal Server Error' };
