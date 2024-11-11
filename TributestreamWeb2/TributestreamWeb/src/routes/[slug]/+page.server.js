@@ -1,47 +1,25 @@
-async function fetchContentFromDatabase(slug) {
-    const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
-     
-    if (!response.ok) {
-        throw new Error('Failed to fetch content from the database');
-    }
-    console.log(response);
-
-    return response.json();
-}
-
 export async function load({ params }) {
     const { slug } = params;
-    console.log(`Fetching tribute with slug: ${slug}`);
-
 
     try {
-        // Fetch content from the database
-        const tributeData = await fetchContentFromDatabase(slug);
+        // Fetch tribute data from the REST API
+        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
 
-        // If we find the tribute in our database, return the data
-        if (tributeData) {
-            return {
-                tribute: tributeData
-            };
+        // Check if the response is OK (status code 200-299)
+        if (!response.ok) {
+            return { status: response.status, body: `Error fetching tribute: ${response.statusText}` };
         }
 
-        // If not in our database, check if it's a WordPress pattern to redirect
-        if (slug.startsWith("celebration") || slug.startsWith("tributestream-for")) {
-            return {
-                status: 302,
-                headers: {
-                    location: `https://wp.tributestream.com/${slug}`,
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                },
-            };
-        }
+        // Parse the JSON data from the response
+        const tributeData = await response.json();
 
-        // If neither in database nor WordPress pattern, return 404
-        return { status: 404, body: "Content not found" };
+        // Return the tribute data to be used in the Svelte page
+        return {
+            tribute: tributeData
+        };
 
     } catch (error) {
+        // Log any unexpected errors and return a 500 status
         console.error('Unexpected error:', error);
         return { status: 500, body: 'Internal Server Error' };
     }

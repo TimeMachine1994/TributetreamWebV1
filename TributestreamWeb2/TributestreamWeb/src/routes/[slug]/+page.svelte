@@ -1,34 +1,38 @@
-<script lang="ts">
+<script context="module">
+  export { load } from './+page.server.js';
+</script>
+
+<script>
   export let data;
+
+  // Destructure the tribute data from the load function
   const { tribute } = data;
 </script>
 
-<div class="tribute-container">
-  <h1>Tribute Details</h1>
-  <pre>{JSON.stringify(tribute, null, 2)}</pre>
-  
-  <div class="tribute-info">
-      <h2>{tribute.loved_one_name}</h2>
-      <p>Created by user: {tribute.user_id}</p>
-      <p>Tribute ID: {tribute.id}</p>
-  </div>
-</div>
+<main>
+  {#if tribute}
+    <h1>Tribute for {tribute.loved_one_name}</h1>
+    <p>ID: {tribute.id}</p>
+    <p>User ID: {tribute.user_id}</p>
+    <p>Slug: {tribute.slug}</p>
+    <p>Created At: {tribute.created_at}</p>
+    <p>Updated At: {tribute.updated_at}</p>
+  {:else}
+    <p>Loading tribute data...</p>
+  {/if}
+</main>
 
 <style>
-  .tribute-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 1rem;
+  main {
+    padding: 1rem;
   }
 
-  .tribute-info {
-      margin-top: 2rem;
-      line-height: 1.6;
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
   }
 
-  pre {
-      background: #f4f4f4;
-      padding: 1rem;
-      border-radius: 4px;
+  p {
+    margin: 0.5rem 0;
   }
 </style>
