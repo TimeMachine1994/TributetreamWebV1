@@ -5,7 +5,16 @@
     let email = '';
     let phone = '';
     let error = '';
-  
+    import { writable } from 'svelte/store';
+
+    import { userIdStore } from '$lib/stores/userStore'; // Import the store
+
+    let userId;
+
+    // Subscribe to the store to get the user ID
+    userIdStore.subscribe(value => {
+        userId = value;
+    });
     function getToken() {
       return localStorage.getItem('jwtToken');
     }
@@ -46,11 +55,18 @@
             }
           })
         });
-  
-        if (!registerResponse.ok) {
-          throw new Error('Failed to register user');
-        }
-  
+        const registerData = await registerResponse.json();
+
+        if (registerResponse.ok) {
+        const userId = registerData.user_id;
+        console.log('Registered User ID:', userId);
+
+        // Update the store with the user ID
+                userIdStore.set(userId);
+            } else {
+                console.error('Registration failed:', registerData.message);
+            }
+        
         // Login and get JWT token
         const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
           method: 'POST',
@@ -90,7 +106,7 @@
     async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
     try {
       console.log('JWT Token:', getToken());
-      const userId = getUserId();
+      
         const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
             method: 'POST',
             headers: {
@@ -98,7 +114,7 @@
                 'Authorization': `Bearer ${getToken()}`
             },
             body: JSON.stringify({
-                user_id: userId,
+                user_id: {userIdStore},
                 loved_one_name: lovedOneName,
                 slug: slug
             })
