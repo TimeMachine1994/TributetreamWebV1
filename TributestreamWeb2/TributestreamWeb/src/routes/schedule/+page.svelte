@@ -75,27 +75,43 @@
         error = err.message;
       }
     }
-
-    // API call to update slug
+    function getUserId(): number {
+    const token = getToken();
+    if (!token) return null;
+    
+    // Decode the JWT token (it's base64 encoded)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+    
+    return payload.user_id;
+}
     async function updateSlug(slug: string): Promise<{ message: string, success?: boolean }> {
-      try {
-      // Create tribute
+    try {
         const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
             },
             body: JSON.stringify({
+                user_id: getUserId(),
                 loved_one_name: lovedOneName,
                 slug: slug
-          })
-      });
-        return await response.json();
-      } catch (error) {
-        console.error('Error updating slug:', error);
-        return { message: 'Error updating slug' };
-      }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create tribute');
+        }
+
+        return { message: 'Tribute created successfully', success: true };
+    } catch (error) {
+        console.error('Error creating tribute:', error);
+        return { message: 'Error creating tribute', success: false };
     }
+}
+
   
 
   </script>

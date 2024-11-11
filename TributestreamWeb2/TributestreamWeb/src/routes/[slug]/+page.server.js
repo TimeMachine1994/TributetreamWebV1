@@ -3,7 +3,7 @@ export async function load({ params }) {
 
     try {
         // First check if this is a tribute in our database
-        const tributeResponse = await fetch(`https://wp.tributestream.com/tributestream/v1/tribute/${slug}`);
+        const tributeResponse = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`);
         const tributeData = await tributeResponse.json();
 
         // If we find the tribute in our database, return the data
