@@ -34,7 +34,7 @@
             <!-- Purchase Button -->
             <div class="mt-8 text-center">
                 <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - $29.99
+                    Purchase Now - Self Serve Portal - $89.99
                 </button>
             </div>
         </div>
