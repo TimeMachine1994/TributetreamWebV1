@@ -1,4 +1,4 @@
-export async function load({ params }) {
+export async function load({ params, fetch }) {
     const { slug } = params;
 
     try {
@@ -7,7 +7,7 @@ export async function load({ params }) {
 
         // Check if the response is OK (status code 200-299)
         if (!response.ok) {
-            return { status: response.status, body: `Error fetching tribute: ${response.statusText}` };
+            return { status: response.status, error: new Error(`Error fetching tribute: ${response.statusText}`) };
         }
 
         // Parse the JSON data from the response
@@ -15,12 +15,14 @@ export async function load({ params }) {
 
         // Return the tribute data to be used in the Svelte page
         return {
-            tribute: tributeData
+            props: {
+                tribute: tributeData
+            }
         };
 
     } catch (error) {
         // Log any unexpected errors and return a 500 status
         console.error('Unexpected error:', error);
-        return { status: 500, body: 'Internal Server Error' };
+        return { status: 500, error: new Error('Internal Server Error') };
     }
 }
