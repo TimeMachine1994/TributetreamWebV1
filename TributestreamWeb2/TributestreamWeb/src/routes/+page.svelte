@@ -1,12 +1,12 @@
 <script lang="ts">
-  
-  //*************/ START import statements and variables /**************/
+ 
+ 
+
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { createCelebrationPage } from '$lib/authHelpers.js';
- 
- 
+
   // State variables
+  let generatedPassword = '';
   let lovedOneName = '';
   let userName = '';
   let userEmail = '';
@@ -17,647 +17,625 @@
   let isEditing = false;
   let tempSlugifiedName = '';
   let isBlurred = false;
-  let isLoading = false; // New variable to track the loading state
-  let nameError = '';
-  let emailError = '';
-  let phoneError = '';
+  let searchQuery = '';
+  let shouldSearch = false;
   let fullName = '';
-  // API base URL
-  const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
+  let email = '';
+  let phone = '';
+  import { userIdStore } from '$lib/stores/userStore'; // Import the store
 
-  // ******** START reactive statements /**************/
-  // Reactive statement to update slugifiedName when lovedOneName changes
+  let userId;
 
-  $: slugifiedName = slugify(lovedOneName);
-  import { createCelebrationPage } from './authHelpers';
 
- 
+    // Subscribe to the store to get the user ID
+      userIdStore.subscribe(value => {
+        console.log('User ID from store:', value);
+        userId = value;
+    });
 
+    function getToken() {
+      return localStorage.getItem('jwtToken');
+    }
   
-// The reactive statement to use email instead of fullName
-$: if (userEmail) {
-    const generatedName = generateUserName(userEmail);
-    if (generatedName) {
-        checkUserNameAvailability(generatedName).then((availableUserName) => {
-            userName = availableUserName;
-        });
-    }
-}
-    //*************/ START base utility functions /**************/
-
   // Function to slugify text
-
-  // Function to handle moving to the next page
-  let isInvalid = false;
-
-function handleNextPage() {
-  if (lovedOneName.trim()) {
-    showSecondPage = true;
-    isBlurred = true;
-    isInvalid = false;
-    error = '';
-  } else {
-    isInvalid = true;
-    error = "Please enter your loved one's name";
-    // Trigger shake animation
-    setTimeout(() => {
-      isInvalid = false;
-      setTimeout(() => {
-        isInvalid = true;
-      }, 10);
-    }, 0);
-  }
-}
-
-
-  // Function to handle editing the name
-  function handleEditName() {
-    isEditing = true;
-    tempSlugifiedName = slugifiedName;
-  }
-
-  // Function to handle saving the name change
-  function handleSaveNameChange() {
-    slugifiedName = tempSlugifiedName;
-    isEditing = false;
-  }
-
-  // Function to handle discarding the name change
-  function handleDiscardNameChange() {
-    isEditing = false;
-  }
-
-  // Function to handle going back to the first page
-  function handleGoBack() {
-    showSecondPage = false;
-    isBlurred = false;
-  }
-    //*************/ END handle form data input/**************/
-
-    function validateFields() {
-  let isValid = true;
-
-  if (!userName.trim()) {
-    nameError = 'Please enter your name';
-    isValid = false;
-  } else {
-    nameError = '';
-  }
-
-  if (!userEmail.trim()) {
-    emailError = 'Please enter your email address';
-    isValid = false;
-  } else {
-    emailError = '';
-  }
-
-  if (!userPhone.trim()) {
-    phoneError = 'Please enter your phone number';
-    isValid = false;
-  } else {
-    phoneError = '';
-  }
-
-  return isValid;
-}
-
-
-  // Function to handle the search and redirect to the results page
-  function handleSearch() {
-    if (lovedOneName.trim()) {
-      goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
-    }
+  function slugify(text) {
+    console.log('Slugifying text:', text);
+    const slugified = text.toString().toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+    console.log('Slugified result:', slugified);
+    return slugified;
   }
   
   // Function to generate a random password
-  function generateRandomPassword(): string {
-    return Math.random().toString(36).slice(-8);
+  function generateRandomPassword() {
+    const password = Math.random().toString(36).slice(-8);
+    console.log('Generated random password:', password);
+    return password;
   }
-
-  // Function to validate JWT token
-  function isValidJWT(token: string): boolean {
-    return token && token.split('.').length === 3;
-  } 
-
-  function slugify(text: string): string {
-    return text
-    .toString()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-  }
-
-  async function handleSubmit() {
-    await createCelebrationPage(email, fullName, lovedOneName, phone);
-  }
-//*************/  START register user  /*************/
-
-// //Function to register a user
-//   async function registerUser(): Promise<string> {
-
-    
-//     const generatedPassword = generateRandomPassword();
-
-//             try {
-//               console.log('Registration payload:', {
-//             username: userName,
-//             email: userEmail,
-//             password: generatedPassword
-//         });
-//         const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
-//           mode: 'cors',
-//         });
-        
-//         if (!response.ok) {
-//           const errorData = await response.json();
-//           throw new Error(errorData.message || 'Registration failed');
-//         }
-//         // Send registration email
-//         await sendRegistrationEmail(userName, userEmail, generatedPassword);
-//         return generatedPassword;
-//       } catch (err) {
-//         error = 'Registration failed';
-//         throw err;
-//       }
-//     }
-
-
-//   // Function to send a registration email
-//   async function sendRegistrationEmail(username: string, email: string, password: string) {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ username: username, email: email, password: password }),
-//         mode: 'cors',
-//       });
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(errorData.message || 'Failed to send email');
-//       }
-//       return await response.json();
-//     } catch (err) {
-//       error = 'Failed to send email';
-//       throw err;
-//     }
-//   }
-//   // Function to log in a user
-//   async function loginUser(username: string, password: string): Promise<string> {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ username, password }),
-//       });
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(errorData.message || 'Login failed');
-//       }
-//       const data = await response.json();
-//       const token = data.token || (data.data && data.data.token);
-//       if (!token || !isValidJWT(token)) {
-//         throw new Error('Invalid token received');
-//       }
-//       localStorage.setItem('jwtToken', token);
-//       return token;
-//     } catch (err) {
-//       error = 'Login failed';
-//       throw err;
-//     }
-//   }
-// function generateUserName(email: string): string {
-//     // Remove any whitespace and convert to lowercase
-//     const cleanEmail = email.trim().toLowerCase();
-    
-//     // Get only the part before the @ symbol
-//     const localPart = cleanEmail.split('@')[0];
-    
-//     // Remove any special characters except for alphanumeric and underscores
-//     const validUsername = localPart.replace(/[^a-z0-9_]/g, '');
-    
-//     // If the username is empty after cleaning, return empty string
-//     if (!validUsername) {
-//         return '';
-//     }
-    
-//     return validUsername;
-// }
-//   // Function to check if username exists on the server
-//   async function checkUserNameAvailability(userName: string): Promise<string> {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
-//       const data = await response.json();
-      
-//       // If the username exists, append an iterative number (_1, _2, etc.)
-//       if (data.exists) {
-//         let suffix = 1;
-//         let newUserName = `${userName}_${suffix}`;
-
-//         // Keep checking for availability until we find a unique username
-//         while (await doesUsernameExist(newUserName)) {
-//           suffix++;
-//           newUserName = `${userName}_${suffix}`;
-//         }
-
-//         return newUserName;
-//       }
-
-//       return userName;  // If the username is available, return it
-//     } catch (err) {
-//       console.error("Error checking username availability", err);
-//       return userName;  // Fallback to original username in case of an error
-//     }
-//   }
-//   // Helper function to check username existence (used in the loop)
-//   async function doesUsernameExist(userName: string): Promise<boolean> {
-//     const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/check-username?username=${userName}`);
-//     const data = await response.json();
-//     return data.exists;
-//   }
-
-//   // Function to create a page
-//   async function createPage(token: string): Promise<number> {
-//     if (!isValidJWT(token)) {
-//       throw new Error('Invalid authentication token. Please log in again.');
-//     }
-//     try {
-//       // Fetch nonce
-//       const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
-//         method: 'GET',
-//         headers: { Authorization: `Bearer ${token}` },
-//       });
-//       const nonceData = await nonceResponse.json();
-//       const nonce = nonceData.nonce;
-
-//       // Create page
-//       const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           Authorization: `Bearer ${token}`,
-//           'X-WP-Nonce': nonce,
-//         },
-//         body: JSON.stringify({
-//           title: lovedOneName,
-//           content: `This is a tribute page for ${lovedOneName}`,
-//         }),
-//       });
-//       if (!response.ok) {
-//         throw new Error(`HTTP error! status: ${response.status}`);
-//       }
-//       const data = await response.json();
-//       if (data && data.page_id) {
-//         return data.page_id;
-//       } else {
-//         throw new Error('Unexpected response format');
-//       }
-//     } catch (err) {
-//       error = 'Error creating page';
-//       throw err;
-//     }
-//   }
-//   async function handleCreateLink() {
-//   // Reset error states
-//   nameError = '';
-//   emailError = '';
-//   phoneError = '';
-//   error = '';  // General error message
-
-//   isLoading = true; // Set loading state to true while processing
-//   try {
-//     const password = await registerUser();  // Register the user
-//     const token = await loginUser(userName, password);  // Log the user in and get token
-//     const pageId = await createPage(token);  // Create the tribute page
-//     console.log('Pre-registration validation:', {
-//         username: userName,
-//         email: userEmail,
-//         password: generatedPassword
-//     });
-//     // Fetch created page data
-//     const response = await fetch(`${API_BASE_URL}/wp/v2/pages/${pageId}`);
-//     const page = await response.json();
-
-//     if (page.slug) {
-//       // Call API endpoint to add the page to the JSON file
-//       await fetch('/api/add-page', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify({ slug: page.slug, isV2: true })
-//       });
-
-//       // Redirect to the new page
-//       window.location.href = `https://tributestream.com/${page.slug}`;
-//     } else {
-//       error = 'Slug not found';  // Set general error if slug is not found
-//     }
-//   } catch (err) {
-//     // Parse specific errors and display meaningful messages
-//     if (err.message && err.message.includes('email')) {
-//       emailError = 'This email is already registered. Please use another email or log in.';
-//     } else if (err.message && err.message.includes('username')) {
-//       nameError = 'This username is already taken. Please choose another username.';
-//     } else {
-//       // Fallback for generic errors
-//       error = err.message || 'An error occurred while creating the link';
-//     }
-//   } finally {
-//     isLoading = false;  // Set loading state to false after processing
-//   }
-// }
-
-
-  //*************/ END create page and link /**************/
-
   
-  //*************/ START handle form data input /**************/
 
-//*******NEW Code moved over*/
 
+  // API base URL
+  const API_BASE_URL = 'https://tributestream.com/wp-json';
+  
+  // Function to handle the search and redirect to the results page
+  async function handleSearch() {
+    console.log('handleSearch called with lovedOneName:', lovedOneName);
+    if (lovedOneName.trim()) {
+      console.log('Redirecting to search page with query:', lovedOneName);
+      goto(`/search?q=${encodeURIComponent(lovedOneName)}`);
+    } else {
+      console.log('lovedOneName is empty, not redirecting');
+    }
+  }
+  
+
+ 
+  
+  // Reactive statement to update slugifiedName when lovedOneName changes
+  $: {
+    console.log('lovedOneName changed:', lovedOneName);
+    slugifiedName = slugify(lovedOneName);
+    console.log('Updated slugifiedName:', slugifiedName);
+  }
+  
+  // Function to validate JWT token
+  function isValidJWT(token) {
+    console.log('Validating JWT token');
+    if (!token) {
+      console.error('Token is null or undefined');
+      return false;
+    }
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('Token does not have 3 parts:', parts.length);
+      return false;
+    }
+    console.log('JWT token is valid');
+    return true;
+  }
+  
+
+
+
+// Function to call the WordPress plugin endpoint to send an email
+async function sendRegistrationEmail(username, email, password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        email: email,
+        password: password
+      }),
+      mode: 'cors', // Ensure CORS is handled
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to send email');
+    }
+
+    const result = await response.json();
+    console.log('Email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+}
+
+
+  // Function to register a user
+  async function registerUser() {
+    console.log('Registering user');
+    generatedPassword = generateRandomPassword();
+    try {
+      console.log('Sending registration request for:', userName, userEmail);
+      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: userName, email: userEmail, password: generatedPassword }),
+        mode: 'cors'
+
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Registration failed:', errorData);
+        throw new Error(errorData.message || 'Registration failed');
+      }
+      const data = await response.json();
+      console.log('User registered successfully:', data);
+
+       
+      return data;
+    } catch (err) {
+      console.error('Registration error:', err);
+      throw err;
+    } 
+  }
+  
+  // Function to log in a user
+  async function loginUser(username, password) {
+    console.log('Logging in user:', username);
+    try {
+      const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Login failed:', errorData);
+        throw new Error(errorData.message || 'Login failed');
+      }
+      const data = await response.json();
+      console.log('Login response:', data);
+      let token = data.token || (data.data && data.data.token);
+      if (!token) {
+        console.error('Token not found in server response');
+        throw new Error('Token not found in server response');
+      }
+      if (!isValidJWT(token)) {
+        console.error('Received invalid token format from server');
+        throw new Error('Received invalid token format from server');
+      }
+      console.log('Storing JWT token in localStorage');
+      localStorage.setItem('jwtToken', token);
+      return token;
+    } catch (err) {
+      console.error('Login error:', err);
+      throw err;
+    }
+  }
+  
+  // Function to create a page
+  async function createPage(token) {
+    console.log('Creating page');
+    if (!token || !isValidJWT(token)) {
+      console.error('Invalid authentication token');
+      throw new Error('Invalid authentication token. Please log in again.');
+    }
+    try {
+      console.log('Fetching nonce');
+      const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const nonceData = await nonceResponse.json();
+      const nonce = nonceData.nonce;
+      console.log('Nonce received:', nonce);
+  
+      console.log('Creating page for:', lovedOneName);
+      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-WP-Nonce': nonce
+        },
+        body: JSON.stringify({
+          title: `${lovedOneName}`,
+          content: `This is a tribute page for ${lovedOneName}`,
+        })
+      });
+      if (!response.ok) {
+        console.error('HTTP error when creating page:', response.status);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data && data.page_id) {
+        console.log('Page created successfully with ID:', data.page_id);
+        return data.page_id;
+      } else {
+        console.error('Unexpected response format:', data);
+        throw new Error('Unexpected response format');
+      }
+    } catch (error) {
+      console.error('Error creating page:', error);
+      throw error;
+    }
+  }
+  async function handleSubmit() {
+      const password = generateRandomPassword();
+      const username = email.split('@')[0];
+      const pageSlug = slugify(lovedOneName);
+  
+      try {
+        // Register user
+        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            email,
+            password,
+            meta: {
+              full_name: fullName,
+              loved_one_name: lovedOneName,
+              phone: phone
+            }
+          })
+        });
+        const registerData = await registerResponse.json();
+
+        if (registerResponse.ok) {
+        userId = registerData.user_id;
+        console.log('Registered User ID:', userId);
+
+        // Update the store with the user ID
+                userIdStore.set(userId);
+            } else {
+                console.error('Registration failed:', registerData.message);
+            }
+        
+        // Login and get JWT token
+        const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+  
+        const tokenData = await loginResponse.json();
+        localStorage.setItem('jwtToken', tokenData.token);
+  
+        // Update slug through API endpoint
+        const updateData = await updateSlug(pageSlug, userId);
+        if (updateData.success) {
+          console.log('Page slug successfully added:', pageSlug);
+        } else {
+          throw new Error(updateData.message || 'Failed to update slug');
+        }
+  
+        // Redirect to new celebration page
+        goto(`/celebration-of-life-for-${pageSlug}`);
+      } catch (err) {
+        error = err.message;
+      }
+    }
+    function getUserId() {
+    const token = getToken();
+    if (!token) return null;
+    
+    // Decode the JWT token (it's base64 encoded)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+    console.log('Decoded JWT Payload:', payload);
+
+    return payload.user_id;
+}
+async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean, tribute?: any }> {
+    try {
+        console.log('JWT Token:', getToken());
+        
+        const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                loved_one_name: lovedOneName,
+                slug: slug
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create tribute');
+        }
+
+        const result = await response.json();
+        console.log('Server response:', result);
+
+        return { 
+            message: result.message,
+            success: true,
+            tribute: {
+                id: result.id
+            }
+        };
+    } catch (error) {
+        console.error('Error creating tribute:', error);
+        return { message: 'Error creating tribute', success: false };
+    }
+}
+
+  // Function to handle creating a link
+  async function handleCreateLink() {
+    console.log('Creating link');
+    error = '';
+    try {
+      await registerUser();
+      console.log('User registered');
+
+          // Send registration email
+      await sendRegistrationEmail(userName, userEmail, generatedPassword);
+      console.log('Registration email sent');
+
+      const token = await loginUser(userName, generatedPassword);
+      console.log('User logged in with token:', token);
+      const pageId = await createPage(token);
+  
+      console.log('Fetching created page data');
+      const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
+      const page = await response.json();
+  
+      console.log('Page created:', pageId);
+      console.log('Fetched page data:', page);
+    
+      // Redirect to the page using the slug
+      if (page.slug) {
+        console.log('Redirecting to:', `https://tributestream.com/${page.slug}`);
+        window.location.href = `https://tributestream.com/${page.slug}`;
+      } else {
+        console.error('Slug not found in page data');
+        error = 'Slug not found';
+      }
+    } catch (err) {
+      console.error('Error in handleCreateLink:', err);
+      error = 'An error occurred while creating the link';
+    }
+  }
+  
+  // Function to handle moving to the next page
+  function handleNextPage() {
+    console.log('Moving to second page');
+    showSecondPage = true;
+    isBlurred = true;
+  }
+  
+  // Function to handle editing the name
+  function handleEditName() {
+    console.log('Editing name');
+    isEditing = true;
+    tempSlugifiedName = slugifiedName;
+  }
+  
+  // Function to handle saving the name change
+  function handleSaveNameChange() {
+    console.log('Saving name change');
+    slugifiedName = tempSlugifiedName;
+    isEditing = false;
+  }
+  
+  // Function to handle discarding the name change
+  function handleDiscardNameChange() {
+    console.log('Discarding name change');
+    isEditing = false;
+  }
+  
+  // Function to handle going back to the first page
+  function handleGoBack() {
+    console.log('Going back to first page');
+    showSecondPage = false;
+    isBlurred = false;
+  }
+  
   // Lifecycle hook
   onMount(() => {
-    // Component mounted
+    console.log('Component mounted');
   });
 
 
-</script>
+
+// Example usage: sendEmail('testuser', 'test@example.com', 'password123');
 
 
+
+  // Add a new function to send the registration email
+//   async function sendRegistrationEmail(username, email, password) {
+// try {
+//   const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ username: username, email: email, password: password }), // Use the parameters here
+//     credentials: 'include', // Include credentials like cookies if needed
+//     mode: 'cors' // Ensure CORS is handled
+//   });
+
+//   // Handle the response
+//   if (!response.ok) {
+//     throw new Error('Failed to send registration email');
+//   }
+
+//   const result = await response.json();
+//   console.log('Registration email sent:', result);
+// } catch (error) {
+//   console.error('Error sending registration email:', error);
+//   // }
+// }
+
+  </script>
+  
+  <!-- The rest of your HTML remains unchanged -->
+  
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Harrington');
 
-  /************* START Custom CSS for the first page - Glow button and old stuff (box an letter but we'll keep it for now.) /**************/
+/* Container for the bordered box */
+.box {
+display: flex;
+justify-content: center;
+align-items: center;
+width: 55px; /* Adjust to your desired size */
+height: 55px; /* Adjust to your desired size */
+border: 3px solid white; /* Thick border to match the image */
+position: relative;
+}
 
-  @import url('https://fonts.googleapis.com/css2?family=Harrington');
+/* Stylized Letter T */
+.letter {
+font-size: 45px; /* Large font size */
+font-family: 'Harrington', serif;
+ /* Bold for the thickness of the letter */
+color: white; /* Black color for the letter */
+line-height: 1; /* Ensures the letter is centered vertically */
+transform: scaleX(1.36726); /* Stretch the text by 136.726% */
 
-  /* Container for the bordered box */
-  .box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 55px;
-    height: 55px;
-    border: 3px solid white;
-    position: relative;
-  }
-
-  /* Stylized Letter T */
-  .letter {
-    font-size: 45px;
-    font-family: 'Harrington', serif;
-    color: white;
-    line-height: 1;
-    transform: scaleX(1.36726);
-  }
+}
 
   .glow-button {
-    background-color: #d4b075;
-    border: 2px solid #fff;
-    color: #000;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-family: 'Times New Roman', serif;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    outline: none;
-  }
-
-  .glow-button:hover {
-    background-color: #f0c75e;
-    color: #000;
-    box-shadow: 0 0 20px #f0c75e, 0 0 30px #f0c75e, 0 0 40px #f0c75e;
-    border-color: #f0c75e;
-  }
-
-  .glow-button:focus {
-    outline: none;
-  }
-
-  .blurred {
-    filter: blur(10px);
-    transition: filter 0.3s ease-in-out;
-  }
-
-  /************* STOP Custom CSS for the first page - Glow button, blur background, and some old stuff (box and letter but we'll keep it for now.) /**************/
-  .spinner-border {
-  width: 30px;
-  height: 30px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid #D5BA7F;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+background-color: #d4b075; /* Darker gold color */
+border: 2px solid #fff; /* White border */
+color: #000; /* Text color */
+padding: 10px 20px;
+font-size: 16px;
+font-family: 'Times New Roman', serif; /* Adjust font if needed */
+text-align: center;
+text-decoration: none;
+display: inline-block;
+cursor: pointer;
+transition: all 0.3s ease;
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+outline: none;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.glow-button:hover {
+background-color: #f0c75e; /* Brighter gold color on hover */
+color: #000; /* Maintain text color */
+box-shadow: 0 0 20px #f0c75e, 0 0 30px #f0c75e, 0 0 40px #f0c75e; /* Glowing effect */
+border-color: #f0c75e; /* Border glows too */
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
+.glow-button:focus {
+outline: none;
+}
+
+.blurred {
+      filter: blur(10px);
+      transition: filter 0.3s ease-in-out;
   }
 
-  .shake {
-    animation: shake 0.5s ease-in-out;
-  }
-
-  .invalid-input {
-    border: 2px solid red;
-  }
 </style>
-<!-- START video background section -->
-<main class="overflow-hidden">
-  <section class="relative bg-gray-900 text-white overf">
-    <video
-    autoplay
-    muted
-    loop
-    playsinline
-    class="absolute inset-0 w-full h-full object-cover z-0"
-    class:blurred={isBlurred}
-    >
-      <source
-        src="https://pub-f5d8194fe58b4bb69fc710f4fecb334f.r2.dev/video.mp4"
-        type="video/mp4"
-        />
 
+<main> 
 
-     Your browser does not support the video tag.
-    </video>
-    <!-- this is the black overlay to  make the white text readable on the homepage over the video -->
-    <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
-  <!-- END video background section -->
+<section class="relative bg-gray-900 text-white">
+<video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
+      <source src="https://pub-f5d8194fe58b4bb69fc710f4fecb334f.r2.dev/video.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
+  </video>
+  <div class="absolute inset-0 bg-black opacity-50 z-10"></div>  
 
-
-  <!-- START hero header text-->
-
-  <div
-    class="relative z-20 flex flex-col items-center justify-start h-screen min-w-screen pt-8 font-['Fanwood_Text']"
-  >
-  <h1 class="text-4xl md:text-6xl text-center mb-4">
-    We Connect Families, One Link at a Time.
-  </h1>
-
-  <p class="text-center mb-8 text-lg md:text-xl">
-  <!-- END hero header text-->
-
-
-
-  <!-- START first page -->
-  {#if !showSecondPage}
-  <form on:submit|preventDefault={handleNextPage}> 
-    <div class="flex flex-col items-center justify-center mb-4 ">
-    Tributestream broadcasts high quality audio and video of your loved
-    one's celebration of life. <br />
-    Enter your loved one's name below to begin your journey with
-    Tributestream.
-  </div>
-  <input
-  type="text"
-  placeholder="Loved One's Name Here"
-  class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center max-w-md"
-  class:invalid-input={isInvalid}
-  class:shake={isInvalid}
-  bind:value={lovedOneName}
-/>
-{#if error}
-<p class="error-text">{error}</p>
-{/if}
-  <div class="flex space-x-4 justify-center">
-    <button type="submit"
-      class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-      >
-      Create Tribute
-    </button>
-    <button
-      on:click={() => {
-      handleSearch();
-      showSecondPage = true;
-      }}
-      class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-      >
-      Search Streams
-      </button>
-    </div>
-  </form>
-  <!-- END first page -->
-
-  {:else}
-
-      <!-- START second page -->
-    <div class=""> Your Loved One's Custom Link:</div>
-    <div class="flex items-center justify-center mb-4">
-      <span class="text-white">
-        http://www.Tributestream.com/celebration-of-life-for-
-      </span>
-        {#if isEditing}
-           <input
-            type="text"
-            class="px-2 py-1 text-gray-900 rounded-md"
-            bind:value={tempSlugifiedName}
-          />          
+  <div class="relative z-20 flex flex-col items-center justify-start h-screen min-w-screen pt-8 font-['Fanwood_Text']">
+      <h1 class="text-4xl md:text-6xl text-center mb-4 ">
+     We Make Hearts Full Again
+      </h1> 
  
-        {:else}
-          <span class="text-white">{slugifiedName}</span>
-        {/if}
-        {#if isEditing}
-        
+       <p class="text-center mb-8 text-lg md:text-xl">
+          
+          {#if !showSecondPage}
+          
+          Tributestream broadcasts high quality audio and video of your loved one's celebartion of life. <br> 
+          Enter your loved ones name below to begin your journey with Tributestream. 
+          <!--Tributestream brings together your families tesitmony of love into one neat package. <br> <i>
+          Tributestream brings closure now.<br> A window to the past, to which we all avow. <br>
+          Relearn powerful lessons time can't dim,<br>
+          and embrace the love that flows from within.
+        </i>-->
 
-          <button class="ml-2 text-green-500" on:click={handleSaveNameChange}>
-            <i class="fas fa-check"></i>
-          </button>
-          <button class="ml-2 text-red-500" on:click={handleDiscardNameChange}>
-            <i class="fas fa-times"></i>
-          </button>
- 
-        {:else}
- 
-          <button class="ml-2 text-white" on:click={handleEditName}>
-            <i class="fas fa-pencil-alt"></i>
-          </button>
- 
-        {/if}
- 
-      </div>
-      <input
-      type="text"
-      placeholder="Your Full Name"
-      class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-      class:invalid-input={nameError}
-      class:shake={nameError}
-      bind:value={fullName}
-    />
-    {#if nameError}
-       <p class="error-text">{nameError}</p>
-    {/if}
-    
-    <input
-      type="email"
-      placeholder="Email Address"
-      class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-      class:invalid-input={emailError}
-      class:shake={emailError}
-      bind:value={userEmail}
-    />
-    {#if emailError}
-       <p class="error-text">{emailError}</p>
-    {/if}
-    
-    <input
-      type="tel"
-      placeholder="Phone Number"
-      class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-      class:invalid-input={phoneError}
-      class:shake={phoneError}
-      bind:value={userPhone}
-    />
-    {#if phoneError}
-    <p class="error-text">{phoneError}</p>
-    {/if}
-      <div class="flex justify-between items-center">
-        <button
-          type="button"
-          on:click={handleGoBack}
-          class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md"
-        >
-          <i class="fas fa-arrow-left"></i>
-        </button>
- 
-        <!-- Conditionally show the throbber or the button -->
-        
-           <button
-            type="button"
-            on:click={handleCreateLink}
-            class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-          >
-            See Custom Link
-          </button>
- 
-       </div>
-  
+           
+          {:else}
+              Your Loved One's Custom Link:
+          {/if}
+      </p>
+
+      <form class="w-full max-w-md">
+          {#if !showSecondPage}
+              <input
+                  type="text"
+                  placeholder="Loved One's Name Here"
+                  class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center"
+                  bind:value={lovedOneName}
+              />
+              <div class="flex space-x-4 justify-center">
+                  <button    on:click={handleNextPage}
+                  class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                      Create Tribute
+                    </button>
+                
+
+                    <button
+                                        on:click={() => {
+                                          handleSearch();
+                                          showSecondPage = true;
+                                        }}
+                                        class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
+                    Search Streams
+                </button> 
+              </div>
+          {:else}
+              <div class="flex items-center justify-center mb-4">
+                  <span class="text-white">http://www.tributestream.com/celebration-of-life-for-{#if isEditing}
+                      <input
+                          type="text"
+                          class="px-2 py-1 text-gray-900 rounded-md"
+                          bind:value={tempSlugifiedName}
+                      />
+                  {:else}
+                      <span class="text-white">{slugifiedName}</span>
+                  {/if}</span>
+                  {#if isEditing}
+                      <button class="ml-2 text-green-500" on:click={handleSaveNameChange}>
+                          <i class="fas fa-check"></i>
+                      </button>
+                      <button class="ml-2 text-red-500" on:click={handleDiscardNameChange}>
+                          <i class="fas fa-times"></i>
+                      </button>
+                  {:else}
+                      <button class="ml-2 text-white" on:click={handleEditName}>
+                          <i class="fas fa-pencil-alt"></i>
+                      </button>
+                  {/if}
+              </div>
+              <input
+                  type="text"
+                  placeholder="Your Name"
+                  class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
+                  bind:value={userName}
+              />
+              <input
+                  type="email"
+                  placeholder="Email Address"
+                  class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
+                  bind:value={userEmail}
+              />
+              <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
+                  bind:value={userPhone}
+              />
+              <div class="flex justify-between items-center">
+                  <button type="button" on:click={handleGoBack} class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
+                      <i class="fas fa-arrow-left"></i>
+                  </button>
+                  <button type="button" on:click={handleSubmit} class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md">
+                      Create Tribute
+                  </button>
+              </div>
+          {/if}
+      </form>
+     
       {#if error}
-        <p class="text-red-500 mt-4">{error}</p>
+          <p class="text-red-500 mt-4">{error}</p>
       {/if}
-    {/if}
- 
+      
+      </div>
+      <div class="box">
+          <div class="letter">T</div>
+      </div>
+      </section>
 
 
-
-</section>
-</main>  
+</main>

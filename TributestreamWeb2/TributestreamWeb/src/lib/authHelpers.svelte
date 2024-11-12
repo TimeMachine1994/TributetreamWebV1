@@ -1,6 +1,7 @@
-import { userIdStore } from './stores'; // Assume userIdStore is defined in your app
+import { userIdStore } from '$lib/stores/userStore';
+import { generateRandomPassword, slugify } from '$lib/utils/createAccount';
 import { goto } from '$app/navigation';
-import { generateRandomPassword, slugify } from './utils'; // Assume these are defined
+
 
 export async function createCelebrationPage(email, fullName, lovedOneName, phone) {
   const password = generateRandomPassword();
