@@ -10,8 +10,8 @@
 
   async function handleSubmit() {
     console.log('Form submitted:', { name, email, message });
-    const subject = "New Registration from " + name + " - " + phoneNumber;
-    const adminEmail = "contact.form@tributestream.com";
+    const subject = "New Contact-Form submission from " + name + " - " + phoneNumber;
+    const adminEmail = "contact.form@tributestream.com, 14072215922@tmomail.net";
 
     try {
         const response = await fetch('https://wp.tributestream.com/wp-json/registration_email/v1/send-email', {
