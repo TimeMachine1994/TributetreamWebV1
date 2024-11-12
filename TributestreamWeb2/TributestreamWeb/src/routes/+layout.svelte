@@ -272,11 +272,11 @@
           If you appreciated the service we provided you and your family, please consider leaving us a five-star review on Google!
         </p>
         <!-- Button for Reviewing on Google -->
-        <button
-          class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-        >
-          Review Us
-        </button>
+        <a href="https://g.page/r/CT2e1k0NJGeKEAE/review"
+        class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out inline-block"
+     >
+       Review Us
+     </a>
       </div>
     </div>
   
