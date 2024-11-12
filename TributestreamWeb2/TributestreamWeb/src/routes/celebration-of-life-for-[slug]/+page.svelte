@@ -34,7 +34,16 @@
             <!-- Purchase Button -->
             <div class="mt-8 text-center">
                 <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - Self Serve Portal - $89.99
+                    Purchase Now - Self Serve Portal $89.99
+                </button>
+                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
+                    Purchase Now - Self Serve Portal + Gear Rental $399
+                </button>
+                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
+                    Purchase Now - Tributestream Solo $599
+                </button>
+                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
+                    Purchase Now - Tributestream Legacy - $1,200
                 </button>
             </div>
         </div>
@@ -53,7 +62,7 @@
                 <!-- FAQ Card 2 -->
                 <div class="bg-gray-800 p-6 rounded-lg transform transition-all hover:-translate-y-2">
                     <h3 class="text-yellow-500 text-xl font-bold mb-4">What's included?</h3>
-                    <p class="text-gray-300">Get lifetime access to the memorial video, downloadable content, and sharing capabilities.</p>
+                    <p class="text-gray-300">Get at least one year long access to the memorial video, downloadable content, and sharing capabilities.</p>
                 </div>
 
                 <!-- FAQ Card 3 -->
