@@ -7,11 +7,9 @@
   let message = '';
   let showForm = true;
   let showSuccess = false;
-  async function handleSubmit() {
-    // Log form data for debugging
-    console.log('Form submitted:', { name, email, message });
 
-    // Create dynamic email subject
+  async function handleSubmit() {
+    console.log('Form submitted:', { name, email, message });
     const subject = "New Registration from " + name + " - " + phoneNumber;
     const adminEmail = "contact.form@tributestream.com";
 
@@ -27,7 +25,6 @@
                 message: message
             })
         });
-
         const data = await response.json();
         return data;
     } catch (error) {
@@ -38,9 +35,7 @@
 </script>
 
 <main>
-  <div class="transition-all duration-500 transform"
-  class:translate-y-[-100vh]={!showForm}>
-
+   <div class="transition-all duration-500 transform" class:translate-y-[-100vh]={!showForm}>
     <div class="card p-4">
         <div class="hero">
             <p class="text-2xl p-4 text-center">Contact Us</p>
@@ -50,7 +45,22 @@
 
     <section class="card p-4 mt-4">
         <form on:submit|preventDefault={handleSubmit}>
-            <!-- Your form inputs -->
+            <label class="label">
+                <span>Name</span>
+                <input class="input" type="text" bind:value={name} placeholder="Your first and last name" required />
+            </label>
+            <label class="label">
+                <span>Phone Number</span>
+                <input class="input" type="tel" bind:value={phoneNumber} placeholder="Your Phone Number" required />
+            </label>
+            <label class="label">
+                <span>Email Address</span>
+                <input class="input" type="email" bind:value={email} placeholder="Your Email Address" required />
+            </label>
+            <label class="label">
+                <span>Message</span>
+                <textarea class="textarea" bind:value={message} rows="4" placeholder="Please enter your message here." required></textarea>
+            </label>
             <button type="submit" class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black">Send</button>
         </form>
     </section>
@@ -63,10 +73,9 @@
             <p>Your message has been sent successfully.</p>
         </div>
     </div>
-
 </div>
+</main>
 
- </main>
 <style>
   main {
     max-width: 600px;
