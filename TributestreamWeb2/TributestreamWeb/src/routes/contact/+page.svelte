@@ -2,13 +2,31 @@
   import { onMount } from 'svelte';
 
   let name = '';
+  let phoneNumber = '';
   let email = '';
   let message = '';
 
   // Placeholder for form submission logic
   function handleSubmit() {
     console.log('Form submitted:', { name, email, message });
+    const subject = "New Registration from " + name + " - " + phoneNumber;
+
+
     // Form submission logic here
+    const response = await fetch('https://wp.tributestream.com/wp-json/registration_email/v1/send-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: email,
+      subject: subject, 
+      message: message
+    })
+  });
+
+  const data = await response.json();
+  return data;
   }
 </script>
 

@@ -72,23 +72,25 @@ x Fix the font on the site
 x Learn how to store media to cloud flare for the background video
 x setup dot ENV to get video to load.
 -> Add better error logging for the user sign in page
--> Generate user account instead of asking for it
+x Generate user account instead of asking for it
 x Fix the colors on the search page
 - Complete the user dashboard
 - Create a page for the funeral director to submit feedback and get prices.
-- update the main tributestream website
+x update the main tributestream website
 - Update the footer on the custom link page
 x Redo the template for the custom link page
 - install custom link page into worcdpress
 - QC all Links and Functions
-- Don't let duplicate links stop the user from creating a link, just iterate the link with a number at the end -1, -2, etc
+x Don't let duplicate links stop the user from creating a link, just iterate the link with a number at the end -1, -2, etc
 - Update email so it shows the correct login page
-- Renew Wordpress Hosting by Oct. 15 
+x Renew Wordpress Hosting by Oct. 15 
 
 
 **************************
 Current status report log:
 **************************
+11-12-2024
+Work
 
 10-28-2024
 Fixed template, need to fine tune error logging and other pages...but MVP is working and can be launched. Template is 80% there. 
