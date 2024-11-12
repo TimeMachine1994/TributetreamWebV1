@@ -1,4 +1,5 @@
 <script>
+ 
     export let data;
     const { tribute } = data;
     console.log('Tribute data loaded:', tribute);
@@ -7,14 +8,18 @@
 <!-- Hero Section -->
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
     <!-- Hero with gradient overlay -->
-    <section class="relative h-[60vh] flex items-center justify-center">
+    <section 
+        class="relative h-[60vh] flex items-center justify-center bg-cover bg-center"
+        style="background-image: url('https://wp.tributestream.com/wp-content/uploads/2019/11/candle-PEVB9JR-scaled.jpg')"
+    >
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent z-10"></div>
         <div class="container mx-auto px-4 z-20 text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">
+            <h1 class="text-4xl md:text-6xl mb-4 text-black font-['Fanwood_Text']">
                 Celebration of Life for {tribute?.loved_one_name || 'Loading...'}
             </h1>
         </div>
     </section>
+
 
     <!-- Video Section -->
     <section class="py-16 px-4">
@@ -30,27 +35,11 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Purchase Button -->
-            <div class="mt-8 text-center">
-                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - Self Serve Portal $89.99
-                </button>
-                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - Self Serve Portal + Gear Rental $399
-                </button>
-                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - Tributestream Solo $599
-                </button>
-                <button class="bg-yellow-500 text-black font-bold py-4 px-8 rounded-full text-lg transform transition-all hover:scale-105 hover:shadow-xl">
-                    Purchase Now - Tributestream Legacy - $1,200
-                </button>
-            </div>
-        </div>
+ 
     </section>
 
     <!-- FAQ Cards -->
-    <section class="py-16 px-4 bg-gray-900">
+    <section class="py-16 px-4 bg-black-900">
         <div class="container mx-auto">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- FAQ Card 1 -->
