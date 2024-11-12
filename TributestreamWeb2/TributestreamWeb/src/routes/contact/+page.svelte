@@ -46,7 +46,7 @@
             </label>
             <label class="label">
                 <span>Phone Number</span>
-                <input class="input" type="tel" bind:value={email} placeholder="Your Phone Number" required />
+                <input class="input" type="tel" bind:value={phoneNumber} placeholder="Your Phone Number" required />
             </label>
             <label class="label">
                 <span>Email Address</span>
