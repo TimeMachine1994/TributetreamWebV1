@@ -5,29 +5,34 @@
   let phoneNumber = '';
   let email = '';
   let message = '';
-
-  // Placeholder for form submission logic
-  function handleSubmit() {
+  async function handleSubmit() {
+    // Log form data for debugging
     console.log('Form submitted:', { name, email, message });
+
+    // Create dynamic email subject
     const subject = "New Registration from " + name + " - " + phoneNumber;
+    const adminEmail = "contact.form@tributestream.com";
 
+    try {
+        const response = await fetch('https://wp.tributestream.com/wp-json/registration_email/v1/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: adminEmail,
+                subject: subject,
+                message: message
+            })
+        });
 
-    // Form submission logic here
-    const response = await fetch('https://wp.tributestream.com/wp-json/registration_email/v1/send-email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      email: email,
-      subject: subject, 
-      message: message
-    })
-  });
-
-  const data = await response.json();
-  return data;
-  }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Submission error:', error);
+        throw error;
+    }
+}
 </script>
 
 <main>
