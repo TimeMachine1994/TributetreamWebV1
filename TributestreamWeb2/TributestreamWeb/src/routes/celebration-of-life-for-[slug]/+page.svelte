@@ -9,7 +9,7 @@
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
     <!-- Hero with gradient overlay -->
     <section
-    class="relative h-[60vh] flex items-center justify-center bg-cover bg-center"
+    class="relative h-[60vh] flex items-center justify-center bg-cover bg-bottom"
     style="background-image: url('https://wp.tributestream.com/wp-content/uploads/2019/11/candle-PEVB9JR-scaled.jpg')"
 >
     <div class="absolute inset-0 bg-gradient-to-b from-[#D5BA7F]/40 to-transparent z-10"></div>
@@ -19,7 +19,6 @@
         </h1>
     </div>
 </section>
-
 
 
     <!-- Video Section -->
