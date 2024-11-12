@@ -602,19 +602,19 @@ outline: none;
                   type="text"
                   placeholder="Your Name"
                   class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                  bind:value={userName}
+                  bind:value={fullName}
               />
               <input
                   type="email"
                   placeholder="Email Address"
                   class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                  bind:value={userEmail}
+                  bind:value={email}
               />
               <input
                   type="tel"
                   placeholder="Phone Number"
                   class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                  bind:value={userPhone}
+                  bind:value={phone}
               />
               <div class="flex justify-between items-center">
                   <button type="button" on:click={handleGoBack} class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
