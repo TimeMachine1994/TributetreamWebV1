@@ -3,13 +3,14 @@ import { titles } from '$lib/pages.js'; // Assuming titles array is moved to a s
 export async function load({ params }) {
     const { slug } = params;
     console.log(slug);
+    const fullSlug = `celebration-of-life-for-${slug}`;
 
     // Check if slug exists in the titles array
-    if (titles.includes(slug)) {
+    if (titles.includes(fullSlug)) {
         // Redirect to WordPress site if slug matches one in the titles list
         return {
             status: 302,
-            redirect: `https://wp.tributestream.com/${slug}`
+            redirect: `https://wp.tributestream.com/${fullSlug}`
         };
     }
 
