@@ -1,12 +1,15 @@
  <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
+	import { page } from '$app/stores';
+	let lovedOneName;
+	$: lovedOneName = $page.url.searchParams.get('q');
 
 	let query = '';
 	let isLoading = writable(false);
 	let error = writable<string | null>(null);
 	let results = writable<any[]>([]);
-
+ 
 	const API_URL = 'https://wp.tributestream.com/wp-json/wp/v2/pages';
 
 	async function fetchPages(searchQuery: string) {

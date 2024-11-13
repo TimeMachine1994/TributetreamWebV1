@@ -27,6 +27,25 @@
             <!-- Video Player Window -->
             <div class="relative aspect-video bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
                 <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="page-content">
+                        <?php echo $content; ?>
+                        
+                        <?php if ($page['custom_html']): ?>
+                            <div class="custom-html-container">
+                                <?php echo $page['custom_html']; ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <?php if ($embedPath): ?>
+                            <div class="embed-container">
+                                <iframe src="<?php echo htmlspecialchars($embedPath); ?>" 
+                                        width="100%" 
+                                        height="600px" 
+                                        frameborder="0">
+                                </iframe>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                     <!-- Play Button -->
                     <button class="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center transition-transform hover:scale-110">
                         <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
