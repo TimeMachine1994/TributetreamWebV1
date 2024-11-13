@@ -1,4 +1,4 @@
-const titles = [
+export const titles = [
   "funeral-live-stream",
   "booking",
   "joannachristinejara",

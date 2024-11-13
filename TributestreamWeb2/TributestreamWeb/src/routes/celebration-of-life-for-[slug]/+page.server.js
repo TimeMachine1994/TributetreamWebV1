@@ -1,4 +1,4 @@
-import { titles } from '$lib/slugs'; // Assuming titles array is moved to a shared lib file for reuse
+import { titles } from '$lib/pages.js'; // Assuming titles array is moved to a shared lib file for reuse
 
 export async function load({ params }) {
     const { slug } = params;
