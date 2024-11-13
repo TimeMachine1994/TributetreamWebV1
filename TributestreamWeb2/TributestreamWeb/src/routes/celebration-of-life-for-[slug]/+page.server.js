@@ -9,7 +9,7 @@ export async function load({ params }) {
     if (titles.includes(fullSlug)) {
         // Redirect to WordPress site if slug matches one in the titles list
         return {
-            status: 302,
+            status: 307,
             redirect: `https://wp.tributestream.com/${fullSlug}`
         };
     }
