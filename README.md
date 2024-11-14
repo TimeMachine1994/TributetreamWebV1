@@ -89,6 +89,9 @@ x Renew Wordpress Hosting by Oct. 15
 **************************
 Current status report log:
 **************************
+
+11-14-2024
+Fixed cors error for local development while site is live. Also, rediscovered the hooks.server.js works great for the routing we need.
 11-12-2024
 Work
 

@@ -50,8 +50,12 @@
 	}
 
 	onMount(() => {
-		fetchPages('');
-	});
+		if (lovedOneName) {
+        query = lovedOneName; // Set the query value to the URL parameter
+        fetchPages(lovedOneName); // Perform the search with the URL parameter
+    } else {
+        fetchPages('');
+    }	});
 </script>
 
 <style>
