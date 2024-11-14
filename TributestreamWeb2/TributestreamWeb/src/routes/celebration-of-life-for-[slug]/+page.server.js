@@ -1,26 +1,22 @@
-import { wordpressPages } from '$lib/pages.js';
+import { titles } from '$lib/pages.js'; // Assuming titles array is moved to a shared lib file for reuse
 
 export async function load({ params }) {
     const { slug } = params;
-    console.log('Received slug:', slug);
-    console.log('WordPress pages array:', wordpressPages);
-    
+    console.log(slug);
     const fullSlug = `celebration-of-life-for-${slug}`;
-    console.log('Generated full slug:', fullSlug);
 
-    if (wordpressPages.includes(slug)) {
-        console.log('Slug match found! Redirecting to WordPress:', `https://wp.tributestream.com/celebration-of-life-for-${slug}`);
+    // Check if slug exists in the titles array
+    if (titles.includes(fullSlug)) {
+        // Redirect to WordPress site if slug matches one in the titles list
         return {
-            redirect: `https://wp.tributestream.com/celebration-of-life-for-${slug}`
+            status: 307,
+            redirect: `https://wp.tributestream.com/${fullSlug}`
         };
     }
-    console.log('No WordPress match found, proceeding with API fetch');
 
+    // Fetch tribute data if the slug is not in the titles array for redirection
     try {
-        const apiUrl = `https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`;
-        console.log('Attempting API fetch from:', apiUrl);
-
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
@@ -28,23 +24,20 @@ export async function load({ params }) {
         });
 
         const tributeData = await response.json();
-        console.log('API Response data:', tributeData);
 
         if (!tributeData) {
-            console.log('No tribute data found');
             return {
                 status: 404,
                 error: new Error('Tribute not found')
             };
         }
 
-        console.log('Successfully retrieved tribute data');
         return {
             tribute: tributeData
         };
 
     } catch (error) {
-        console.error('API fetch error details:', error);
+        console.error('Error fetching tribute:', error);
         return {
             status: 500,
             error: new Error('Failed to load tribute data')

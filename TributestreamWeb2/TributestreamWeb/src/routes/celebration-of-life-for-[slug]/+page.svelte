@@ -1,7 +1,10 @@
 <script>
  
     export let data;
+    
     const { tribute } = data;
+    
+
     console.log('Tribute data loaded:', tribute);
 </script>
 
