@@ -1,20 +1,16 @@
-import { titles } from '$lib/pages.js'; // Assuming titles array is moved to a shared lib file for reuse
+import { wordpressPages } from '$lib/pages.js';
 
 export async function load({ params }) {
     const { slug } = params;
     console.log(slug);
     const fullSlug = `celebration-of-life-for-${slug}`;
 
-    // Check if slug exists in the titles array
-    if (titles.includes(fullSlug)) {
-        // Redirect to WordPress site if slug matches one in the titles list
+    if (wordpressPages.includes(slug)) {
         return {
-            status: 307,
-            redirect: `https://wp.tributestream.com/${fullSlug}`
+            redirect: `https://wp.yourdomain.com/celebration-of-life-for-${slug}`
         };
     }
 
-    // Fetch tribute data if the slug is not in the titles array for redirection
     try {
         const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`, {
             method: 'GET',
