@@ -1,12 +1,14 @@
-import { titles } from '$lib/pages.js'; // Assuming titles array is moved to a shared lib file for reuse
+import { wordpressPages } from '$lib/pages.js';
 
 export async function load({ params }) {
     const { slug } = params;
     console.log(slug);
     const fullSlug = `celebration-of-life-for-${slug}`;
+    const pages = wordpressPages;
+
 
     // Check if slug exists in the titles array
-    if (titles.includes(fullSlug)) {
+    if (wordpressPages.includes(fullSlug)) {
         // Redirect to WordPress site if slug matches one in the titles list
         return {
             status: 307,
