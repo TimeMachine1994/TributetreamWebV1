@@ -7,7 +7,7 @@ export async function load({ params }) {
 
     if (wordpressPages.includes(slug)) {
         return {
-            redirect: `https://wp.yourdomain.com/celebration-of-life-for-${slug}`
+            redirect: `https://wp.tributestream.com/celebration-of-life-for-${slug}`
         };
     }
 
