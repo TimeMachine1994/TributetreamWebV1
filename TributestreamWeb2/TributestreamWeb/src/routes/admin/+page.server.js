@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
         throw redirect(302, '/login');
     }
 
-    const userResponse = await fetch('https://your-wordpress-site.com/wp-json/wp/v2/users/me', {
+    const userResponse = await fetch('https://wp.tributestream.com/wp-json/wp/v2/users/me', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
         throw redirect(302, '/login');
     }
 
-    const slugsResponse = await fetch('https://your-wordpress-site.com/wp-json/custom/v1/slugs', {
+    const slugsResponse = await fetch('https://wp.tributestream.com/wp-json/custom/v1/slugs', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
