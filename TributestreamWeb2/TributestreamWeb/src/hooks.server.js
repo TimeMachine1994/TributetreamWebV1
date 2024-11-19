@@ -10,14 +10,14 @@ export async function handle({ event, resolve }) {
         return await resolve(event);
     }
 
-    // Check if the slug is in the imported data and if it's a v2 page
+    // Check if the slug exists in wordpressPages
     const page = wordpressPages.find(p => p.slug === slug);
 
-    if (page && page.v2page) {
-        // If it is a "v2" page, continue handling the request within SvelteKit
-        return await resolve(event);
-    } else {
-        // If it is not a "v2" page, redirect to WordPress
+    if (page) {
+        // If slug exists in wordpressPages, redirect to WordPress
         throw redirect(302, `https://wp.tributestream.com${url.pathname}`);
+    } else {
+        // If slug is not found in wordpressPages, handle with SvelteKit
+        return await resolve(event);
     }
 }
