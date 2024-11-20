@@ -60,7 +60,7 @@
 
 
   // API base URL
-  const API_BASE_URL = 'https://tributestream.com/wp-json';
+  const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
   
   // Function to handle the search and redirect to the results page
   async function handleSearch() {
@@ -74,8 +74,7 @@
   }
   
 
- 
-  
+   
   // Reactive statement to update slugifiedName when lovedOneName changes
   $: {
     console.log('lovedOneName changed:', lovedOneName);

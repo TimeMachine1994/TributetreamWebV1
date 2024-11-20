@@ -6,7 +6,7 @@
     let username = '';
     let password = '';
     let error = writable('');
-    const API_BASE_URL = 'https://tributestream.com/wp-json';
+    const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
 
     // Function to validate JWT token
     function isValidJWT(token) {

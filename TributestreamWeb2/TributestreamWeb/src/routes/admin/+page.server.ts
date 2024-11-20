@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // src/routes/dashboard/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
@@ -39,3 +40,6 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
         slugs
     };
 };
+=======
+ 
+>>>>>>> 7d5ba0d (hmmm)
