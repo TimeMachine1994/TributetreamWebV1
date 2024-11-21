@@ -2,17 +2,7 @@
     export let data;
     $: tributes = data.tributes;
     $: user = data.user;
-    //LEFT OFF HERE!!1
-     // Format date helper
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+ 
     import AdminLivestreamCard from '$lib/components/AdminLivestreamCard.svelte';
  
   

@@ -11,5 +11,7 @@ export async function load({ fetch }) {
     const tributes = await response.json();
     console.log('Loaded tributes:', tributes.length); // Add logging
 
+
+    
     return { tributes };
 }
