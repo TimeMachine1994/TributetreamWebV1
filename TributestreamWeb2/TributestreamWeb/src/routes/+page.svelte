@@ -162,7 +162,7 @@ async function sendRegistrationEmail(username, email, password) {
   }
   
   // Function to log in a user
-  async function loginUser(username, password) {
+  export async function loginUser(username, password) {
     console.log('Logging in user:', username);
     try {
       const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
