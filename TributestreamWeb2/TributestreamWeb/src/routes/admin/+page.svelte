@@ -1,19 +1,31 @@
 <script>
-    export let tributes = [];
+    export let data;
+    $: tributes = data.tributes;
+  
+    import AdminLivestreamCard from '$lib/components/AdminLivestreamCard.svelte';
+ 
+  
+
+  
+  
+  
+  
+ 
 </script>
 
-<h1 class="text-2xl font-bold">Admin Dashboard</h1>
-<p>Welcome to the admin area!</p>
-
-{#if tributes.length > 0}
-    <ul class="space-y-4">
-        {#each tributes as tribute}
-            <li class="p-4 bg-white shadow rounded">
-                <h2 class="text-xl font-semibold">{tribute.loved_one_name}</h2>
-                <p class="text-gray-600">Slug: {tribute.slug}</p>
-            </li>
-        {/each}
-    </ul>
-{:else}
-    <p class="text-gray-500">No tributes found.</p>
-{/if}
+ 
+ 
+ 
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+    {#each tributes as tribute}
+    
+        <AdminLivestreamCard
+            lovedOneName={tribute.loved_one_name}
+            tributeId={tribute.id}
+            
+            displayName={tribute.user_id}
+            createdOn={tribute.created_at}
+            modifiedOn={tribute.updated_at}
+        />
+    {/each} 
+</div>
