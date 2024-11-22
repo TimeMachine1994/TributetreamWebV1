@@ -6,31 +6,27 @@
 const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
 
 // Utility to get JWT token from localStorage
-export const getToken = () => localStorage.getItem('token');
-
+ 
 // Function to validate a JWT token remotely
-export const validateToken = async () => {
-    const token = getToken();
+ 
+export async function validateToken(cookies) {
+    const token = cookies.get('session');
     if (!token) return false;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token/validate`, {
-            method: 'POST',
+        const response = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token/validate', {
             headers: {
-                Authorization: `Bearer ${token}`,
-            },
+                'Authorization': `Bearer ${token}`
+            }
         });
-
-        return response.ok; // Token is valid if response is OK
+        return response.ok;
     } catch (error) {
-        console.error('Error validating token:', error);
         return false;
     }
-};
-
+}
 // Wrapper for making API requests with the JWT token
 export const apiFetch = async (endpoint, options = {}) => {
-    const token = getToken();
+    const token = cookies.get('session');
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
