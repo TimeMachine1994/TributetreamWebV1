@@ -8,7 +8,6 @@
       nonce: '',
       versionString: 'wp/v2/'
     };
-    @import url('https://fonts.googleapis.com/css2?family=Fanwood+Text:ital@0;1&display=swap');
 
   </script>
   <!-- Importing external JavaScript libraries for Backbone.js and WordPress API -->
