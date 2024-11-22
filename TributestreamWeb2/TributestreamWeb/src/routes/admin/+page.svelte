@@ -3,16 +3,16 @@
     $: tributes = data.tributes;
   
     import AdminLivestreamCard from '$lib/components/AdminLivestreamCard.svelte';
- 
-  
+    export let tributes;
 
-  
-  
-  
-  
  
 </script>
-
+<h1>Admin Dashboard</h1>
+<ul>
+    {#each tributes as tribute}
+        <li>{tribute.loved_one_name}</li>
+    {/each}
+</ul>
  
  
  

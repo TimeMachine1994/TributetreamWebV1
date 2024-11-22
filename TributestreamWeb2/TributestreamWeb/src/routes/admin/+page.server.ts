@@ -1,17 +1,22 @@
-import { error } from '@sveltejs/kit';
-import { json } from '@sveltejs/kit';
+// ==============================
+// Server-Side Authentication Check
+// ==============================
 
-export async function load({ fetch }) {
-    const response = await fetch('http://wp.tributestream.com/wp-json/tributestream/v1/tribute');
- 
-    if (!response.ok) {
-        throw error(response.status, 'Failed to fetch tributes');
+import { redirect } from '@sveltejs/kit';
+import { validateToken } from '$lib/utils/api';
+
+export async function load() {
+    const isAuthenticated = await validateToken();
+    if (!isAuthenticated) {
+        throw redirect(302, '/login');
     }
 
-    const tributes = await response.json();
-    console.log('Loaded tributes:', tributes.length); // Add logging
+    // Fetch tributes if authenticated
+    const tributes = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+    }).then((res) => res.json());
 
-
-    
     return { tributes };
 }
