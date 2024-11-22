@@ -12,7 +12,7 @@
   }
   
   async function getNonce() {
-    const response = await fetch('http://wp.tributestream.com/wp-json/tributestream/v1/get-nonce');
+    const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/get-nonce');
     const data = await response.json();
     return data.nonce;
   }
