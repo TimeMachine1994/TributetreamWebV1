@@ -19,7 +19,7 @@
   async function handleSubmit() {
     try {
       const nonce = await getNonce();
-       const response = await fetch(`http://wp.tributestream.com/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`, {
+       const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
