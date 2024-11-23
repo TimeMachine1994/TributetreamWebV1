@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 <script lang="ts">
     import { writable } from 'svelte/store';
     export let data;
@@ -94,7 +94,3 @@
         </div>
     </div>
   </div>
-  
-=======
- 
->>>>>>> 7d5ba0d (hmmm)
