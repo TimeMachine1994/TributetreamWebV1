@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 
 export const actions = {
-    default: async ({ request, fetch }) => {
+    default: async ({ request, fetch, cookies }) => {
         const data = await request.formData();
         const username = data.get('username');
         const password = data.get('password');
@@ -17,6 +17,16 @@ export const actions = {
         }
 
         const result = await response.json();
-        return { token: result.token };
+         // Set the JWT in cookies with secure settings
+        cookies.set('jwt', result.token, {
+            path: '/',
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 // 24 hours
+        });
+
+        // Redirect to dashboard after successful login
+        throw redirect(302, '/dashboard');
     }
 };
