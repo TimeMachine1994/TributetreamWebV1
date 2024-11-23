@@ -1,10 +1,6 @@
 <script lang="ts">
- 
- 
-
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-
   // State variables
   let generatedPassword = '';
   let lovedOneName = '';
@@ -22,21 +18,11 @@
   let fullName = '';
   let email = '';
   let phone = '';
-  import { userIdStore } from '$lib/stores/userStore'; // Import the store
-
-  let userId;
-
-
-    // Subscribe to the store to get the user ID
-      userIdStore.subscribe(value => {
-        console.log('User ID from store:', value);
-        userId = value;
-    });
-
-    function getToken() {
-      return localStorage.getItem('jwtToken');
-    }
-  
+  import { userIdStore } from '$lib/stores/userStore';
+  let userId = $userIdStore;
+  function getToken() {
+    return localStorage.getItem('jwtToken');
+  }
   // Function to slugify text
   function slugify(text) {
     console.log('Slugifying text:', text);
@@ -49,19 +35,14 @@
     console.log('Slugified result:', slugified);
     return slugified;
   }
-  
   // Function to generate a random password
   function generateRandomPassword() {
     const password = Math.random().toString(36).slice(-8);
     console.log('Generated random password:', password);
     return password;
   }
-  
-
-
   // API base URL
   const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
-  
   // Function to handle the search and redirect to the results page
   async function handleSearch() {
     console.log('handleSearch called with lovedOneName:', lovedOneName);
@@ -72,16 +53,12 @@
       console.log('lovedOneName is empty, not redirecting');
     }
   }
-  
-
-   
   // Reactive statement to update slugifiedName when lovedOneName changes
   $: {
     console.log('lovedOneName changed:', lovedOneName);
     slugifiedName = slugify(lovedOneName);
     console.log('Updated slugifiedName:', slugifiedName);
   }
-  
   // Function to validate JWT token
   function isValidJWT(token) {
     console.log('Validating JWT token');
@@ -97,40 +74,34 @@
     console.log('JWT token is valid');
     return true;
   }
-  
-
-
-
 // Function to call the WordPress plugin endpoint to send an email
-async function sendRegistrationEmail(username, email, password) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username,
-        email: email,
-        password: password
-      }),
-      mode: 'cors', // Ensure CORS is handled
-    });
+  async function sendRegistrationEmail(username, email, password) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          email: email,
+          password: password
+        }),
+        mode: 'cors', // Ensure CORS is handled
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to send email');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send email');
+      }
+
+      const result = await response.json();
+      console.log('Email sent successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending email:', error);
     }
-
-    const result = await response.json();
-    console.log('Email sent successfully:', result);
-    return result;
-  } catch (error) {
-    console.error('Error sending email:', error);
   }
-}
-
-
   // Function to register a user
   async function registerUser() {
     console.log('Registering user');
@@ -159,7 +130,6 @@ async function sendRegistrationEmail(username, email, password) {
       throw err;
     } 
   }
-  
   // Function to log in a user
   export async function loginUser(username, password) {
     console.log('Logging in user:', username);
@@ -193,7 +163,6 @@ async function sendRegistrationEmail(username, email, password) {
       throw err;
     }
   }
-  
   // Function to create a page
   async function createPage(token) {
     console.log('Creating page');
@@ -299,7 +268,7 @@ async function sendRegistrationEmail(username, email, password) {
       } catch (err) {
         error = err.message;
       }
-    }
+  }
     function getUserId() {
     const token = getToken();
     if (!token) return null;
@@ -311,44 +280,43 @@ async function sendRegistrationEmail(username, email, password) {
     console.log('Decoded JWT Payload:', payload);
 
     return payload.user_id;
-}
-async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean, tribute?: any }> {
-    try {
-        console.log('JWT Token:', getToken());
-        
-        const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`
-            },
-            body: JSON.stringify({
-                user_id: userId,
-                loved_one_name: lovedOneName,
-                slug: slug
-            })
-        });
+  }
+  async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean, tribute?: any }> {
+      try {
+          console.log('JWT Token:', getToken());
+          
+          const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${getToken()}`
+              },
+              body: JSON.stringify({
+                  user_id: userId,
+                  loved_one_name: lovedOneName,
+                  slug: slug
+              })
+          });
 
-        if (!response.ok) {
-            throw new Error('Failed to create tribute');
-        }
+          if (!response.ok) {
+              throw new Error('Failed to create tribute');
+          }
 
-        const result = await response.json();
-        console.log('Server response:', result);
+          const result = await response.json();
+          console.log('Server response:', result);
 
-        return { 
-            message: result.message,
-            success: true,
-            tribute: {
-                id: result.id
-            }
-        };
-    } catch (error) {
-        console.error('Error creating tribute:', error);
-        return { message: 'Error creating tribute', success: false };
-    }
-}
-
+          return { 
+              message: result.message,
+              success: true,
+              tribute: {
+                  id: result.id
+              }
+          };
+      } catch (error) {
+          console.error('Error creating tribute:', error);
+          return { message: 'Error creating tribute', success: false };
+      }
+  }
   // Function to handle creating a link
   async function handleCreateLink() {
     console.log('Creating link');
@@ -385,79 +353,42 @@ async function updateSlug(slug: string, userId: number): Promise<{ message: stri
       error = 'An error occurred while creating the link';
     }
   }
-  
   // Function to handle moving to the next page
   function handleNextPage() {
     console.log('Moving to second page');
     showSecondPage = true;
     isBlurred = true;
   }
-  
   // Function to handle editing the name
   function handleEditName() {
     console.log('Editing name');
     isEditing = true;
     tempSlugifiedName = slugifiedName;
   }
-  
   // Function to handle saving the name change
   function handleSaveNameChange() {
     console.log('Saving name change');
     slugifiedName = tempSlugifiedName;
     isEditing = false;
   }
-  
   // Function to handle discarding the name change
   function handleDiscardNameChange() {
     console.log('Discarding name change');
     isEditing = false;
   }
-  
   // Function to handle going back to the first page
   function handleGoBack() {
     console.log('Going back to first page');
     showSecondPage = false;
     isBlurred = false;
   }
-  
   // Lifecycle hook
   onMount(() => {
     console.log('Component mounted');
   });
-
-
-
-// Example usage: sendEmail('testuser', 'test@example.com', 'password123');
-
-
-
-  // Add a new function to send the registration email
-//   async function sendRegistrationEmail(username, email, password) {
-// try {
-//   const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/register`, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({ username: username, email: email, password: password }), // Use the parameters here
-//     credentials: 'include', // Include credentials like cookies if needed
-//     mode: 'cors' // Ensure CORS is handled
-//   });
-
-//   // Handle the response
-//   if (!response.ok) {
-//     throw new Error('Failed to send registration email');
-//   }
-
-//   const result = await response.json();
-//   console.log('Registration email sent:', result);
-// } catch (error) {
-//   console.error('Error sending registration email:', error);
-//   // }
-// }
-
   </script>
   
-  <!-- The rest of your HTML remains unchanged -->
-  
+
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Harrington');
 

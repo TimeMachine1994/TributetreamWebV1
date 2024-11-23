@@ -2,7 +2,8 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { writable } from 'svelte/store';
-
+    import { jwtStore } from '$lib/stores/jwtStore';
+    let jwtToken = $jwtStore;
     let username = '';
     let password = '';
     let error = writable('');
@@ -38,7 +39,7 @@
                 return;
             }
 
-            localStorage.setItem('jwtToken', token);
+             jwtStore.set(token);
             await goto('/admin');
         } catch (err) {
             error.set(err.message || 'An error occurred during login');
