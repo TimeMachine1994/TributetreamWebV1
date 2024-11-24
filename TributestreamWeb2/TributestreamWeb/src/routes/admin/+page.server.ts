@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
 
   try {
     // Make a GET request to fetch tributes
-    const response = await fetch(`https://wp.tributestream.com/wp-json/custom-plugin/v1/get-tributes`, {
+    const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/get-tributes`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`

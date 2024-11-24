@@ -1,12 +1,12 @@
 import type { Actions } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
- 
+
 export const actions: Actions = {
-  login: async ({ request, cookies }) => {
+  default: async ({ request, cookies }) => {
     // Extract form data from request
     const formData = await request.formData();
-    const username = formData.get('username');
-    const password = formData.get('password');
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
 
     // Ensure form fields are filled out
     if (!username || !password) {
@@ -40,13 +40,15 @@ export const actions: Actions = {
         sameSite: 'strict', // Protect against CSRF attacks
         maxAge: 60 * 60 * 24  // Set cookie expiry to 1 day
       });
+   // Return a success response
+   return {
+    success: true,
+    message: 'Login successful'
+  };
 
-      // Redirect to the admin page after successful login
-      throw redirect(303, '/admin');
-
-    } catch (error) {
-      console.error('Login error:', error);
-      return fail(500, { error: 'Server error. Please try again later.' });
-    }
-  }
+} catch (error) {
+  console.error('Login error:', error);
+  return fail(500, { error: 'Server error. Please try again later.' });
+}
+}
 };
