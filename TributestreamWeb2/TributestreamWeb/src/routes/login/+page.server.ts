@@ -1,7 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
+import type { Actions } from '@sveltejs/kit';
 
-export const actions = {
-    default: async ({ request, fetch, cookies }) => {
+export const actions: Actions = {
+    login: async ({ request, cookies }) => {
         const data = await request.formData();
         const username = data.get('username');
         const password = data.get('password');
@@ -27,6 +28,6 @@ export const actions = {
         });
 
         // Redirect to dashboard after successful login
-        throw redirect(302, '/dashboard');
+        throw redirect(302, '/admin');
     }
 };

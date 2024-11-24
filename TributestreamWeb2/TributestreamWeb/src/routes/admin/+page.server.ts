@@ -1,9 +1,8 @@
 // src/routes/dashboard/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
- export const load: PageServerLoad = async ({ fetch, cookies }) => {
-    const token = cookies.get('jwt');
-
+     export const load: PageServerLoad = async ({ cookies }) => {
+        const token = cookies.get('jwt');
 
     if (!token) {
         throw redirect(302, '/login');

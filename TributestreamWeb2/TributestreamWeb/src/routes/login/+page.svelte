@@ -2,8 +2,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { writable } from 'svelte/store';
-    import { jwtStore } from '$lib/stores/jwtStore';
-    let jwtToken = $jwtStore;
+     
     let username = '';
     let password = '';
     let error = writable('');
