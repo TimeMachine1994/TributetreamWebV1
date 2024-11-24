@@ -39,7 +39,6 @@ const handleSubmit = async (event) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestBody),
-      mode: 'cors'
     });
 
     // Log the response status to help debug
