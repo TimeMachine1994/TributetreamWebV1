@@ -1,62 +1,11 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
-
+   
+  
     // Placeholder for the initial list of live streams (fetched from backend)
-    export let tributes = [];  // Provided by server load, should contain initial data
+    export let data;
+    $: tributes = data.tributes;
+ 
 
-    // Writable store for managing livestreams data dynamically
-    export const livestreams = writable(tributes);
-
-    // Writable store for creating a new livestream
-    export const newLivestream = writable({ 
-        title: '', 
-        customer: '', 
-        date: '', 
-        time: '', 
-        status: 'Scheduled' 
-    });
-
-    // Function to add a new livestream
-    export const addLivestream = async () => {
-        // Check if all required fields are provided
-        const { title, customer, date, time } = $newLivestream;
-        if (!title || !customer || !date || !time) {
-            alert("Please fill out all fields.");
-            return;
-        }
-
-        try {
-            // Add new livestream data to server via action or backend API call
-            const formData = new FormData();
-            formData.append('title', title);
-            formData.append('customer', customer);
-            formData.append('date', date);
-            formData.append('time', time);
-            formData.append('status', 'Scheduled');
-
-            const response = await fetch('/admin?action=createLivestream', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                // Update livestream store upon successful addition
-                livestreams.update(current => [
-                    ...current,
-                    { id: current.length + 1, ...$newLivestream }
-                ]);
-                
-                // Reset newLivestream values after addition
-                newLivestream.set({ title: '', customer: '', date: '', time: '', status: 'Scheduled' });
-            } else {
-                const result = await response.json();
-                alert(result.error || 'Failed to add livestream');
-            }
-        } catch (err) {
-            console.error('Error adding livestream:', err);
-            alert('Server error. Please try again.');
-        }
-    };
 </script>
 
 <!-- Main Content -->
@@ -76,54 +25,20 @@
                 <th class="p-4 text-left">Status</th>
             </tr>
         </thead>
-        <tbody>
-            {#each $livestreams as stream}
-                <tr class="border-b">
-                    <td class="p-4">{stream.title}</td>
-                    <td class="p-4">{stream.customer}</td>
-                    <td class="p-4">{stream.date}</td>
-                    <td class="p-4">{stream.time}</td>
-                    <td class="p-4">{stream.status}</td>
-                </tr>
-            {/each}
-        </tbody>
-    </table>
+            <tbody>
+                    {#each $tributes as tribute}
+                        <tr class="border-b">
+                            <td class="p-4">{tribute.loved_one_name}</td>
+                            <td class="p-4">{tribute.id}</td>
+                            <td class="p-4">{tribute.created_at}</td>
+                            <td class="p-4">{tribute.created_at}</td>
+                            <td class="p-4">{tribute.created_at}</td>
+                        </tr>
+                    {/each}
+            </tbody>
 
-    <!-- Add New Livestream -->
-    <div class="mt-6">
-        <h3 class="text-lg font-bold mb-2">Add New Livestream</h3>
-        <div class="flex gap-4">
-            <input
-                type="text"
-                placeholder="Title"
-                bind:value={$newLivestream.title}
-                class="p-2 border rounded w-1/5"
-            />
-            <select
-                bind:value={$newLivestream.customer}
-                class="p-2 border rounded w-1/5"
-            >
-                <option value="">Select Customer</option>
-                <option value="TechCorp">TechCorp</option>
-                <option value="HealthCare Inc.">HealthCare Inc.</option>
-                <option value="Finance Group">Finance Group</option>
-            </select>
-            <input
-                type="date"
-                bind:value={$newLivestream.date}
-                class="p-2 border rounded w-1/5"
-            />
-            <input
-                type="time"
-                bind:value={$newLivestream.time}
-                class="p-2 border rounded w-1/5"
-            />
-            <button 
-                on:click={addLivestream} 
-                class="bg-blue-500 text-white p-2 rounded"
-            >
-                Add Livestream
-            </button>
-        </div>
-    </div>
+
+    </table>
+    <p class="p-4">No livestreams found.</p>
+
 </main>
