@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { writable } from 'svelte/store';
-     
+    import { enhance } from '$app/forms'; 
     let username = '';
     let password = '';
     let error = writable('');
@@ -74,13 +74,13 @@
                 {#if $error}
                     <p class="text-red-500 text-sm">{$error}</p>
                 {/if}
-
+<from method="POST" use:enhance>
                 <button
                     type="submit"
                     class="w-full bg-[#D5BA7F] text-black font-bold py-2 px-4 rounded-lg hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
                 >
                     Login
-                </button>
+                </button></from>
             </form>
         </div>
     </div>
