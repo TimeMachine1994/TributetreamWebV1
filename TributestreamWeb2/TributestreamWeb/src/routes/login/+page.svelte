@@ -8,36 +8,7 @@
     let error = writable('');
     const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
 
-    // Function to validate JWT token
-    function isValidJWT(token) {
-        if (!token) return false;
-        const parts = token.split('.');
-        return parts.length === 3;
-    }
-
-    async function handleLogin() {
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('password', password);
-
-        try {
-            const response = await fetch('/login', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const result = await response.json();
-                error = result.error || 'Login failed';
-            } else {
-                // Redirect to /admin page if login succeeds
-                window.location.href = '/admin';
-            }
-        } catch (err) {
-            console.error('Login error:', err);
-            error = 'Server error. Please try again later.';
-        }
-    }
+ 
       
 </script>
 
