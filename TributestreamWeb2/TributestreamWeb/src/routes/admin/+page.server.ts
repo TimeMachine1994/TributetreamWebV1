@@ -1,41 +1,36 @@
-// src/routes/dashboard/+page.server.ts
 import type { PageServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
-     export const load: PageServerLoad = async ({ cookies }) => {
-        const token = cookies.get('jwt');
+ import { redirect } from '@sveltejs/kit';
 
-    if (!token) {
-        throw redirect(302, '/login');
-    }
+export const load: PageServerLoad = async ({ cookies }) => {
+  // Retrieve JWT from cookies
+  const token = cookies.get('jwt');
 
-    const userResponse = await fetch('https://wp.tributestream.com/wp-json/wp/v2/users/me', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
+  // If token doesn't exist, redirect to login
+  if (!token) {
+    throw redirect(303, '/login');
+  }
+
+  try {
+    // Make a GET request to fetch tributes
+    const response = await fetch(`https://wp.tributestream.com/wp-json/custom-plugin/v1/get-tributes`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
 
-    if (!userResponse.ok) {
-        throw redirect(302, '/login');
+    if (!response.ok) {
+      throw new Error('Failed to fetch tributes');
     }
 
-    const user = await userResponse.json();
-    if (!user.roles.includes('administrator')) {
-        throw redirect(302, '/login');
-    }
-
-    const slugsResponse = await fetch('https://wp.tributestream.com/wp-json/custom/v1/slugs', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    if (!slugsResponse.ok) {
-        throw new Error('Failed to fetch slugs');
-    }
-
-    const slugs = await slugsResponse.json();
-
+    const tributes = await response.json();
     return {
-        slugs
+      tributes
     };
+  } catch (error) {
+    console.error('Error fetching tributes:', error);
+    return {
+      tributes: []
+    };
+  }
 };

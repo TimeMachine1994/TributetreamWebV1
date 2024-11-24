@@ -15,35 +15,30 @@
         return parts.length === 3;
     }
 
-    async function handleLogin(event) {
-        event.preventDefault();
+    async function handleLogin() {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+
         try {
-            const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
+            const response = await fetch('/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: formData
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                error.set(errorData.message || 'Login failed');
-                return;
+                const result = await response.json();
+                error = result.error || 'Login failed';
+            } else {
+                // Redirect to /admin page if login succeeds
+                window.location.href = '/admin';
             }
-
-            const data = await response.json();
-            const token = data.token || (data.data && data.data.token);
-
-            if (!token || !isValidJWT(token)) {
-                error.set('Invalid token received');
-                return;
-            }
-
-             jwtStore.set(token);
-            await goto('/admin');
         } catch (err) {
-            error.set(err.message || 'An error occurred during login');
+            console.error('Login error:', err);
+            error = 'Server error. Please try again later.';
         }
     }
+      
 </script>
 
 <section class="relative bg-gray-900 text-white">
@@ -51,7 +46,7 @@
         <div class="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-lg">
             <h1 class="text-3xl font-bold mb-6 text-center">Login to Tributestream</h1>
             
-            <form on:submit={handleLogin} class="space-y-4">
+            <form on:submit|preventDefault={handleLogin} class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium mb-2">Username</label>
                     <input
