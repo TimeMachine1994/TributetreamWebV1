@@ -46,7 +46,7 @@
         <div class="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-lg">
             <h1 class="text-3xl font-bold mb-6 text-center">Login to Tributestream</h1>
             
-            <form on:submit|preventDefault={handleLogin} class="space-y-4">
+            <form method="post"              class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium mb-2">Username</label>
                     <input
