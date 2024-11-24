@@ -15,7 +15,7 @@ export const actions: Actions = {
 
     try {
       // Make a POST request to the WordPress backend for authentication
-      const response = await fetch(`https://wp.tributestream.com/wp-json/custom-registration-plugin/v1/user-login`, {
+      const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/user-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
