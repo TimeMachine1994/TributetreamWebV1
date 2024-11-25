@@ -52,7 +52,6 @@ export const actions = {
                 form,
                 success: true,
                 token: data.token,
-                userRole: data.user_role 
             };
         } catch (error) {
             return fail(500, {
