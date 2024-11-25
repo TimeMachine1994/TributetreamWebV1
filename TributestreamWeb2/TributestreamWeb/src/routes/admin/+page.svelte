@@ -11,7 +11,7 @@
   
     // Fetch all tributes on mount
     const fetchTributes = async () => {
-      const response = await fetch("/wp-json/tributestream/v1/tribute", {
+      const response = await fetch("https://wp.tributestream.com/wp-json/tributestream/v1/tribute", {
         headers: {
           "Content-Type": "application/json",
         },
