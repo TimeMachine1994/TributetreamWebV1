@@ -1,5 +1,5 @@
 <script>
-    export let error = null;
+    export let error = null; // Passed from the server-side on errors
 </script>
 
 <div class="login-form">
@@ -19,6 +19,7 @@
         />
         <button type="submit">Login</button>
     </form>
+
     {#if error}
         <p class="error">{error}</p>
     {/if}
