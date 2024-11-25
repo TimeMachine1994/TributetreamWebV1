@@ -32,7 +32,7 @@
     const saveCustomHtml = async (tributeId) => {
       try {
         const response = await fetch(
-          `/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`,
+          `https://wp.tributestream.com/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`,
           {
             method: "PUT",
             headers: {
