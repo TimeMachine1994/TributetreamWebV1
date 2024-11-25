@@ -3,7 +3,7 @@
     import { goto } from '$app/navigation';
 
     let isAuthenticated = false;
-    let userRole = '';
+    let userName = '';
     let isLoading = true;
 
     onMount(async () => {
@@ -34,9 +34,7 @@
             if (response.ok) {
                 console.log('✅ Token validated successfully');
                 isAuthenticated = true;
-                userRole = data.user_role || 'unknown';
-                console.log('👤 User role:', userRole);
-            } else {
+             } else {
                 console.log('❌ Token validation failed');
                 goto('/login');
             }
@@ -55,6 +53,6 @@
 {:else if isAuthenticated}
     <div>
         <h1>Admin Dashboard</h1>
-        <p>Welcome, {userRole} user!</p>
+        <p>Welcome user!</p>
     </div>
 {/if}
