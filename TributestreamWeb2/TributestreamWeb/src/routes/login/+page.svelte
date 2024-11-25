@@ -1,73 +1,40 @@
-<script lang="ts">
-    import { goto } from '$app/navigation';
-    import { writable } from 'svelte/store';
-
-    // User input stores
-    let username = '';
-    let password = '';
-
-    const error = writable<string | null>(null);
-
-    async function login() {
-        try {
-            // Authenticate and obtain JWT
-            const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (!loginResponse.ok) {
-                const errData = await loginResponse.json();
-                error.set(errData.message || 'Login failed');
-                return;
-            }
-
-            const { token } = await loginResponse.json();
-
-            // Store JWT in a cookie instead of localStorage
-            document.cookie = `jwt=${token}; path=/; Secure; HttpOnly; SameSite=Strict`;
-
-            // Fetch user role
-            const roleResponse = await fetch('https://wp.tributestream.com/wp-json/custom/v1/user-role', {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!roleResponse.ok) {
-                throw new Error('Failed to fetch user role');
-            }
-
-            const { roles } = await roleResponse.json();
-
-            // Redirect based on role
-            if (roles.includes('administrator')) {
-                goto('/admin');
-            } else {
-                goto('/dashboard');
-            }
-        } catch (err) {
-            error.set('An unexpected error occurred');
-        }
-    }
+<script>
+    export let error = null;
 </script>
 
 <div class="login-form">
     <h1>Login</h1>
-    <form on:submit|preventDefault={login}>
+    <form method="POST">
         <input
             type="text"
+            name="username"
             placeholder="Username"
-            bind:value={username}
+            required
         />
         <input
             type="password"
+            name="password"
             placeholder="Password"
-            bind:value={password}
+            required
         />
         <button type="submit">Login</button>
     </form>
-    {#if $error}
-        <p class="error">{$error}</p>
+    {#if error}
+        <p class="error">{error}</p>
     {/if}
 </div>
+
+<style>
+    .login-form {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .error {
+        color: red;
+        margin-top: 10px;
+    }
+</style>
