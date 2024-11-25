@@ -33,4 +33,5 @@ export async function handle({ event, resolve }) {
     // If it is not a "v2" page, redirect to WordPress
     throw redirect(302, `https://wp.tributestream.com${url.pathname}`);
   }
+ 
 }

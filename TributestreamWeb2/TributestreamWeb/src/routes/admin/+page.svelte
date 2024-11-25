@@ -1,44 +1,60 @@
 <script lang="ts">
-   
-  
-    // Placeholder for the initial list of live streams (fetched from backend)
-    export let data;
-    $: tributes = data.tributes;
- 
+    import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
 
+    let isAuthenticated = false;
+    let userRole = '';
+    let isLoading = true;
+
+    onMount(async () => {
+        console.log('🏁 Admin page mounted');
+        const token = localStorage.getItem('jwt_token');
+        console.log('🔑 Retrieved token:', token ? 'Token exists' : 'No token found');
+
+        if (!token) {
+            console.log('⚠️ No token found, redirecting to login');
+            goto('/login');
+            return;
+        }
+
+        try {
+            console.log('🔄 Validating token with WordPress');
+            const response = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token/validate', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('📡 Validation response status:', response.status);
+            const data = await response.json();
+            console.log('📦 Validation response data:', data);
+
+            if (response.ok) {
+                console.log('✅ Token validated successfully');
+                isAuthenticated = true;
+                userRole = data.user_role || 'unknown';
+                console.log('👤 User role:', userRole);
+            } else {
+                console.log('❌ Token validation failed');
+                goto('/login');
+            }
+        } catch (error) {
+            console.error('🚨 Validation error:', error);
+            goto('/login');
+        } finally {
+            console.log('🏁 Authentication check completed');
+            isLoading = false;
+        }
+    });
 </script>
 
-<!-- Main Content -->
-<main class="flex-1 p-6">
-    <div class="mb-6">
-        <h2 class="text-xl font-bold">Livestreams</h2>
+{#if isLoading}
+    <div>Loading...</div>
+{:else if isAuthenticated}
+    <div>
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, {userRole} user!</p>
     </div>
-
-    <!-- Livestream Table -->
-    <table class="w-full bg-white shadow-md rounded-md">
-        <thead class="bg-gray-200">
-            <tr>
-                <th class="p-4 text-left">Title</th>
-                <th class="p-4 text-left">Customer</th>
-                <th class="p-4 text-left">Date</th>
-                <th class="p-4 text-left">Time</th>
-                <th class="p-4 text-left">Status</th>
-            </tr>
-        </thead>
-            <tbody>
-                    {#each $tributes as tribute}
-                        <tr class="border-b">
-                            <td class="p-4">{tribute.loved_one_name}</td>
-                            <td class="p-4">{tribute.id}</td>
-                            <td class="p-4">{tribute.created_at}</td>
-                            <td class="p-4">{tribute.created_at}</td>
-                            <td class="p-4">{tribute.created_at}</td>
-                        </tr>
-                    {/each}
-            </tbody>
-
-
-    </table>
-    <p class="p-4">No livestreams found.</p>
-
-</main>
+{/if}
