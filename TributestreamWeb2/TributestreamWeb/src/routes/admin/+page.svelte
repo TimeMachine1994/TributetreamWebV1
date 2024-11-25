@@ -11,15 +11,23 @@
   
     // Fetch all tributes on mount
     const fetchTributes = async () => {
-      const response = await fetch("https://wp.tributestream.com/wp-json/tributestream/v1/tribute", {
+    const token = localStorage.getItem('jwt_token');
+    console.log('🔑 Using token for fetch:', token ? 'Token present' : 'No token');
+    
+    const response = await fetch("https://wp.tributestream.com/wp-json/tributestream/v1/tribute", {
         headers: {
-          "Content-Type": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
-      });
-      const data = await response.json();
-      tributes.set(data);
-    };
-  
+    });
+    
+    console.log('📡 Response status:', response.status);
+    const data = await response.json();
+    console.log('📦 Fetched data:', data);
+    
+    tributes.set(data);
+};
+
     // Save updated custom_html
     const saveCustomHtml = async (tributeId) => {
       try {
