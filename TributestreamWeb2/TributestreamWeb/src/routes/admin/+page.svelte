@@ -31,18 +31,17 @@
     // Save updated custom_html
     const saveCustomHtml = async (tributeId) => {
       try {
-        const response = await fetch(
-          `https://wp.tributestream.com/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`,
-          {
-            method: "PUT",
+            const token = localStorage.getItem('jwt_token');
+        console.log('🔑 Token retrieved for HTML save:', token ? 'Present' : 'Missing');
+        
+        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/custom-html/${tributeId}`, {
+            method: 'PUT',
             headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ custom_html: editingHtml }),
-          }
-        );
+            body: JSON.stringify({ custom_html: editingHtml })
+        });
   
         if (!response.ok) {
           console.error("Failed to save custom HTML");
