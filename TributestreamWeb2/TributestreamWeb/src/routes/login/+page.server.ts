@@ -3,13 +3,19 @@ import { redirect, type Actions } from '@sveltejs/kit';
 export const actions: Actions = {
     login: async ({ request, cookies }) => {
         try {
+            // Step 1: Extract form data
             const formData = await request.formData();
-            const username = formData.get('username');
-            const password = formData.get('password');
+            const username = formData.get('username') as string;
+            const password = formData.get('password') as string;
 
-            console.log('Login attempt with:', { username, password });
+            if (!username || !password) {
+                console.error('Missing username or password');
+                return { error: 'Username and password are required' };
+            }
 
-            // Step 1: Authenticate with WordPress
+            console.log('Attempting login for user:', username);
+
+            // Step 2: Authenticate with WordPress
             const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -20,26 +26,31 @@ export const actions: Actions = {
 
             if (!loginResponse.ok) {
                 const errorBody = await loginResponse.json();
-                console.error('Token POST failed:', {
-                    status: loginResponse.status,
-                    errorBody
-                });
+                console.error('Token POST failed:', errorBody);
                 return { error: `Login failed: ${errorBody.message || 'Unknown error'}` };
             }
 
             const { token } = await loginResponse.json();
+
+            if (!token || !token.match(/^ey[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/)) {
+                console.error('Invalid JWT received:', token);
+                return { error: 'Invalid token received from the server' };
+            }
+
             console.log('Token retrieved successfully:', token);
 
-            // Step 2: Set JWT as a cookie
+            // Step 3: Set JWT as a cookie
             cookies.set('jwt', token, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'strict',
                 maxAge: 60 * 60 * 24, // 1 day
-                path: '/' // Required for cookie scope
+                path: '/'
             });
 
-            // Step 3: Fetch the user role
+            console.log('JWT cookie set successfully');
+
+            // Step 4: Fetch user role
             const roleResponse = await fetch('https://wp.tributestream.com/wp-json/custom/v1/user-role', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -48,17 +59,14 @@ export const actions: Actions = {
 
             if (!roleResponse.ok) {
                 const roleErrorBody = await roleResponse.json();
-                console.error('User role request failed:', {
-                    status: roleResponse.status,
-                    errorBody: roleErrorBody
-                });
+                console.error('User role request failed:', roleErrorBody);
                 return { error: 'Failed to fetch user role' };
             }
 
             const { roles } = await roleResponse.json();
             console.log('User roles retrieved:', roles);
 
-            // Step 4: Redirect based on role
+            // Step 5: Redirect based on role
             if (roles.includes('administrator')) {
                 throw redirect(302, '/admin');
             } else {
