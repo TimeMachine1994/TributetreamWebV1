@@ -1,23 +1,16 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { currentTributes } from '../../lib/stores/currentTributes';
-    import CreateTributeForm from '../../form/CreateTributeForm.svelte';
+    // Props passed from the server-side load function
+    export let tributes: Array<{ event_name: string; event_date: string; livestream_url: string }>;
 
+    // Modal state
     let showCreateModal = false;
-
-    // Fetch tributes on page load
-    onMount(async () => {
-        const response = await fetch('/current-tributes');
-        const data = await response.json();
-        currentTributes.set(data);
-    });
 
     // Open the create tribute modal
     function openCreateModal() {
         showCreateModal = true;
     }
 </script>
-<slot/>
+
 <div class="container mx-auto py-6 px-4">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
@@ -33,11 +26,25 @@
     <!-- Current Tributes -->
     <section class="mb-6">
         <h2 class="text-xl font-semibold mb-4">Current Tributes</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each $currentTributes as tribute}
-                <CurrentTributeCard {tribute} />
-            {/each}
-        </div>
+        {#if tributes.length > 0}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {#each tributes as tribute}
+                    <div class="p-4 border border-gray-300 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-lg">{tribute.event_name}</h3>
+                        <p class="text-sm text-gray-600">Date: {tribute.event_date}</p>
+                        <a
+                            href={tribute.livestream_url}
+                            target="_blank"
+                            class="text-blue-500 underline text-sm"
+                        >
+                            View Livestream
+                        </a>
+                    </div>
+                {/each}
+            </div>
+        {:else}
+            <p>No tributes available.</p>
+        {/if}
     </section>
 
     <!-- Add New Tribute -->
