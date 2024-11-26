@@ -66,6 +66,7 @@
     "highlight.js": "11.10.0",
     "svelte-forms-lib": "^2.0.1",
     "svrollbar": "^0.12.0",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^3.23.8"
   }
 }
