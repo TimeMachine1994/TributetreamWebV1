@@ -1,7 +1,7 @@
 <script lang="ts">
     // Props passed from the server-side load function
     export let tributes: Array<{ event_name: string; event_date: string; livestream_url: string }>;
-
+    import CreateTributeForm from "../../form/CreateTributeForm.svelte";
     // Modal state
     let showCreateModal = false;
 

@@ -1,22 +1,17 @@
-import { json } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
 import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
+import type { RequestEvent } from '@sveltejs/kit';
 
 export async function load(event: RequestEvent) {
     try {
         const response = await fetchWithAuth(
-            '/wp-json/custom/v1/tribute-pages',
+            'https://wp.tributestream.com/wp-json/custom/v1/tribute-pages',
             { method: 'GET' },
-            event.request // Pass the request object for cookies
+            event.request
         );
         const tributes = await response.json();
-        return {
-            tributes, // Pass the data to the page as props
-        };
+        return { tributes }; // Ensure this matches the prop in +page.svelte
     } catch (error) {
         console.error('Error fetching tributes:', error);
-        return {
-            tributes: [], // Return an empty array on failure
-        };
+        return { tributes: [] }; // Default to an empty array on error
     }
 }
