@@ -3,6 +3,7 @@
 <!-- Head Section -->
 <svelte:head>
   <script>
+    
     window.wpApiSettings = {
       root: 'https://wp.tributestream.com/wp-json/',
       nonce: '',
@@ -62,7 +63,7 @@
     import { goto } from '$app/navigation'; /* Function to navigate to a new page */
     import '../app.postcss'; /* Importing global styles */
     import '@fortawesome/fontawesome-free/css/all.min.css'
-
+ 
 /*********** START Intialize stores and drawer ***********/
     initializeStores();
 
@@ -103,7 +104,7 @@
 
 
 </script>
-    
+ 
 <!--*********** START Drawer Component Logic **********-->
 
 <!-- Drawer Component for Mobile Navigation -->

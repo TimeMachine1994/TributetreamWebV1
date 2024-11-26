@@ -56,6 +56,7 @@
     "@fortawesome/free-brands-svg-icons": "^6.6.0",
     "@fortawesome/free-regular-svg-icons": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@spotlightjs/spotlight": "^2.6.0",
     "@sveltejs/adapter-vercel": "^5.4.6",
     "@valibot/valibot": "npm:@jsr/valibot__valibot@^1.0.0-beta.8",
     "backbone": "^1.6.0",
