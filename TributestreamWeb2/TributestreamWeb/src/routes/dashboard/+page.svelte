@@ -31,10 +31,9 @@
         showCreateModal = true;
     }
 </script>
-
+<slot>
 <!-- Rest of your component remains the same -->
 <div>
-
     <!-- Add New Tribute -->
     <button
         class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -48,3 +47,5 @@
         <CreateTributeForm on:close={() => (showCreateModal = false)} />
     {/if}
 </div>
+
+</slot>
