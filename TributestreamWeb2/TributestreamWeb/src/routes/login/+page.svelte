@@ -13,17 +13,15 @@
             
             if (result.type === 'success') {
                 const token = result.data.token;
-                  // Store in localStorage
-                  localStorage.setItem('jwt_token', token);
-                console.log('💾 Token stored in localStorage');
+                // Remove localStorage storage since we're moving to server-side only
                 
-                // Store in cookie (secure, httpOnly)
-                document.cookie = `jwt_token=${token}; path=/; max-age=604800; secure; samesite=strict`;
-                console.log('🍪 Token stored in cookie');
+                // Let the server handle cookie storage via the response headers
+                // The cookie will be automatically handled by the browser
+                // and subsequent requests will include it
                 
                 console.log('🚗 Starting navigation to /admin');
                 await goto('/admin', { replaceState: true });
-            }
+}
         },
         onSubmit: () => {
             console.log('📝 Form submission started');

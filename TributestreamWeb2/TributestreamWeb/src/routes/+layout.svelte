@@ -194,13 +194,12 @@
             </a>
           </li>
           <li>
-            <!-- Login/Account Settings Button -->
             <button
-              on:click={handleAuthAction}
-              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
-            >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
+            on:click={handleAuthAction}
+            class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
+          >
+            {isLoggedIn ? 'My Portal' : 'Login'}
+          </button>
           </li>
         </ul>
       </nav>
