@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite dev",
+    "dev:msw-server": "concurrently \"cd msw && ts-node server.ts\" \"npm run dev\"",
     "build": "vite build",
     "preview": "vite preview",
     "test": "npm run test:integration && npm run test:unit &&",
@@ -30,11 +31,13 @@
     "@types/node": "22.5.5",
     "@types/node-fetch": "^2.6.12",
     "autoprefixer": "10.4.20",
+    "concurrently": "^9.1.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.36.0",
     "globals": "^15.0.0",
     "jest": "^29.7.0",
+    "msw": "^2.6.6",
     "node-fetch": "^3.3.2",
     "postcss": "8.4.47",
     "prettier": "^3.1.1",
@@ -45,6 +48,7 @@
     "sveltekit-superforms": "^2.20.1",
     "tailwindcss": "3.4.11",
     "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.0.0",
     "valibot": "^1.0.0-beta.8",
@@ -75,5 +79,10 @@
     "svrollbar": "^0.12.0",
     "yup": "^1.4.0",
     "zod": "^3.23.8"
+  },
+  "msw": {
+    "workerDirectory": [
+      "static"
+    ]
   }
 }

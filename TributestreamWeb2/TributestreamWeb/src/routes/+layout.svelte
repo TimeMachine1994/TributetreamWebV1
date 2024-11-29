@@ -56,6 +56,7 @@
 </style>
 
 <script lang="ts">
+  
     /* Importing necessary functions and components */
     import { onMount } from 'svelte'; /* Svelte lifecycle function */
     import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton'; /* Skeleton UI components */
