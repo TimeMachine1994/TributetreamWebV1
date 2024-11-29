@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "@playwright/test": "^1.49.0",
     "backbone": "^1.6.0"
+  },
+  "devDependencies": {
+    "start-server-and-test": "^2.0.8"
   }
 }

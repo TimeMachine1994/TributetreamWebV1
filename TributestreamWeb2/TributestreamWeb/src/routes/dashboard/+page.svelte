@@ -1,51 +1,89 @@
-<script lang="ts">
+<script>
     import { onMount } from 'svelte';
-    import CreateTributeForm from '../../form/CreateTributeForm.svelte';
-
-    // Modal state
-    let showCreateModal = false;
-
-    // Tributes data
-    let tributes: Array<{ event_name: string; event_date: string; livestream_url: string }> = [];
-
-    // Fetch tributes from the SvelteKit endpoint
-    async function fetchTributes() {
-        try {
-            const response = await fetch('/api/tribute-pages');
-            if (!response.ok) {
-                throw new Error('Failed to fetch tributes');
-            }
-            tributes = await response.json();
-        } catch (error) {
-            console.error('Error fetching tributes:', error);
-        }
+    import BladeSlider from '../../lib/components/BladeSlider.svelte';
+    import { WordPressApiService } from '$lib/services/WordPressApiService';
+  
+    let tributes = [];
+    let events = [];
+    let pages = [];
+    let streams = [];
+  
+    async function fetchData() {
+      try {
+        const api = new WordPressApiService({ cookies: { get: () => 'jwt-token-placeholder' } }); // Replace placeholder
+        tributes = await api.getAllTributes();
+        events = await api.getAllEvents();
+        pages = await api.getAllPages();
+        streams = await api.getAllStreams(0); // Example: Use a page_id if needed
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
     }
-
-    // Fetch tributes when the component mounts
+  
     onMount(() => {
-        fetchTributes();
+      fetchData();
     });
-
-    // Open the create tribute modal
-    function openCreateModal() {
-        showCreateModal = true;
+  
+    function handleCreateStream() {
+      // Placeholder for stream creation logic
+      console.log('Create stream');
     }
-</script>
-<slot>
-<!-- Rest of your component remains the same -->
-<div>
-    <!-- Add New Tribute -->
-    <button
-        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        on:click={openCreateModal}
-    >
-        Add New Tribute
-    </button>
-
-    <!-- Create Tribute Modal -->
-    {#if showCreateModal}
-        <CreateTributeForm on:close={() => (showCreateModal = false)} />
-    {/if}
-</div>
-
-</slot>
+  </script>
+  
+  <div>
+    <h1>Manage Livestreams</h1>
+    <BladeSlider items={tributes} title="Tributes">
+      <template let:item slot="item">
+        <div>
+          <h3>{item.loved_one_name}</h3>
+          <p>Slug: {item.slug}</p>
+        </div>
+      </template>
+    </BladeSlider>
+  
+    <BladeSlider items={events} title="Events">
+      <template let:item slot="item">
+        <div>
+          <h3>{item.event_name}</h3>
+          <p>{item.event_date}</p>
+        </div>
+      </template>
+    </BladeSlider>
+  
+    <BladeSlider items={pages} title="Pages">
+      <template let:item slot="item">
+        <div>
+          <h3>{item.event_name}</h3>
+          <p>Status: {item.page_status}</p>
+        </div>
+      </template>
+    </BladeSlider>
+  
+    <BladeSlider items={streams} title="Streams">
+      <template let:item slot="item">
+        <div>
+          <h3>{item.stream_title}</h3>
+          <p>Start: {item.start_time}</p>
+        </div>
+      </template>
+    </BladeSlider>
+  
+    <button on:click={handleCreateStream}>Add New Stream</button>
+  </div>
+  
+  <style>
+    h1 {
+      text-align: center;
+    }
+    button {
+      display: block;
+      margin: 2rem auto;
+      padding: 0.5rem 1rem;
+      background-color: #0070f3;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+  
