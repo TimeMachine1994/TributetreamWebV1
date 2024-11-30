@@ -88,22 +88,64 @@ interface CreateVideoRequest {
 // Handlers
 export const handlers = [
     // === AUTHENTICATION ===
+// Add these handlers to the existing handlers array
 
-    // Login Handler
-    http.post<LoginRequestBody>('/custom/v1/login', async ({ request }) => {
-        const { username, password } = await request.json();
+// Login handler
+http.post('https://wp.tributestream.com/wp-json/custom/v1/login', async ({ request }) => {
+    const { username, password } = await request.json();
 
-        // Simulate authentication logic
-        if (username === 'admin' && password === 'password') {
-            const token = `mock-jwt-token-${generateId()}`;
-            currentUser = { username, roles: ['administrator'] };
-            console.log('Login successful for:', username);
-            return HttpResponse.json({ message: 'Login successful', token, roles: currentUser.roles });
-        } else {
-            console.error('Invalid login attempt:', { username, password });
-            return HttpResponse.json({ message: 'Invalid username or password' }, { status: 401 });
-        }
-    }),
+    if (username === 'admin' && password === 'password') {
+        const token = generateJwtToken();
+        validTokens.set(token, { username, roles: ['administrator'] });
+        return HttpResponse.json({
+            message: 'Login successful',
+            token,
+            roles: ['administrator']
+        });
+    }
+
+    return HttpResponse.json(
+        { message: 'Invalid username or password' },
+        { status: 401 }
+    );
+}),
+
+// Tribute handlers
+http.post('/tributestream/v1/tribute', async ({ request }) => {
+    const { user_id, loved_one_name, slug } = await request.json();
+    const id = generateId();
+    
+    const newTribute = { 
+        id, 
+        user_id, 
+        loved_one_name, 
+        slug, 
+        custom_html: '' 
+    };
+    tributes.set(id, newTribute);
+
+    return HttpResponse.json(newTribute, { status: 201 });
+}),
+
+http.get('/tributestream/v1/tribute/:slug', ({ params }) => {
+    const { slug } = params;
+    const tribute = Array.from(tributes.values()).find(t => t.slug === slug);
+
+    if (!tribute) {
+        return HttpResponse.json(
+            { message: 'Tribute not found' },
+            { status: 404 }
+        );
+    }
+
+    return HttpResponse.json(tribute);
+}),
+
+http.get('/tributestream/v1/tribute', () => {
+    return HttpResponse.json(Array.from(tributes.values()));
+})
+
+ 
 
     // === TRIBUTES ===
 
