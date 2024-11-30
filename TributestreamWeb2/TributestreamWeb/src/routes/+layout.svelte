@@ -91,8 +91,9 @@
   /* Function to handle authentication actions */
   function handleAuthAction() {
     if (isLoggedIn) {
-      // If the user is logged in, navigate to account settings page
-      goto('/account-settings');
+      // If the user is logged in, log them out
+      // NOT-COMPLETE
+      goto('/#');
     } else {
       // If the user is not logged in, navigate to login page
       goto('/login');
@@ -149,7 +150,7 @@
               on:click={() => { handleAuthAction(); closeDrawer; }}
               class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
             >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
+              {isLoggedIn ? 'Log Out' : 'Login'}
             </button>
           </li>
         </ul>
