@@ -1,6 +1,6 @@
 import { wordpressPages } from '$lib/pages.js';
-
-export async function load({ params }) {
+const BASE_WORDPRESS_API = 'http://localhost/wp-json';
+const MAIN_URL = 'http://localhost';export async function load({ params }) {
     const { slug } = params;
     console.log(slug);
     const fullSlug = `celebration-of-life-for-${slug}`;
@@ -18,7 +18,7 @@ export async function load({ params }) {
 
     // Fetch tribute data if the slug is not in the titles array for redirection
     try {
-        const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${slug}`, {
+        const response = await fetch(`${BASE_WORDPRESS_API}/tributestream/v1/tribute/${slug}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'

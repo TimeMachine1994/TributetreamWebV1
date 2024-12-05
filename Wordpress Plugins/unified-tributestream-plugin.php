@@ -28,6 +28,8 @@ add_action ('rest_api_init', function() {
         'permission_callback' => 'is_user_logged_in',
     ]);
 
+    //Need to add GET route for this soon.
+
     // Register user registration route
     register_rest_route('tributestream/v1', '/register', [
         'methods' => ['POST', 'GET'],

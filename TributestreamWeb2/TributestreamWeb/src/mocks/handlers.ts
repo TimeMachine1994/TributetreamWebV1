@@ -34,7 +34,21 @@ export const handlers = [
             }, { status: 201 })
         }
     ),
-
+    http.get(
+        `${BASE_WORDPRESS_API}/tributestream/v1/tribute/:slug`,
+        async ({ params }) => {
+            const { slug } = params;
+            console.log('Fetching tribute for slug:', slug);
+            
+            // Return the tribute data
+            return HttpResponse.json({
+                slug: slug,
+                loved_one_name: "Test Name",
+                // Add other tribute data fields here
+            });
+        }
+    ),
+    
     //Intercept POST that would normally create the tribute page.
     http.post(
         `${BASE_WORDPRESS_API}/tributestream/v1/tribute`, 
