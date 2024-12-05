@@ -162,7 +162,7 @@ export const handlers = [
   }),
 
   // Handler for POST /wp-json/tributestream/v1/register
-  http.post('/wp-json/tributestream/v1/register', async ({ request }) => {
+  http.post('http://localhost/wp-json/tributestream/v1/register', async ({ request }) => {
     console.log('Received a POST request to /wp-json/tributestream/v1/register');
 
     // Parse request body

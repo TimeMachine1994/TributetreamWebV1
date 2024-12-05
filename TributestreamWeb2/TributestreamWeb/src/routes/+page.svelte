@@ -42,7 +42,9 @@
     return password;
   }
   // API base URL
-  const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
+  //ORIGINAL: const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
+  const API_BASE_URL = 'http://localhost/wp-json';
+
   // Function to handle the search and redirect to the results page
   async function handleSearch() {
     console.log('handleSearch called with lovedOneName:', lovedOneName);
@@ -219,7 +221,7 @@
   
       try {
         // Register user
-        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+        const registerResponse = await fetch('http://localhost/wp-json/tributestream/v1/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -246,7 +248,7 @@
             }
         
         // Login and get JWT token
-        const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+        const loginResponse = await fetch('http://localhost/wp-json/jwt-auth/v1/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -285,7 +287,7 @@
       try {
           console.log('JWT Token:', getToken());
           
-          const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+          const response = await fetch('http://localhost/wp-json/tributestream/v1/tribute', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
