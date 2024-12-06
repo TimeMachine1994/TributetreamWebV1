@@ -37,6 +37,18 @@ add_action ('rest_api_init', function() {
         'permission_callback' => '__return_true'
     ]);
 
+    register_rest_route('tributestream/v1', '/saveCart', [
+        'methods' => ['POST', 'GET'],
+        'callback' => 'handle_livestream_cart',
+        'permission_callback' => 'is_user_logged_in'
+    ]);
+
+    register_rest_route('tributestream/v1', '/family_poc_profile', [
+        'methods' => ['POST', 'GET'],
+        'callback' => 'handle_family_poc_profile',
+        'permission_callback' => 'is_user_logged_in'
+    ]);
+
 // **************************************************************
 // ::End of registering rest routes
 // **************************************************************
@@ -46,7 +58,35 @@ add_action ('rest_api_init', function() {
 // ::Start of custom functions, which routes will be calling.
 // **************************************************************
 
+// **************************************************************
+// ::Start of rough functions
+// **************************************************************
+// Establish family_poc_profile
+function handle_family_poc_profile($request) {
+    global $wpdb;
+    $params = $request->get_json_params();
+    $user_id = $params['user_id'];
+    $phone = // pull from tributes
+    $created_at = //if not created yet, establish the timestamp.
+    $updated_at = //make current timestamp
+    $incomplete_cart = // send order json to tributes custom html for future rendering,
+// write to database here??
+//post means write update the keyvaue pares sent via the request, get means send the key value pairs as a resposne 
+}
 
+// handle livestream cart from calculator page
+function handle_livestream_cart($request) {
+    global $wpdb;
+    $params = $request->get_json_params();
+    $user_id = $params['user_id'];
+    $cart_items = $params['cart_items'];
+    //write the the database here
+
+}
+
+// **************************************************************
+// ::End rough functions
+// **************************************************************
 // Create tribute
 function create_tribute($request) {
     global $wpdb;

@@ -1,43 +1,15 @@
 <?php
-/*
-Plugin Name: Custom User Registration
-*/
-global $wpdb;
+ 
 
-
-// Set up CORS headers specifically for REST API requests
-add_action('rest_api_init', function() {
-    header("Access-Control-Allow-Origin: https://tributestream.com");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");
-}, 15);
+ 
 add_action('rest_api_init', function() {
     
-        register_rest_route('custom/v1', '/slugs', array(
+        register_rest_route('tributestream/v1', '/slugs', array(
         'methods' => 'GET',
         'callback' => 'get_all_slugs'
     ));
 
-    register_rest_route('registration_email/v1', '/send-email', array(
-        'methods' => 'POST',
-        'callback' => 'custom_send_registration_email',
-        'permission_callback' => '__return_true',
-        'args' => array(
-            'email' => array(
-                'required' => true,
-                'type' => 'string'
-            ),
-            'subject' => array(
-                'required' => true,
-                'type' => 'string'
-            ),
-            'message' => array(
-                'required' => true,
-                'type' => 'string'
-            )
-        )
-    ));
-    
+ 
     
     
     
@@ -83,20 +55,13 @@ add_action('rest_api_init', function() {
 
 
     // Register user registration route
-    register_rest_route('custom-user-registration/v1', '/register', [
+    register_rest_route('tributestream/v1', '/register', [
         'methods' => ['POST', 'GET'],
         'callback' => 'handle_tributestream_registration',
         'permission_callback' => '__return_true'
     ]);
 
-    // Test endpoint for debugging
-    register_rest_route('custom-user-registration/v1', '/test', [
-        'methods' => 'GET',
-        'callback' => function() {
-            return new WP_REST_Response('Endpoint is working!', 200);
-        },
-        'permission_callback' => '__return_true'
-    ]);
+ 
     
         register_rest_route('tributestream/v1', '/tribute/(?P<tribute_id>\d+)/videos', [
         'methods' => 'GET',
