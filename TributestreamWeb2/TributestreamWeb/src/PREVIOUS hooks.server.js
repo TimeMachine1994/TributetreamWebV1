@@ -1,18 +1,7 @@
-<<<<<<< HEAD
 import { redirect } from '@sveltejs/kit';
 import fs from 'fs';
 import path from 'path';
-import { dev } from '$app/environment';
-=======
-import { dev } from '$app/environment';
 
->>>>>>> ma
-if (dev) {
-  const { server } = await import('./mocks/node');
-
-  server.listen();
-<<<<<<< HEAD
-}
 export async function handle({ event, resolve }) {
   const url = new URL(event.request.url);
   const slug = url.pathname.split('/').pop();  // Assuming the slug is the last part of the path
@@ -46,6 +35,3 @@ export async function handle({ event, resolve }) {
   }
  
 }
-=======
-}
->>>>>>> ma

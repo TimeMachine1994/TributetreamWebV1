@@ -42,7 +42,9 @@
     return password;
   }
   // API base URL
-  const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
+  //ORIGINAL: const API_BASE_URL = 'https://wp.tributestream.com/wp-json';
+  const API_BASE_URL = 'http://localhost/wp-json';
+
   // Function to handle the search and redirect to the results page
   async function handleSearch() {
     console.log('handleSearch called with lovedOneName:', lovedOneName);
@@ -75,33 +77,33 @@
     return true;
   }
 // Function to call the WordPress plugin endpoint to send an email
-  async function sendRegistrationEmail(username, email, password) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          email: email,
-          password: password
-        }),
-        mode: 'cors', // Ensure CORS is handled
-      });
+  // async function sendRegistrationEmail(username, email, password) {
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/send-email`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         username: username,
+  //         email: email,
+  //         password: password
+  //       }),
+  //       mode: 'cors', // Ensure CORS is handled
+  //     });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send email');
-      }
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.message || 'Failed to send email');
+  //     }
 
-      const result = await response.json();
-      console.log('Email sent successfully:', result);
-      return result;
-    } catch (error) {
-      console.error('Error sending email:', error);
-    }
-  }
+  //     const result = await response.json();
+  //     console.log('Email sent successfully:', result);
+  //     return result;
+  //   } catch (error) {
+  //     console.error('Error sending email:', error);
+  //   }
+  // }
   // Function to register a user
   async function registerUser() {
     console.log('Registering user');
@@ -131,87 +133,87 @@
     } 
   }
   // Function to log in a user
-  export async function loginUser(username, password) {
-    console.log('Logging in user:', username);
-    try {
-      const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Login failed:', errorData);
-        throw new Error(errorData.message || 'Login failed');
-      }
-      const data = await response.json();
-      console.log('Login response:', data);
-      let token = data.token || (data.data && data.data.token);
-      if (!token) {
-        console.error('Token not found in server response');
-        throw new Error('Token not found in server response');
-      }
-      if (!isValidJWT(token)) {
-        console.error('Received invalid token format from server');
-        throw new Error('Received invalid token format from server');
-      }
-      console.log('Storing JWT token in localStorage');
-      localStorage.setItem('jwtToken', token);
-      return token;
-    } catch (err) {
-      console.error('Login error:', err);
-      throw err;
-    }
-  }
-  // Function to create a page
-  async function createPage(token) {
-    console.log('Creating page');
-    if (!token || !isValidJWT(token)) {
-      console.error('Invalid authentication token');
-      throw new Error('Invalid authentication token. Please log in again.');
-    }
-    try {
-      console.log('Fetching nonce');
-      const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const nonceData = await nonceResponse.json();
-      const nonce = nonceData.nonce;
-      console.log('Nonce received:', nonce);
+  // export async function loginUser(username, password) {
+  //   console.log('Logging in user:', username);
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/jwt-auth/v1/token`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ username, password })
+  //     });
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       console.error('Login failed:', errorData);
+  //       throw new Error(errorData.message || 'Login failed');
+  //     }
+  //     const data = await response.json();
+  //     console.log('Login response:', data);
+  //     let token = data.token || (data.data && data.data.token);
+  //     if (!token) {
+  //       console.error('Token not found in server response');
+  //       throw new Error('Token not found in server response');
+  //     }
+  //     if (!isValidJWT(token)) {
+  //       console.error('Received invalid token format from server');
+  //       throw new Error('Received invalid token format from server');
+  //     }
+  //     console.log('Storing JWT token in localStorage');
+  //     localStorage.setItem('jwtToken', token);
+  //     return token;
+  //   } catch (err) {
+  //     console.error('Login error:', err);
+  //     throw err;
+  //   }
+  // }
+  // // Function to create a page
+  // async function createPage(token) {
+  //   console.log('Creating page');
+  //   if (!token || !isValidJWT(token)) {
+  //     console.error('Invalid authentication token');
+  //     throw new Error('Invalid authentication token. Please log in again.');
+  //   }
+  //   try {
+  //     console.log('Fetching nonce');
+  //     const nonceResponse = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/get-nonce`, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     });
+  //     const nonceData = await nonceResponse.json();
+  //     const nonce = nonceData.nonce;
+  //     console.log('Nonce received:', nonce);
   
-      console.log('Creating page for:', lovedOneName);
-      const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-WP-Nonce': nonce
-        },
-        body: JSON.stringify({
-          title: `${lovedOneName}`,
-          content: `This is a tribute page for ${lovedOneName}`,
-        })
-      });
-      if (!response.ok) {
-        console.error('HTTP error when creating page:', response.status);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data && data.page_id) {
-        console.log('Page created successfully with ID:', data.page_id);
-        return data.page_id;
-      } else {
-        console.error('Unexpected response format:', data);
-        throw new Error('Unexpected response format');
-      }
-    } catch (error) {
-      console.error('Error creating page:', error);
-      throw error;
-    }
-  }
+  //     console.log('Creating page for:', lovedOneName);
+  //     const response = await fetch(`${API_BASE_URL}/my-custom-plugin/v1/create-page`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`,
+  //         'X-WP-Nonce': nonce
+  //       },
+  //       body: JSON.stringify({
+  //         title: `${lovedOneName}`,
+  //         content: `This is a tribute page for ${lovedOneName}`,
+  //       })
+  //     });
+  //     if (!response.ok) {
+  //       console.error('HTTP error when creating page:', response.status);
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     const data = await response.json();
+  //     if (data && data.page_id) {
+  //       console.log('Page created successfully with ID:', data.page_id);
+  //       return data.page_id;
+  //     } else {
+  //       console.error('Unexpected response format:', data);
+  //       throw new Error('Unexpected response format');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error creating page:', error);
+  //     throw error;
+  //   }
+  // }
   async function handleSubmit() {
       const password = generateRandomPassword();
       const username = email.split('@')[0];
@@ -219,7 +221,7 @@
   
       try {
         // Register user
-        const registerResponse = await fetch('https://wp.tributestream.com/wp-json/custom-user-registration/v1/register', {
+        const registerResponse = await fetch('http://localhost/wp-json/tributestream/v1/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -246,7 +248,7 @@
             }
         
         // Login and get JWT token
-        const loginResponse = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
+        const loginResponse = await fetch('http://localhost/wp-json/jwt-auth/v1/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -269,23 +271,23 @@
         error = err.message;
       }
   }
-    function getUserId() {
-    const token = getToken();
-    if (!token) return null;
+  //   function getUserId() {
+  //   const token = getToken();
+  //   if (!token) return null;
     
-    // Decode the JWT token (it's base64 encoded)
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(window.atob(base64));
-    console.log('Decoded JWT Payload:', payload);
+  //   // Decode the JWT token (it's base64 encoded)
+  //   const base64Url = token.split('.')[1];
+  //   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  //   const payload = JSON.parse(window.atob(base64));
+  //   console.log('Decoded JWT Payload:', payload);
 
-    return payload.user_id;
-  }
+  //   return payload.user_id;
+  // }
   async function updateSlug(slug: string, userId: number): Promise<{ message: string, success?: boolean, tribute?: any }> {
       try {
           console.log('JWT Token:', getToken());
           
-          const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
+          const response = await fetch('http://localhost/wp-json/tributestream/v1/tribute', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
@@ -317,42 +319,42 @@
           return { message: 'Error creating tribute', success: false };
       }
   }
-  // Function to handle creating a link
-  async function handleCreateLink() {
-    console.log('Creating link');
-    error = '';
-    try {
-      await registerUser();
-      console.log('User registered');
+  // // Function to handle creating a link
+  // async function handleCreateLink() {
+  //   console.log('Creating link');
+  //   error = '';
+  //   try {
+  //     await registerUser();
+  //     console.log('User registered');
 
-          // Send registration email
-      await sendRegistrationEmail(userName, userEmail, generatedPassword);
-      console.log('Registration email sent');
+  //         // Send registration email
+  //     await sendRegistrationEmail(userName, userEmail, generatedPassword);
+  //     console.log('Registration email sent');
 
-      const token = await loginUser(userName, generatedPassword);
-      console.log('User logged in with token:', token);
-      const pageId = await createPage(token);
+  //     const token = await loginUser(userName, generatedPassword);
+  //     console.log('User logged in with token:', token);
+  //     const pageId = await createPage(token);
   
-      console.log('Fetching created page data');
-      const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
-      const page = await response.json();
+  //     console.log('Fetching created page data');
+  //     const response = await fetch(`https://tributestream.com/wp-json/wp/v2/pages/${pageId}`);
+  //     const page = await response.json();
   
-      console.log('Page created:', pageId);
-      console.log('Fetched page data:', page);
+  //     console.log('Page created:', pageId);
+  //     console.log('Fetched page data:', page);
     
-      // Redirect to the page using the slug
-      if (page.slug) {
-        console.log('Redirecting to:', `https://tributestream.com/${page.slug}`);
-        window.location.href = `https://tributestream.com/${page.slug}`;
-      } else {
-        console.error('Slug not found in page data');
-        error = 'Slug not found';
-      }
-    } catch (err) {
-      console.error('Error in handleCreateLink:', err);
-      error = 'An error occurred while creating the link';
-    }
-  }
+  //     // Redirect to the page using the slug
+  //     if (page.slug) {
+  //       console.log('Redirecting to:', `https://tributestream.com/${page.slug}`);
+  //       window.location.href = `https://tributestream.com/${page.slug}`;
+  //     } else {
+  //       console.error('Slug not found in page data');
+  //       error = 'Slug not found';
+  //     }
+  //   } catch (err) {
+  //     console.error('Error in handleCreateLink:', err);
+  //     error = 'An error occurred while creating the link';
+  //   }
+  // }
   // Function to handle moving to the next page
   function handleNextPage() {
     console.log('Moving to second page');
