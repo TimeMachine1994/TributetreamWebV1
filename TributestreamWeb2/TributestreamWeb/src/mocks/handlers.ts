@@ -7,6 +7,39 @@
 
  import { http, HttpResponse } from 'msw'
  
+let tributes = [
+    {
+        id: 1,
+        user_id: 101,
+        loved_one_name: "Sarah Jane Smith",
+        slug: "sarah-jane-smith-memorial",
+        created_at: "2023-11-01T08:00:00",
+        updated_at: "2023-11-01T08:00:00",
+        custom_html: "<div class='memorial-content'>Beloved mother and friend</div>",
+        phone_number: "555-0123"
+    },
+    {
+        id: 2,
+        user_id: 102,
+        loved_one_name: "James Robert Wilson", 
+        slug: "james-wilson-celebration",
+        created_at: "2023-11-02T10:30:00",
+        updated_at: "2023-11-02T15:45:00",
+        custom_html: "<div class='tribute-section'>Dedicated father and veteran</div>",
+        phone_number: "555-0124"
+    },
+    {
+        id: 3,
+        user_id: 103,
+        loved_one_name: "Maria Elena Rodriguez",
+        slug: "maria-rodriguez-memory", 
+        created_at: "2023-11-03T09:15:00",
+        updated_at: "2023-11-03T14:20:00",
+        custom_html: "<div class='memory-wall'>Cherished grandmother and teacher</div>",
+        phone_number: "555-0125"
+    }
+    // ... other initial data
+];
 const BASE_WORDPRESS_API = 'http://localhost/wp-json';
 const MAIN_URL = 'http://localhost';
 // **************************************************************
@@ -192,6 +225,96 @@ export const handlers = [
 //             })
 //         }
 //     )
+http.get(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes`, () => {
+    return HttpResponse.json([
+        {
+            id: 1,
+            user_id: 101,
+            loved_one_name: "Sarah Jane Smith",
+            slug: "sarah-jane-smith-memorial",
+            created_at: "2023-11-01T08:00:00",
+            updated_at: "2023-11-01T08:00:00",
+            custom_html: "<div class='memorial-content'>Beloved mother and friend</div>",
+            phone_number: "555-0123"
+        },
+        {
+            id: 2,
+            user_id: 102,
+            loved_one_name: "James Robert Wilson", 
+            slug: "james-wilson-celebration",
+            created_at: "2023-11-02T10:30:00",
+            updated_at: "2023-11-02T15:45:00",
+            custom_html: "<div class='tribute-section'>Dedicated father and veteran</div>",
+            phone_number: "555-0124"
+        },
+        {
+            id: 3,
+            user_id: 103,
+            loved_one_name: "Maria Elena Rodriguez",
+            slug: "maria-rodriguez-memory", 
+            created_at: "2023-11-03T09:15:00",
+            updated_at: "2023-11-03T14:20:00",
+            custom_html: "<div class='memory-wall'>Cherished grandmother and teacher</div>",
+            phone_number: "555-0125"
+        }
+    ], { status: 200 })
+}),
+
+
+ // GET all tributes
+ http.get(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes`, () => {
+    return HttpResponse.json(tributes, { status: 200 });
+}),
+
+// GET single tribute
+http.get(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes/:id`, ({ params }) => {
+    const tribute = tributes.find(t => t.id === Number(params.id));
+    if (!tribute) {
+        return HttpResponse.json({ message: 'Tribute not found' }, { status: 404 });
+    }
+    return HttpResponse.json(tribute, { status: 200 });
+}),
+// POST new tribute
+http.post(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes`, async ({ request }) => {
+    const newTribute = await request.json();
+    const tribute = {
+        ...newTribute,
+        id: tributes.length + 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    tributes.push(tribute);
+    return HttpResponse.json(tribute, { status: 201 });
+}),
+
+// PUT update tribute
+http.put(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes/:id`, async ({ params, request }) => {
+    const updatedData = await request.json();
+    const index = tributes.findIndex(t => t.id === Number(params.id));
     
+    if (index === -1) {
+        return HttpResponse.json({ message: 'Tribute not found' }, { status: 404 });
+    }
+
+    tributes[index] = {
+        ...tributes[index],
+        ...updatedData,
+        updated_at: new Date().toISOString()
+    };
+
+    return HttpResponse.json(tributes[index], { status: 200 });
+}),
+
+// DELETE tribute
+http.delete(`${BASE_WORDPRESS_API}/wp/v2/wpa2_tributes/:id`, ({ params }) => {
+    const index = tributes.findIndex(t => t.id === Number(params.id));
+    
+    if (index === -1) {
+        return HttpResponse.json({ message: 'Tribute not found' }, { status: 404 });
+    }
+
+    tributes = tributes.filter(t => t.id !== Number(params.id));
+    return HttpResponse.json({ message: 'Tribute deleted successfully' }, { status: 200 });
+}),
 
  ]

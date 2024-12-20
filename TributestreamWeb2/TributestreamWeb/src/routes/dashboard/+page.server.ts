@@ -4,14 +4,20 @@ import type { RequestEvent } from '@sveltejs/kit';
 export async function load(event: RequestEvent) {
     try {
         const response = await fetchWithAuth(
-            'https://wp.tributestream.com/wp-json/custom/v1/tribute-pages',
+            'http://localhost/wp-json/wp/v2/wpa2_tributes',
             { method: 'GET' },
-            event.request
+            event
         );
         const tributes = await response.json();
-        return { tributes }; // Ensure this matches the prop in +page.svelte
+        return { 
+            tributes,
+            status: 'success'
+        };
     } catch (error) {
-        console.error('Error fetching tributes:', error);
-        return { tributes: [] }; // Default to an empty array on error
+        console.error('Error fetching wpa2_tributes:', error);
+        return { 
+            tributes: [],
+            status: 'error'
+        };
     }
 }

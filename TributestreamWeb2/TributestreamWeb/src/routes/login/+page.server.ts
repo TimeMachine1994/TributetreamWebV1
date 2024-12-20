@@ -1,65 +1,41 @@
-import * as v from 'valibot';
-import { superValidate } from 'sveltekit-superforms';
-import { valibot } from 'sveltekit-superforms/adapters';
-import { fail } from '@sveltejs/kit';
-
-const LoginSchema = v.object({
-    username: v.string([
-        v.minLength(1, 'Username is required')
-    ]),
-    password: v.string([
-        v.minLength(1, 'Password is required'),
-        v.minLength(8, 'Password must be at least 8 characters')
-    ])
-});
-
-export const load = async () => {
-    const form = await superValidate(valibot(LoginSchema));
-    return { form };
-};
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
 
 export const actions = {
-    default: async ({ request }) => {
-        const form = await superValidate(request, valibot(LoginSchema));
+    default: async ({ request, cookies }) => {
+        const data = await request.formData();
+        const username = data.get('username');
+        const password = data.get('password');
 
-        if (!form.valid) {
-            return fail(400, { form });
-        }
+        const response = await fetch('http://localhost/wp-json/jwt-auth/v1/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username,
+                password
+            })
+        });
 
-        try {
-            const response = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: form.data.username,
-                    password: form.data.password
-                })
-            });
+        const result = await response.json();
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                return fail(401, {
-                    form: {
-                        ...form,
-                        errors: { username: data.message || 'Invalid credentials' }
-                    }
-                });
-            }
-
-            // Successfully logged in
-            return { 
-                form,
-                success: true,
-                token: data.token,
-            };
-        } catch (error) {
-            return fail(500, {
-                form: {
-                    ...form,
-                    errors: { username: 'Server error occurred' }
-                }
+        if (!response.ok) {
+            return fail(400, { 
+                error: true, 
+                message: result.message 
             });
         }
+
+        // Store the JWT token in a secure HTTP-only cookie
+        cookies.set('jwt', result.token, {
+            path: '/',
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 // 24 hours
+        });
+
+        throw redirect(302, '/dashboard');
     }
-};
+} satisfies Actions;
