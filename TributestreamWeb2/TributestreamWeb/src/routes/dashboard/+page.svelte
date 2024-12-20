@@ -1,60 +1,6 @@
 
 
 
-fddf
-//
-
-
-<!-- <script lang="ts">
-    export let data;
-    let searchTerm = '';
-    
-    $: filteredTributes = data.wpa2_tributes.filter(tribute => 
-        tribute.slug.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-</script>
-
-<div class="container mx-auto p-6">
-    <div class="mb-6">
-        <input
-            type="text"
-            bind:value={searchTerm}
-            placeholder="Search tributes by slug..."
-            class="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
-        />
-    </div>
-
-    <div class="overflow-x-auto bg-white rounded-lg shadow">
-        <table class="min-w-full table-auto">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {#each filteredTributes as tribute}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tribute.slug}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tribute.title}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {tribute.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                                {tribute.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(tribute.created_at).toLocaleDateString()}
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
-
--->
 <script lang="ts">
   export let data;
   let searchTerm = '';
@@ -125,3 +71,56 @@ fddf
       </div>
   {/each}
 </div>
+
+ 
+
+<!-- <script lang="ts">
+    export let data;
+    let searchTerm = '';
+    
+    $: filteredTributes = data.wpa2_tributes.filter(tribute => 
+        tribute.slug.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+</script>
+
+<div class="container mx-auto p-6">
+    <div class="mb-6">
+        <input
+            type="text"
+            bind:value={searchTerm}
+            placeholder="Search tributes by slug..."
+            class="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+        />
+    </div>
+
+    <div class="overflow-x-auto bg-white rounded-lg shadow">
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {#each filteredTributes as tribute}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tribute.slug}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tribute.title}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {tribute.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                {tribute.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(tribute.created_at).toLocaleDateString()}
+                        </td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    </div>
+
+-->
