@@ -1,3 +1,5 @@
+import type { PageServerLoad } from './$types';
+import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
 
 export const load: PageServerLoad = async (event) => {
     console.log('Starting dashboard data load');
