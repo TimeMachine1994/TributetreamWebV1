@@ -1,10 +1,16 @@
 import { redirect } from '@sveltejs/kit';
 import fs from 'fs';
 import path from 'path';
-
+// Example hooks.server.ts
+ 
+ 
 export async function handle({ event, resolve }) {
   const url = new URL(event.request.url);
   const slug = url.pathname.split('/').pop();  // Assuming the slug is the last part of the path
+
+  // Access cookies
+  const jwt = event.cookies.get('jwt');
+  console.log('JWT Cookie:', jwt);
 
   // Skip non-page requests or slugs you don't care about
   if (!slug || (!url.pathname.startsWith('/celebration-of-life-for') && !url.pathname.startsWith('/tributestream-for'))) {
