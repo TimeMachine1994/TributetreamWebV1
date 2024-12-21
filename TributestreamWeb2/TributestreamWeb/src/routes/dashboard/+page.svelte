@@ -2,8 +2,16 @@
 
 
 <script lang="ts">
-  export let data;
-  let searchTerm = '';
+  import { onMount } from 'svelte';
+    export let data;
+    let searchTerm = '';
+
+    onMount(() => {
+        console.log('Component mounted with data:', data);
+        console.log('Tributes:', data.tributes);
+        console.log('Streams:', data.streams);
+    });
+
   
   // Get streams associated with a tribute
   function getTributeStreams(tributeId: number) {
