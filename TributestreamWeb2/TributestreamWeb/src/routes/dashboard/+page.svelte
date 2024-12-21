@@ -1,26 +1,26 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   
-  export let data;
-  let searchTerm = '';
+  let { data } = $props();
+  let searchTerm = $state('');
 
   interface TributeWithStreams extends WPA2Tribute {
       associatedStreams: WPA2Stream[];
   }
 
   // Combine tributes with their streams
-  $: tributesWithStreams = data.tributes.map(tribute => ({
+  let tributesWithStreams = $derived(data.tributes.map(tribute => ({
       ...tribute,
       associatedStreams: data.streams.filter(stream => 
           stream.tribute_id === tribute.id
       )
-  }));
+  })));
 
   // Filter tributes based on search
-  $: filteredTributes = tributesWithStreams.filter(tribute =>
+  let filteredTributes = $derived(tributesWithStreams.filter(tribute =>
       tribute.loved_one_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tribute.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ));
 
   async function updateCustomHtml(tributeId: number, newHtml: string) {
       try {

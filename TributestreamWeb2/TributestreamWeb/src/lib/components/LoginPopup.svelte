@@ -1,5 +1,9 @@
-<script>
-    export let action = "/login"; // Default form action (customizable)
+<script lang="ts">
+  interface Props {
+    action?: string; // Default form action (customizable)
+  }
+
+  let { action = "/login" }: Props = $props();
   </script>
   
   <div class="group relative inline-block">

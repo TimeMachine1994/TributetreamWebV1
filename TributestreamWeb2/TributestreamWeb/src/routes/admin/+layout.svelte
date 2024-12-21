@@ -1,6 +1,11 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
     import { writable } from 'svelte/store';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
     
 
   </script>
@@ -21,7 +26,7 @@
     </aside>
 <main>
 
-    <slot />
+    {@render children?.()}
 </main>
   </div>
   

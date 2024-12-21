@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
     import { superForm } from 'sveltekit-superforms';
   
-    export let data;
+  let { data } = $props();
   
     // Create the form on the client
     const { form, enhance } = superForm(data.form);

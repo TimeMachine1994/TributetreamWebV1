@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
    
-    let livestreams = [];
-    let loading = true;
-    let error = null;
+    let livestreams = $state([]);
+    let loading = $state(true);
+    let error = $state(null);
   
     // Fetch livestreams on component mount
     onMount(async () => {
@@ -77,7 +77,7 @@
                 <a href={`/dashboard/edit-livestream/${livestream.id}`} class="text-blue-500 hover:underline">Edit</a>
                 <button
                   class="text-red-500 hover:underline"
-                  on:click={() => deleteLivestream(livestream.id)}
+                  onclick={() => deleteLivestream(livestream.id)}
                 >
                   Delete
                 </button>

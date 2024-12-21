@@ -4,7 +4,7 @@
     import { writable } from 'svelte/store';
   
     // Creating reactive stores for form state and stream data
-    let form; 
+    let form = $state(); 
     let loading = writable(false); // To handle the loading state during async operations
     let streamData = writable({}); // To hold the RTMP link, stream key, and embed code once fetched
   
@@ -67,7 +67,7 @@
   
   <div class="flex flex-col items-center p-6">
     <!-- Form for stream generation -->
-    <form on:submit={form.handleSubmit} class="w-full max-w-lg">
+    <form onsubmit={form.handleSubmit} class="w-full max-w-lg">
       <div class="mb-6">
         <label class="block text-gray-700 text-sm font-bold mb-2">Stream Title:</label>
         <input
@@ -84,7 +84,7 @@
           name="streamDescription"
           bind:value={form.values.streamDescription}
           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
+></textarea>
       </div>
       <button
         type="submit"

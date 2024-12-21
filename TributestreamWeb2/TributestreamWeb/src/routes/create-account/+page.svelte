@@ -1,10 +1,12 @@
 <script>
+  import { preventDefault } from 'svelte/legacy';
+
     import { onMount } from 'svelte';
   
-    let username = '';
-    let email = '';
-    let password = '';
-    let confirmPassword = '';
+    let username = $state('');
+    let email = $state('');
+    let password = $state('');
+    let confirmPassword = $state('');
   
     // Placeholder for account creation logic
     function handleCreateAccount() {
@@ -26,7 +28,7 @@
       </div>
   
       <section class="card p-4 mt-4">
-          <form on:submit|preventDefault={handleCreateAccount}>
+          <form onsubmit={preventDefault(handleCreateAccount)}>
               <label class="label">
                   <span>Username</span>
                   <input class="input" type="text" bind:value={username} placeholder="Choose a username" required />

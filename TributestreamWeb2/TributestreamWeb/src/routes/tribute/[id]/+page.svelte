@@ -1,5 +1,5 @@
-<script>
-    export let tribute;
+<script lang="ts">
+    let { tribute } = $props();
 </script>
 
 <main>

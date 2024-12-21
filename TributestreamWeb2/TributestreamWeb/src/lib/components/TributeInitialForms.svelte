@@ -1,11 +1,22 @@
 <script lang="ts">
-    export let tributeName: string;
-    export let error: string;
-    export let handleStepNavigation: (direction: 'next' | 'back') => void;
-    export let handleSearch: () => void;
+    import { preventDefault } from 'svelte/legacy';
+
+    interface Props {
+        tributeName: string;
+        error: string;
+        handleStepNavigation: (direction: 'next' | 'back') => void;
+        handleSearch: () => void;
+    }
+
+    let {
+        tributeName = $bindable(),
+        error,
+        handleStepNavigation,
+        handleSearch
+    }: Props = $props();
     </script>
     
-    <form on:submit|preventDefault={() => handleStepNavigation('next')}>
+    <form onsubmit={preventDefault(() => handleStepNavigation('next'))}>
       <div class="flex flex-col items-center justify-center mb-4">
         <p class="text-center mb-8">
           Tributestream broadcasts high quality audio and video of your loved
@@ -28,7 +39,7 @@
           <button type="submit" class="tribute-button">
             Create Tribute
           </button>
-          <button on:click={handleSearch} class="tribute-button">
+          <button onclick={handleSearch} class="tribute-button">
             Search Streams
           </button>
         </div>

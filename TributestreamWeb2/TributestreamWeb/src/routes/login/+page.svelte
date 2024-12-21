@@ -2,7 +2,7 @@
     import { superForm } from 'sveltekit-superforms';
     import { goto } from '$app/navigation';
     
-    export let data;
+    let { data } = $props();
     console.log('Initial data received:', data);
     
     const { form, errors, enhance, message } = superForm(data.form, {

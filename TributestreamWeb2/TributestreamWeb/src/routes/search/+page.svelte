@@ -1,11 +1,15 @@
  <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { page } from '$app/stores';
-	let lovedOneName;
-	$: lovedOneName = $page.url.searchParams.get('q');
+	let lovedOneName = $state();
+	run(() => {
+		lovedOneName = $page.url.searchParams.get('q');
+	});
 
-	let query = '';
+	let query = $state('');
 	let isLoading = writable(false);
 	let error = writable<string | null>(null);
 	let results = writable<any[]>([]);
@@ -78,7 +82,7 @@
 
 <div class="min-h-screen bg-[#CFCFCE] flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
 	<h1 class="text-4xl font-extrabold text-[#070707] mb-6">Search Pages</h1>
-	<form on:submit={handleSearch} class="w-full max-w-lg flex mb-8">
+	<form onsubmit={handleSearch} class="w-full max-w-lg flex mb-8">
 		<input
 			type="text"
 			bind:value={query}

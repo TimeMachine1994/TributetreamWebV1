@@ -3,11 +3,21 @@
     import FormFields from './FormFields.svelte';
     import type { FormState, UIState, ValidationState } from '../types';
     
-    export let formState: FormState;
-    export let validationState: ValidationState;
-    export let uiState: UIState;
-    export let handleStepNavigation: (direction: 'next' | 'back') => void;
-    export let handleTributeCreation: () => void;
+    interface Props {
+        formState: FormState;
+        validationState: ValidationState;
+        uiState: UIState;
+        handleStepNavigation: (direction: 'next' | 'back') => void;
+        handleTributeCreation: () => void;
+    }
+
+    let {
+        formState,
+        validationState,
+        uiState,
+        handleStepNavigation,
+        handleTributeCreation
+    }: Props = $props();
     </script>
     
     <div class="w-full max-w-md">
@@ -27,7 +37,7 @@
       <div class="flex justify-between items-center">
         <button
           type="button"
-          on:click={() => handleStepNavigation('back')}
+          onclick={() => handleStepNavigation('back')}
           class="back-button"
         >
           <i class="fas fa-arrow-left"></i>
@@ -35,7 +45,7 @@
     
         <button
           type="button"
-          on:click={handleTributeCreation}
+          onclick={handleTributeCreation}
           class="tribute-button"
           disabled={uiState.isLoading}
         >

@@ -1,3 +1,11 @@
+<script lang="ts">
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
+</script>
+
 <header class="bg-gray-800 text-white shadow-lg">
   <nav class="container mx-auto flex items-center py-4 px-6">
     <ul class="flex space-x-6">
@@ -8,4 +16,4 @@
     </ul>
   </nav>
 </header>
-<slot />
+{@render children?.()}
