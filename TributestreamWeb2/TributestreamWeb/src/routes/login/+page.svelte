@@ -20,7 +20,7 @@
                 // and subsequent requests will include it
                 
                 console.log('🚗 Starting navigation to /admin');
-                await goto('/admin', { replaceState: true });
+                await goto('/dashboard', { replaceState: true });
 }
         },
         onSubmit: () => {

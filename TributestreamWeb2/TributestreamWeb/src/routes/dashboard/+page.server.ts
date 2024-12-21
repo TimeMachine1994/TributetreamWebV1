@@ -1,48 +1,30 @@
-import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
-import type { RequestEvent } from '@sveltejs/kit';
 
-interface WPA2Stream {
-    id: number;
-    tribute_id: number;
-    custom_embed: string;
-}
-
-interface WPA2Tribute {
-    id: number;
-    user_id: number;
-    loved_one_name: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
-    custom_html: string;
-    phone_number: string;
-    number_of_streams: number;
-}
-
-export async function load(event: RequestEvent) {
+export const load: PageServerLoad = async (event) => {
+    console.log('Starting dashboard data load');
     const API_BASE = 'https://wp.tributestream.com/wp-json/custom/v1';
     
     try {
+        console.log('Fetching tributes and streams...');
         const [tributesRes, streamsRes] = await Promise.all([
             fetchWithAuth(`${API_BASE}/wpa2_tributes`, { method: 'GET' }, event),
             fetchWithAuth(`${API_BASE}/streams`, { method: 'GET' }, event)
         ]);
 
-        const tributes: WPA2Tribute[] = await tributesRes.json();
-        const streams: WPA2Stream[] = await streamsRes.json();
-
+        const tributes = await tributesRes.json();
+        const streams = await streamsRes.json();
+        
+        console.log('Fetched data:', { tributes, streams });
+        
         return {
             tributes,
-            streams,
-            success: true
+            streams
         };
     } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('Load error:', error);
         return {
             tributes: [],
             streams: [],
-            success: false,
             error: 'Failed to load data'
         };
     }
-}
+};

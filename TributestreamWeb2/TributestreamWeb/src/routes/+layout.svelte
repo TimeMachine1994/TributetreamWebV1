@@ -63,6 +63,8 @@
     import { goto } from '$app/navigation'; /* Function to navigate to a new page */
     import '../app.postcss'; /* Importing global styles */
     import '@fortawesome/fontawesome-free/css/all.min.css'
+
+    
  
 /*********** START Intialize stores and drawer ***********/
     initializeStores();
@@ -93,7 +95,7 @@
     if (isLoggedIn) {
       // If the user is logged in, log them out
       // NOT-COMPLETE
-      goto('/#');
+      goto('/dashboard');
     } else {
       // If the user is not logged in, navigate to login page
       goto('/login');
