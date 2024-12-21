@@ -1,26 +1,7 @@
-// import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
-// import type { RequestEvent } from '@sveltejs/kit';
+ import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
+ import type { RequestEvent } from '@sveltejs/kit';
 
-// export async function load(event: RequestEvent) {
-//     try {
-//         const response = await fetchWithAuth(
-//             'https://wp.tributestream.com/wp-json/custom/v1/wpa2_tributes',
-//             {
-//                 method: 'GET',
-//                 headers: {
-//                     'Content-Type': 'application/json'
-//                 }
-//             },
-//             event
-//         );
-//         const wpa2_tributes = await response.json();
-//         return { wpa2_tributes };
-//     } catch (error) {
-//         console.error('Error fetching wpa2_tributes:', error);
-//         return { wpa2_tributes: [] };
-//     }
-// }import type { RequestEvent } from '@sveltejs/kit';import type { RequestEvent } from '@sveltejs/kit';
-import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
+
 
 export async function load(event: RequestEvent) {
     const WORDPRESS_API_URL = 'https://wp.tributestream.com/wp-json/custom/v1';
