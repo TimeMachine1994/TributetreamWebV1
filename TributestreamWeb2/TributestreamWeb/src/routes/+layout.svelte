@@ -94,7 +94,7 @@
     if (isLoggedIn) {
       // If the user is logged in, log them out
       // NOT-COMPLETE
-      goto('/#');
+      goto('/dashboard');
     } else {
       // If the user is not logged in, navigate to login page
       goto('/login');
