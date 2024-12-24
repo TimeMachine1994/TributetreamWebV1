@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import TributeInitialForm from '../components/TributeInitialForm.svelte';
@@ -7,7 +9,7 @@
     import type { FormState, UIState, ValidationState } from '../types';
     
     // Initialize states
-    let formState: FormState = {
+    let formState: FormState = $state({
       tributeName: '',
       userFullName: '',
       userEmail: '',
@@ -15,7 +17,7 @@
       username: '',
       urlSlug: '',
       tempUrlSlug: ''
-    };
+    });
     
     let uiState: UIState = {
       currentStep: 1,
@@ -32,7 +34,9 @@
     };
     
     // URL Slug Generation
-    $: formState.urlSlug = generateUrlSlug(formState.tributeName);
+    run(() => {
+        formState.urlSlug = generateUrlSlug(formState.tributeName);
+    });
     
     // Import all your existing functions here
     // [Previous functions remain the same]

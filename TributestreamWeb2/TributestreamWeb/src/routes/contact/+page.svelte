@@ -1,12 +1,14 @@
 <script>
+  import { preventDefault } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
 
-  let name = '';
-  let phoneNumber = '';
-  let email = '';
-  let message = '';
-  let showForm = true;
-  let showSuccess = false;
+  let name = $state('');
+  let phoneNumber = $state('');
+  let email = $state('');
+  let message = $state('');
+  let showForm = $state(true);
+  let showSuccess = $state(false);
 
   async function handleSubmit() {
     console.log('Form submitted:', { name, email, message });
@@ -45,7 +47,7 @@
                 <p class="text-center">We'd love to hear from you. Send us a message and we'll get back to you as soon as possible.</p>
             </div>
 
-            <form on:submit|preventDefault={handleSubmit}>
+            <form onsubmit={preventDefault(handleSubmit)}>
                 <label class="label">
                     <span>Name</span>
                     <input class="input" type="text" bind:value={name} placeholder="Your first and last name" required />

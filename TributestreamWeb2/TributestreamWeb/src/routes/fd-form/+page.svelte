@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
     import { writable } from 'svelte/store';
   
     // Define the formData writable store
@@ -95,7 +97,7 @@
       </div>
   
       <!-- Client Information Form -->
-      <form on:submit|preventDefault={handleSubmit} class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+      <form onsubmit={preventDefault(handleSubmit)} class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <h2 class="text-2xl font-bold mb-6 text-gray-900">Client Information</h2>
   
         <!-- Funeral Director Name -->

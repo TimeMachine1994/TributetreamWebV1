@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { authService } from '$lib/api/unified-tributestream-plugin/auth';
@@ -7,21 +9,21 @@
 
   // State variables
   let generatedPassword = '';
-  let lovedOneName = '';
+  let lovedOneName = $state('');
   let userName = '';
   let userEmail = '';
   let userPhone = '';
-  let error = '';
-  let showSecondPage = false;
-  let slugifiedName = '';
-  let isEditing = false;
-  let tempSlugifiedName = '';
-  let isBlurred = false;
+  let error = $state('');
+  let showSecondPage = $state(false);
+  let slugifiedName = $state('');
+  let isEditing = $state(false);
+  let tempSlugifiedName = $state('');
+  let isBlurred = $state(false);
   let searchQuery = '';
   let shouldSearch = false;
-  let fullName = '';
-  let email = '';
-  let phone = '';
+  let fullName = $state('');
+  let email = $state('');
+  let phone = $state('');
   import { userIdStore } from '$lib/stores/userStore';
   let userId = $userIdStore;
    
@@ -62,11 +64,11 @@
     }
   }
   // Reactive statement to update slugifiedName when lovedOneName changes
-  $: {
+  run(() => {
     console.log('lovedOneName changed:', lovedOneName);
     slugifiedName = slugify(lovedOneName);
     console.log('Updated slugifiedName:', slugifiedName);
-  }
+  });
 
 
   //**************************************************************************************************** */
@@ -360,12 +362,12 @@ outline: none;
             bind:value={lovedOneName}
           />
           <div class="flex space-x-4 justify-center">
-            <button on:click={handleNextPage}
+            <button onclick={handleNextPage}
               class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black  hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out">
               Create Tribute
             </button>
             <button
-              on:click={() => {
+              onclick={() => {
                 handleSearch();
                 showSecondPage = true;
               }}
@@ -385,14 +387,14 @@ outline: none;
                       <span class="text-white">{slugifiedName}</span>
                   {/if}</span>
                   {#if isEditing}
-                      <button class="ml-2 text-green-500" on:click={handleSaveNameChange}>
+                      <button class="ml-2 text-green-500" onclick={handleSaveNameChange}>
                           <i class="fas fa-check"></i>
                       </button>
-                      <button class="ml-2 text-red-500" on:click={handleDiscardNameChange}>
+                      <button class="ml-2 text-red-500" onclick={handleDiscardNameChange}>
                           <i class="fas fa-times"></i>
                       </button>
                   {:else}
-                      <button class="ml-2 text-white" on:click={handleEditName}>
+                      <button class="ml-2 text-white" onclick={handleEditName}>
                           <i class="fas fa-pencil-alt"></i>
                       </button>
                   {/if}
@@ -416,10 +418,10 @@ outline: none;
                   bind:value={phone}
               />
               <div class="flex justify-between items-center">
-                  <button type="button" on:click={handleGoBack} class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
+                  <button type="button" onclick={handleGoBack} class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md">
                       <i class="fas fa-arrow-left"></i>
                   </button>
-                  <button type="button" on:click={handleSubmit} class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md">
+                  <button type="button" onclick={handleSubmit} class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md">
                       Create Tribute
                   </button>
               </div>

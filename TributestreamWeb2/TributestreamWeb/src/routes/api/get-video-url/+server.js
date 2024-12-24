@@ -30,5 +30,6 @@ export async function GET({ url }) {
   } catch (err) {
     console.error('Error generating presigned URL:', err);
     throw error(500, 'Error generating presigned URL');
-  }
-}
+  };
+
+  

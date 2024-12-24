@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { preventDefault } from 'svelte/legacy';
+
     import { createForm } from 'svelte-forms-lib';
     import { z } from 'zod';
 
@@ -35,14 +37,19 @@
         }
     });
 
-    // Close modal
-    export let close: () => void;
+    
+    interface Props {
+        // Close modal
+        close: () => void;
+    }
+
+    let { close }: Props = $props();
 </script>
 
 <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
         <h2 class="text-lg font-bold mb-4">Create New Tribute</h2>
-        <form on:submit|preventDefault={handleSubmit}>
+        <form onsubmit={preventDefault(handleSubmit)}>
             <label class="block mb-2">
                 Event Name:
                 <input
@@ -70,7 +77,7 @@
             <div class="flex justify-end space-x-2">
                 <button
                     type="button"
-                    on:click={close}
+                    onclick={close}
                     class="px-4 py-2 bg-gray-500 text-white rounded"
                 >
                     Cancel

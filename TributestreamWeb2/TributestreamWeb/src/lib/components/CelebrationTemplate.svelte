@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let data;
+  let { data } = $props();
     
     // Destructure the data passed from server
     const { template, slug } = data;

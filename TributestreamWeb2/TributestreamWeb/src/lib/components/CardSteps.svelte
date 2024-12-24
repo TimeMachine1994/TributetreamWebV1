@@ -1,9 +1,9 @@
-<script>
-    export let steps = [
+<script lang="ts">
+  let { steps = [
       { title: "Step 1", description: "Brief description of step 1." },
       { title: "Step 2", description: "Brief description of step 2." },
       { title: "Step 3", description: "Brief description of step 3." }
-    ];
+    ] } = $props();
   </script>
   
   <div class="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-6 p-6">

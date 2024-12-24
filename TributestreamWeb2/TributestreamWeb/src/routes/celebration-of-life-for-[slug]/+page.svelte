@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
  
-    export let data;
+    let { data } = $props();
     
     const { tribute } = data;
     

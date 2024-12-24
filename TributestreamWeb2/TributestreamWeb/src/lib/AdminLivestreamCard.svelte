@@ -1,12 +1,23 @@
-<script>
-    export let lovedOneName = 'Loved One Name'; // Replace with dynamic data
-    export let livestreamSet = false; // Boolean to indicate livestream status
-    export let displayName = 'Display Name'; // Replace with dynamic data
-    export let createdOn = '2024-11-11'; // Replace with dynamic data
-    export let modifiedOn = '2024-11-12'; // Replace with dynamic data
-    export let livestreamId = 0;
-    let showPrompt = false;
-    let custom_html = '';
+<script lang="ts">
+  interface Props {
+    lovedOneName?: string; // Replace with dynamic data
+    livestreamSet?: boolean; // Boolean to indicate livestream status
+    displayName?: string; // Replace with dynamic data
+    createdOn?: string; // Replace with dynamic data
+    modifiedOn?: string; // Replace with dynamic data
+    livestreamId?: number;
+  }
+
+  let {
+    lovedOneName = 'Loved One Name',
+    livestreamSet = false,
+    displayName = 'Display Name',
+    createdOn = '2024-11-11',
+    modifiedOn = '2024-11-12',
+    livestreamId = 0
+  }: Props = $props();
+    let showPrompt = $state(false);
+    let custom_html = $state('');
 
     function handleLivestreamClick() {
         showPrompt = true;
@@ -40,7 +51,7 @@
     <h2>{lovedOneName}</h2>
     <button 
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        on:click={handleLivestreamClick}
+        onclick={handleLivestreamClick}
     >
         {livestreamSet ? 'Update Livestream' : 'Set Livestream'}
     </button>
@@ -54,7 +65,7 @@
             ></textarea>
             <button 
                 class="mt-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                on:click={updateCustomHtml}
+                onclick={updateCustomHtml}
             >
                 Save Changes
             </button>

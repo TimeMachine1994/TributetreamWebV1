@@ -1,8 +1,12 @@
 <script lang="ts">
     import type { FormState, ValidationState } from '../types';
     
-    export let formState: FormState;
-    export let validationState: ValidationState;
+    interface Props {
+        formState: FormState;
+        validationState: ValidationState;
+    }
+
+    let { formState = $bindable(), validationState }: Props = $props();
     </script>
     
     <div class="space-y-4">

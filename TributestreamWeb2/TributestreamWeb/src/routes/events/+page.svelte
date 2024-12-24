@@ -1,5 +1,5 @@
-<script>
-    export let events;
+<script lang="ts">
+    let { events } = $props();
 </script>
 
 <main>

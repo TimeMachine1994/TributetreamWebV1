@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
     import { goto } from '$app/navigation';
-    let lovedOneName = '';
-    let fullName = '';
-    let email = '';
-    let phone = '';
-    let error = '';
+    let lovedOneName = $state('');
+    let fullName = $state('');
+    let email = $state('');
+    let phone = $state('');
+    let error = $state('');
     let user_id = '';
     import { writable } from 'svelte/store';
 
@@ -147,7 +149,7 @@ async function updateSlug(slug: string, userId: number): Promise<{ message: stri
 
   </script>
   
-  <form on:submit|preventDefault={handleSubmit} class="max-w-md mx-auto p-6">
+  <form onsubmit={preventDefault(handleSubmit)} class="max-w-md mx-auto p-6">
     <div class="space-y-4">
       <div>
         <label for="lovedOneName">Loved One's Name</label>
