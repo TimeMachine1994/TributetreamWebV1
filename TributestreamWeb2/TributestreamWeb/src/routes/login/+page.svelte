@@ -1,74 +1,78 @@
 <script lang="ts">
-        export let errors: Record<string, any> | undefined;
     import { enhance } from '$app/forms';
- 
- </script>
+    import { goto } from '$app/navigation';
+    import type { ActionData } from './$types';
+    
+    export let form: ActionData;
+    let isSubmitting = false;
 
-<div class="login-container">
-    <!-- Standard HTML form, posts to "?/login". -->
-    <form method="POST" action="?/login"  >
-        <h1>Login</h1>
+    function handleEnhance() {
+        return ({ formElement }) => {
+            isSubmitting = true;
+            
+            return async ({ result }) => {
+                isSubmitting = false;
+                if (result.type === 'success') {
+                    goto('/dashboard');
+                }
+            };
+        };
+    }
+</script>
 
-        <div class="form-group">
-            <label for="username">Username</label>
+<div class="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
+    <form 
+        method="POST"
+        use:enhance={handleEnhance}
+        class="space-y-4"
+    >
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Login</h1>
+        
+        <div class="space-y-2">
+            <label 
+                for="username" 
+                class="block text-sm font-medium text-gray-700"
+            >
+                Username
+            </label>
             <input
                 type="text"
                 id="username"
                 name="username"
+                value={form?.username ?? ''}
                 required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
         </div>
 
-        <div class="form-group">
-            <label for="password">Password</label>
+        <div class="space-y-2">
+            <label 
+                for="password" 
+                class="block text-sm font-medium text-gray-700"
+            >
+                Password
+            </label>
             <input
                 type="password"
                 id="password"
                 name="password"
                 required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
         </div>
-        {#if errors && errors.credentials}
-        <p style="color: red;">{errors.credentials}</p>
-    {/if}
-        <button type="submit">
-            Log In
+
+        {#if form?.error}
+            <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {form.message}
+            </div>
+        {/if}
+
+        <button
+            type="submit"
+            disabled={isSubmitting}
+            class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+            {isSubmitting ? 'Logging in...' : 'Log In'}
         </button>
     </form>
 </div>
-
-<style>
-    .login-container {
-        max-width: 400px;
-        margin: 2rem auto;
-        padding: 2rem;
-    }
-
-    .form-group {
-        margin-bottom: 1rem;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-
-    input {
-        width: 100%;
-        padding: 0.5rem;
-    }
-
-    button {
-        width: 100%;
-        padding: 0.75rem;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background: #45a049;
-    }
-</style>
