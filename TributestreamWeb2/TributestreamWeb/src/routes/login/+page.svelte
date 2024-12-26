@@ -1,19 +1,38 @@
 <script lang="ts">
+        export let errors: Record<string, any> | undefined;
     import { enhance } from '$app/forms';
-</script>
+ </script>
 
 <div class="login-container">
-    <form method="POST" use:enhance>
+    <!-- Standard HTML form, posts to "?/login". -->
+    <form method="POST" action="?/login" use:enhance >
         <h1>Login</h1>
+
         <div class="form-group">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                required
+            />
         </div>
+
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                required
+            />
         </div>
-        <button type="submit">Log In</button>
+        {#if errors && errors.credentials}
+        <p style="color: red;">{errors.credentials}</p>
+    {/if}
+        <button type="submit">
+            Log In
+        </button>
     </form>
 </div>
 

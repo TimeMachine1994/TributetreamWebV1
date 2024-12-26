@@ -18,7 +18,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     });
 
     // Get a cookie
-    const cookieValue = event.cookies.get('myCookie');
+   event.cookies.get('myCookie');
 
     // Delete a cookie
     event.cookies.delete('myCookie', { path: '/' });

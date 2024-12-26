@@ -2,193 +2,174 @@
      +page.svelte
 
      This file is the main Dashboard page in Svelte 5. It demonstrates:
-       1. Using Runes ($state, $effect) for reactivity.
+       1. Using Runes ($state) for reactivity.
        2. Handling props via $props().
        3. Managing editing and saving logic for tribute objects.
+       4. Tailwind CSS utility classes for styling.
      ***************************************************************************************** -->
 
      <script lang="ts">
         /******************************************************************************
          * Imports and Declarations
          *****************************************************************************/
+        // Importing the Tribute type from our server load file (adjust the path if needed)
         import type { Tribute } from './+page.server';
-    
+      
+        // Recommended: use SvelteKit environment utilities instead of `process.env`
+        // This might vary based on your project’s config. Example:
+        // import { PUBLIC_BASE_WORDPRESS_API } from '$env/static/public';
+        // const BASE_WORDPRESS_API = PUBLIC_BASE_WORDPRESS_API;
+      
+        // For illustration, we show a direct constant assignment. In a real project,
+        // replace this with your official environment variable import from SvelteKit.
+        const BASE_WORDPRESS_API = 'https://example.com'; // Example fallback
+      
         /**
-         * Environment variable pointing to our WordPress API base URL
-         */
-        const BASE_WORDPRESS_API = process.env.BASE_WORDPRESS_API;
-    
-        /**
-         * Destructuring data from server load function using Svelte 5's $props() function.
-         * We need to invoke $props() with parentheses to comply with Svelte 5's rune usage.
+         * Svelte 5's $props() approach to extract load data or passed-in props
+         * We can also console.log it to confirm it's being set. 
          */
         const { data } = $props();
-    
+        console.log('Loaded props from +page.svelte:', data);
+      
         /**
          * Svelte 5 Runes:
          *  - $state: declare a reactive state variable
-         *  - $effect: execute side effects that depend on reactive variables
+         *  - $derived: for purely derived variables (not used here)
+         *  - $effect: for side effects (not needed in this example)
+         *
+         * Here we focus on $state, as we want to be able to modify these variables
+         * in response to user actions (e.g., editing, saving).
          */
-    
-        // tributes: stores the array of Tribute items
-        let tributes = $state<Tribute[]>([]);
-    
-        // status: indicates loading state or error/success status
-        let status = $state<string>('loading');
-    
-        // The $effect rune: run this whenever `data` changes.
-        // This ensures that "status" and "tributes" are updated
-        // after the server load function completes.
-        $: $effect(() => {
-            status = data.status;
-            // data.tributes is a JSON string from the server; parse it into an array
-            tributes = JSON.parse(data.tributes);
-        });
-    
+      
+        // tributes: stores the array of Tribute items, initialized from `data.tributes`
+        let tributes = $state<Tribute[]>(
+          data && data.tributes ? JSON.parse(data.tributes) : []
+        );
+      
+        // status: indicates loading state or error/success status, initialized from `data.status`
+        let status = $state<string>(
+          data && data.status ? data.status : 'loading'
+        );
+      
         // editingTribute: keeps track of the currently edited tribute object
         let editingTribute = $state<Tribute | null>(null);
-    
+      
         // isEditing: boolean flag indicating if we are in "edit mode"
         let isEditing = $state(false);
-    
+      
         /**
          * handleEdit - prepares the tribute object for editing
          * @param tribute - the tribute object that should be edited
          */
         function handleEdit(tribute: Tribute) {
-            editingTribute = { ...tribute };
-            isEditing = true;
+          editingTribute = { ...tribute }; // Clone so we don't mutate the array directly
+          isEditing = true;
         }
-    
+      
         /**
          * handleSave - sends the updated tribute object to our custom WordPress endpoint
          *              and updates the local tributes array upon success.
          */
         async function handleSave() {
-            if (!editingTribute) return;
-    
-            try {
-                const response = await fetch(`${BASE_WORDPRESS_API}/custom/v1/tributestream`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(editingTribute)
-                });
-    
-                if (response.ok) {
-                    // Update the tributes array with the newly edited tribute
-                    tributes = tributes.map((t) =>
-                        t.id === editingTribute?.id ? editingTribute : t
-                    );
-                    // Reset the editing states
-                    isEditing = false;
-                    editingTribute = null;
-                }
-            } catch (error) {
-                console.error('Error updating tribute:', error);
+          // If nothing is being edited, just return
+          if (!editingTribute) return;
+      
+          try {
+            const response = await fetch(`${BASE_WORDPRESS_API}/custom/v1/tributestream`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(editingTribute)
+            });
+      
+            if (response.ok) {
+              // Update the tributes array with the newly edited tribute
+              tributes = tributes.map((t) =>
+                t.id === editingTribute?.id ? editingTribute : t
+              );
+              // Reset the editing states
+              isEditing = false;
+              editingTribute = null;
+            } else {
+              console.error('Non-OK response updating tribute:', response.statusText);
             }
+          } catch (error) {
+            console.error('Error updating tribute:', error);
+          }
         }
-    </script>
-    
-    <!-- 
-        We use Svelte markup to conditionally show loading, no tributes, or 
+      </script>
+      
+      <!--
+        We use Svelte markup to conditionally show loading, no tributes, or
         a list of tribute cards with edit buttons.
-    -->
-    {#if status === 'loading'}
-        <div>Loading tributes...</div>
-    {:else if tributes.length === 0}
-        <div>No tributes found.</div>
-    {:else}
-        <div class="tributes-container">
-            {#each tributes as tribute (tribute.id)}
-                <div class="tribute-card">
-                    {#if isEditing && editingTribute?.id === tribute.id}
-                        <!-- Edit Form -->
-                        <div class="editing-form">
-                            <!-- 
-                                For demonstration, we assume the WP data has "title" and "content".
-                                Adjust these fields as needed for your actual data structure.
-                            -->
-                            <input 
-                                type="text" 
-                                bind:value={editingTribute.title} 
-                                placeholder="Title" 
-                            />
-                            <textarea 
-                                bind:value={editingTribute.content}
-                                placeholder="Content"
-                            ></textarea>
-    
-                            <button onclick={handleSave}>Save</button>
-                            <button 
-                                onclick={() => {
-                                    isEditing = false; 
-                                    editingTribute = null;
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    {:else}
-                        <!-- Display Tribute -->
-                        <h3>{tribute.title}</h3>
-                        <p>{tribute.content}</p>
-                        <button onclick={() => handleEdit(tribute)}>Edit</button>
-                    {/if}
+      -->
+      {#if status === 'loading'}
+        <div class="text-center p-4">Loading tributes...</div>
+      
+      {:else if tributes.length === 0}
+        <div class="text-center p-4">No tributes found.</div>
+      
+      {:else}
+        <!-- Container for tributes, using Tailwind utility classes -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
+          {#each tributes as tribute (tribute.id)}
+            <!-- Card for each tribute -->
+            <div class="border border-gray-200 rounded-lg shadow bg-white p-4">
+              {#if isEditing && editingTribute?.id === tribute.id}
+                <!-- Edit Form -->
+                <div class="flex flex-col space-y-2">
+                  <!--
+                    For demonstration, we assume the WP data has "title" and "content".
+                    Adjust these fields as needed for your actual data structure.
+                  -->
+                  <input
+                    type="text"
+                    bind:value={editingTribute.title}
+                    placeholder="Title"
+                    class="border border-gray-300 rounded p-2"
+                  />
+                  <textarea
+                    bind:value={editingTribute.content}
+                    placeholder="Content"
+                    class="border border-gray-300 rounded p-2 min-h-[100px]"
+                  ></textarea>
+      
+                  <div class="flex space-x-2">
+                    <!-- Save Button -->
+                    <button 
+                      onclick={handleSave}
+                      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Save
+                    </button>
+                    <!-- Cancel Button -->
+                    <button
+                      onclick={() => {
+                        isEditing = false;
+                        editingTribute = null;
+                      }}
+                      class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-            {/each}
+              {:else}
+                <!-- Display Tribute -->
+                <h3 class="text-lg font-semibold">{tribute.title}</h3>
+                <p class="text-gray-700">{tribute.content}</p>
+      
+                <!-- Edit button -->
+                <button
+                  onclick={() => handleEdit(tribute)}
+                  class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Edit
+                </button>
+              {/if}
+            </div>
+          {/each}
         </div>
-    {/if}
-    
-    <style>
-        /******************************************************************************
-         * Styles for the tribute dashboard
-         *****************************************************************************/
-        .tributes-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-            padding: 1rem;
-        }
-    
-        .tribute-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-    
-        .editing-form {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-    
-        input,
-        textarea {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-    
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-    
-        button {
-            padding: 0.5rem 1rem;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-    
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-    
+      {/if}
+      
