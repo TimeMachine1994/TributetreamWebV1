@@ -58,7 +58,8 @@ export const actions = {
       // 3. Parse JSON response from WP
       const result = await response.json();
       console.log('Response from WordPress API:', result);
-
+    // 6. On success, redirect the user to the dashboard
+   
       // 4. If the request failed, return a 400 with the error message
       if (!response.ok) {
         console.error('WordPress API error:', result?.message || 'Unknown error');
@@ -82,9 +83,7 @@ export const actions = {
 
       console.log('JWT token stored successfully.');
 
-      // 6. On success, redirect the user to the dashboard
-      console.log('Redirecting user to /dashboard...');
-      throw redirect(302, '/dashboard');
+  
 
     } catch (error) {
       console.error('An unexpected error occurred during the login process:', error);
@@ -93,5 +92,7 @@ export const actions = {
         message: 'An unexpected error occurred. Please try again later.'
       });
     }
+ 
   }
+  
 } satisfies Actions;

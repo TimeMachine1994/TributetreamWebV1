@@ -43,7 +43,7 @@ export async function load(event: RequestEvent) {
    *      or any relevant key you’ve chosen.
    * 2. If no token is found, redirect to the login page with 307 status.
    ********************************************************************/
-  const token = event.cookies.get('token');
+  const token = event.cookies.get('jwt');
   if (!token) {
     throw redirect(307, '/login');
   }
@@ -55,7 +55,7 @@ export async function load(event: RequestEvent) {
      *    - Adjust the endpoint path as needed for your custom WP routes.
      ********************************************************************/
     const response = await fetchWithAuth(
-      `${BASE_WORDPRESS_API}/wp-json/custom/v1/wpa2_tributes`,
+      `${BASE_WORDPRESS_API}/custom/v1/wpa2_tributes`,
       { method: 'GET' },
       event
     );

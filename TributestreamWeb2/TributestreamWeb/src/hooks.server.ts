@@ -9,7 +9,7 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
     // Set a cookie
-    event.cookies.set('myCookie', 'cookieValue', {
+    event.cookies.set('jwt', 'cookieValue', {
         path: '/',
         httpOnly: true,
         secure: true,
@@ -18,10 +18,10 @@ export const handle: Handle = async ({ event, resolve }) => {
     });
 
     // Get a cookie
-   event.cookies.get('myCookie');
+   event.cookies.get('jwt');
 
     // Delete a cookie
-    event.cookies.delete('myCookie', { path: '/' });
+    event.cookies.delete('jwt', { path: '/' });
 
     const response = await resolve(event);
     return response;

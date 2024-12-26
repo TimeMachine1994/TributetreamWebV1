@@ -1,11 +1,12 @@
 <script lang="ts">
         export let errors: Record<string, any> | undefined;
     import { enhance } from '$app/forms';
+ 
  </script>
 
 <div class="login-container">
     <!-- Standard HTML form, posts to "?/login". -->
-    <form method="POST" action="?/login" use:enhance >
+    <form method="POST" action="?/login"  >
         <h1>Login</h1>
 
         <div class="form-group">
