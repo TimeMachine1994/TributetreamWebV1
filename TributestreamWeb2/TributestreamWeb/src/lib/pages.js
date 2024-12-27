@@ -1,4 +1,4 @@
-export const wordpressPages = [
+  export const wordpressPages = [
   "funeral-live-stream",
   "booking",
   "joannachristinejara",

@@ -6,7 +6,7 @@
        3. Managing editing and saving logic for tribute objects.
        4. Tailwind CSS utility classes for styling.
        5. Extensive console logging to debug data flow.
-***************************************************************************************** -->
+*******************************d********************************************************** -->
 
 <script lang="ts">
   /******************************************************************************
@@ -18,6 +18,7 @@
   // In a real project, you'd import from '$env/static/public' or a custom config.
   const BASE_WORDPRESS_API = 'https://example.com';
 
+  
   /**
    * Svelte 5's new approach: $props(), $state, etc.
    * We can console.log to confirm we’re getting the correct server data (tributes, status).
@@ -32,6 +33,20 @@
   let tributes = $state<Tribute[]>(
     data && data.tributes ? JSON.parse(data.tributes) : []
   );
+  // FILE: src/routes/dashboard/+page.server.ts
+
+import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals }) => {
+  const { user, session } = locals;
+
+  if (!user || !session) {
+    throw redirect(307, '/login');
+  }
+
+  return { user, session };
+};
 
   // status: indicates whether data load was "success" or "error" (or anything else)
   let status = $state<string>(data && data.status ? data.status : 'loading');
