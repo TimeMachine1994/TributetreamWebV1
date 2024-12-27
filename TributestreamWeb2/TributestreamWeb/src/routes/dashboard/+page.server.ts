@@ -1,80 +1,83 @@
 /*****************************************************************************************
- * +page.server.ts
+ * +page.server.ts (Svelte 5 / Dashboard)
  *
- * This file handles server-side data fetching for the Dashboard page in Svelte 5.
- * It checks if a JWT token is present in cookies; if not, it redirects to /login.
- * Otherwise, it fetches the tributes list from the WordPress backend and returns
- * a JSON string of tributes and a status indicating success or error.
+ * Handles server-side data fetching for the Dashboard page in SvelteKit.
+ * Since the `jwt` cookie is set with `httpOnly`, we must retrieve it on the server,
+ * validate it, and optionally pass relevant data to the client.
  *****************************************************************************************/
 
-import type { RequestEvent } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { fetchWithAuth } from '$lib/utils/fetchWithAuth';
-import { BASE_WORDPRESS_API } from '$env/static/private';
-/**
- * Environment variable pointing to our WordPress API base URL.
- * In a real SvelteKit setup, you might use import { PUBLIC_BASE_WORDPRESS_API } from '$env/static/public';
- * Instead of direct process.env usage. Shown here for illustration.
- */
- 
+import type { PageServerLoad } from './$types';
+import { BASE_WORDPRESS_API } from '$env/static/private'; // adjust if needed
+
 /**
  * Data structure describing a single Tribute record.
  * Adjust these fields according to your actual data schema from WP.
  */
 export interface Tribute {
   id: number;
-  loved_one_name: string;
-  phone_number: string;
-  created_at: string;
-  custom_html?: string;
+  title: string;
+  content: string;
+  // ... other fields as needed
 }
 
 /**
- * SvelteKit load function to retrieve data from the WordPress backend.
- *
- * @param event - RequestEvent from SvelteKit
- * @returns An object containing `tributes` (as a JSON string) and a `status`.
- *          Or throws a redirect to /login if no JWT token is found in cookies.
+ * load function
+ * - Retrieves the `jwt` cookie and uses it for server-side requests.
+ * - Passes the relevant data to the client.
  */
-export async function load(event: RequestEvent) {
-  /********************************************************************
-   * 1. Check for JWT Token in cookies
-   *    - We assume your JWT is stored under a cookie named 'token'
-   *      or any relevant key you’ve chosen.
-   * 2. If no token is found, redirect to the login page with 307 status.
-   ********************************************************************/
-  const token = event.cookies.get('jwt');
+export const load: PageServerLoad = async ({ cookies }) => {
+  console.log('[dashboard/+page.server.ts] load() invoked');
+
+  /***************************************************************
+   * 1. Retrieve the JWT Token from httpOnly cookie
+   ***************************************************************/
+  const token = cookies.get('jwt'); // This will fetch the `httpOnly` cookie server-side
+  console.log('[dashboard/+page.server.ts] Checking cookie "jwt":', token);
+
+  // If no token, redirect user to /login
   if (!token) {
+    console.warn('[dashboard/+page.server.ts] No JWT found, redirecting to /login');
     throw redirect(307, '/login');
   }
 
+  /***************************************************************
+   * 2. Attempt to fetch tributes from WordPress using the token
+   ***************************************************************/
   try {
-    /********************************************************************
-     * 3. Make an authenticated fetch call to retrieve tributes from WP
-     *    - fetchWithAuth will handle the token-based authentication for us.
-     *    - Adjust the endpoint path as needed for your custom WP routes.
-     ********************************************************************/
-    const response = await fetchWithAuth(
-      `${BASE_WORDPRESS_API}/custom/v1/wpa2_tributes`,
-      { method: 'GET' },
-      event
-    );
+    console.log('[dashboard/+page.server.ts] Attempting to fetch tributes');
+    const response = await fetch(`${BASE_WORDPRESS_API}/custom/v1/wpa2_tributes`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`, // Pass JWT as Bearer token in Authorization header
+        'Content-Type': 'application/json'
+      }
+    });
 
-    // Attempt to parse the JSON response from WP
+    console.log('[dashboard/+page.server.ts] WP fetch response status:', response.status);
+
+    if (!response.ok) {
+      console.error('[dashboard/+page.server.ts] Non-OK response from WP:', response.statusText);
+      return {
+        tributes: '[]',
+        status: 'error'
+      };
+    }
+
     const data = await response.json();
+    console.log('[dashboard/+page.server.ts] Fetched tributes data:', data);
 
-    // Return tributes (as a JSON string) and a success status
+    // Return tributes and status to the client
     return {
       tributes: JSON.stringify(data),
       status: 'success'
     };
-
   } catch (error) {
-    console.error('Error fetching wpa2_tributes:', error);
-    // In case of error, return an empty array and set status to 'error'
+    console.error('[dashboard/+page.server.ts] Error fetching tributes:', error);
+    // Return empty array and error status in case of failure
     return {
       tributes: '[]',
       status: 'error'
     };
   }
-}
+};

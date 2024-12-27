@@ -5,24 +5,11 @@
 
 //   server.listen();
 // }
-import type { Handle } from '@sveltejs/kit';
+/** @type {import('@sveltejs/kit').Handle} */
 
-export const handle: Handle = async ({ event, resolve }) => {
-    // Set a cookie
-    event.cookies.set('jwt', 'cookieValue', {
-        path: '/',
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-    });
+export function handle({ event, resolve }) {
+	const jwt = event.cookies.get('jwt');
+	event.locals.user = jwt ? JSON.parse(atob(jwt)) : null;
 
-    // Get a cookie
-   event.cookies.get('jwt');
-
-    // Delete a cookie
-    event.cookies.delete('jwt', { path: '/' });
-
-    const response = await resolve(event);
-    return response;
-};
+	return resolve(event);
+}
