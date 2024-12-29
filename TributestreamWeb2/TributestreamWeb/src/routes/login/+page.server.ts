@@ -1,71 +1,74 @@
+import type { Actions } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
-import { BASE_WORDPRESS_API } from '$env/static/private';
- 
- 
 
-async function handleLogin(username: string, password: string) {
-         const response = await fetch(`${BASE_WORDPRESS_API}/wp-json/jwt-auth/v1/token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username,
-                password
-            })
-        });
+export const actions: Actions = {
+    default: async ({ request, cookies }) => {
+        console.log('🚀 Starting login process...');
 
-        return response.json();
-    }
+        // Extract form data from request
+        const formData = await request.formData();
+        const username = formData.get('username') as string;
+        const password = formData.get('password') as string;
+        console.log('📝 Form data received - Username provided:', !!username);
 
+        // Ensure form fields are filled out
+        if (!username || !password) {
+            console.log('❌ Validation failed: Missing credentials');
+            return fail(400, { error: 'Username and password are required' });
+        }
 
-
-export const load: PageServerLoad = async ({ cookies }) => {
-    const token = await cookies.get('jwt');
-    if (token) {
-        throw redirect(302, '/dashboard');
-    }
-    return { user: null };
-};
-
-export const actions = {
-    login: async ({ cookies, request,  }) => {
-        const data = await request.formData();
-        const username = data.get('username');
-        const password = data.get('password');
-        const response = await handleLogin(username, password);
-        
      
-            const responseData = await response.json();
-            
-            cookies.set('jwt', responseData.data.token, {
-                path: '/',
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 60 * 60 * 24 // 24 hours
+            console.log('🌐 Making request to WordPress backend...');
+            const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/user-login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
             });
 
-            const user = {
-                id: responseData.data.id,
-                email: responseData.data.email,
-                nicename: responseData.data.nicename,
-                firstName: responseData.data.firstName,
-                lastName: responseData.data.lastName,
-                displayName: responseData.data.displayName
-            };
+            console.log('📡 WordPress response status:', response.status);
 
-            return {
-                success: true,
-                statusCode: 200,
-                code: responseData.code,
-                message: responseData.message,
-                user, 
-            };
-        }
-        
+            // Check if the response is OK
+            if (!response.ok) {
+                console.log('❌ Authentication failed with status:', response.status);
+                return fail(401, { error: 'Invalid credentials' });
+            }
 
-} satisfies Actions;
+            // Parse the response
+  // After parsing the response
+const result = await response.json();
+console.log('✅ Login successful, token received');
+console.log('🔑 Full token value:', result.token); // Print the actual token
+console.log('🔍 Token structure:', {
+    type: typeof result.token,
+    length: result.token?.length,
+    value: result.token
+});
 
- 
+
+            // Save JWT to cookies
+            cookies.set('jwt', result.token, {
+                path: '/',
+                httpOnly: false,
+                secure: false,
+                sameSite: 'none',
+                maxAge: 60 * 60 * 24
+            });
+            console.log('🍪 JWT cookie set successfully');
+
+
+
+
+
+
+
+
+
+            
+            throw redirect(303, '/dashboard');
+
+    
+
+    }
+};

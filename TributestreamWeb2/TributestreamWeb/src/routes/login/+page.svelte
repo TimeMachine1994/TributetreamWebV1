@@ -4,7 +4,7 @@
 
 </script>
 
-<form method="POST" action="?/login">
+<form method="POST" >
 <label for="username">Username:</label>
 <input type="text" id="username" name="username" required>
 <label for="password">Password:</label>
