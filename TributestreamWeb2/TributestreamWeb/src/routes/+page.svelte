@@ -327,7 +327,6 @@ outline: none;
 </style>
 
 <main> 
-
 <section class="relative bg-gray-900 text-white">
   <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0" class:blurred={isBlurred}>
     <source src="https://209.74.64.181:12091/down/FCymVumu4aQG.mp4" type="video/mp4" />
