@@ -42,7 +42,7 @@ export const actions: Actions = {
         try {
             console.log('🔵 Sending PUT request to update custom HTML.');
             //FIX THIS!!!!! THJIS IS WHER EI LEFT OFF
-            const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute/tribute-event/${tributeId}`, {
+            const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute-event/${tributeId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${locals.jwt}`,
