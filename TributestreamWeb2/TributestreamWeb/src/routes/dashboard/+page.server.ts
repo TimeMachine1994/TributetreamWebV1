@@ -5,17 +5,7 @@ import { BASE_WORDPRESS_API } from '$env/static/private';
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
-    console.log('🚀 Dashboard load: Starting server load function');
-    
-
-
-    const token = cookies.get('jwt');
-    console.log('🔑 Full JWT Token:', token); // Log the actual token value
-    
-    if (!token) {
-        throw redirect(302, '/login');
-    }
-
+};
     // try {
 
     //     const nonceResponse = await fetch(`${BASE_WORDPRESS_API}/tributestream/v1/get-nonce`, {
@@ -65,4 +55,4 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
 
     
-};
+

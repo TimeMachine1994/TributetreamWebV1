@@ -56,7 +56,7 @@ console.log('🔍 Token structure:', {
                 maxAge: 60 * 60 * 24
             });
             console.log('🍪 JWT cookie set successfully');
-
+console.log('🔑 JWT cookie value:', cookies.get('jwt'));
 
 
 
