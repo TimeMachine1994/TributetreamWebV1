@@ -3,24 +3,62 @@
     export let data;
 
     import { writable } from 'svelte/store';
+    import { invalidate } from '$app/navigation';
 
-    // Store for search input
     let searchQuery = '';
-
-    // Store for selected tribute
     const selectedTribute = writable(null);
 
-    // Filtered tributes based on search
     $: filteredTributes = data.tributes.filter((tribute) =>
         tribute.loved_one_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    let customHtml = '';
+
     function openPanel(tribute) {
+        console.log('🟢 Opening panel for tribute:', tribute);
         selectedTribute.set(tribute);
+        customHtml = tribute.custom_html || '';
     }
 
     function closePanel() {
+        console.log('🟡 Closing panel');
         selectedTribute.set(null);
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        console.log('🔵 Submitting form with tributeId:', $selectedTribute.id);
+        console.log('🔵 Custom HTML content:', customHtml);
+
+        const formData = new FormData(event.target);
+        for (const [key, value] of formData.entries()) {
+            console.log(`🟣 Form Data - ${key}:`, value);
+        }
+
+        try {
+            const response = await fetch('?/saveCustomHtml', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Server response:', result);
+
+            if (result.success) {
+                alert('Custom HTML updated successfully!');
+                invalidate(); // Refresh the data
+            } else {
+                console.error('❌ Server error message:', result.error);
+                alert(result.error || 'Failed to save custom HTML.');
+            }
+        } catch (error) {
+            console.error('❌ Error during form submission:', error);
+            alert('Failed to save custom HTML. Please try again.');
+        }
     }
 </script>
 
@@ -73,12 +111,25 @@
                 </button>
                 <h2 class="text-2xl font-bold mb-4">Details for { $selectedTribute.loved_one_name }</h2>
                 <p><strong>ID:</strong> { $selectedTribute.id }</p>
-                <p><strong>User ID:</strong> { $selectedTribute.user_id }</p>
-                <p><strong>Slug:</strong> { $selectedTribute.slug }</p>
-                <p><strong>Created At:</strong> { $selectedTribute.created_at }</p>
-                <p><strong>Updated At:</strong> { $selectedTribute.updated_at }</p>
-                <p><strong>Phone Number:</strong> { $selectedTribute.phone_number || 'N/A' }</p>
-                <p><strong>Number of Streams:</strong> { $selectedTribute.number_of_streams ?? 'N/A' }</p>
+                <p><strong>Custom HTML:</strong></p>
+
+                <!-- Save Form -->
+                <form method="POST" action="?/saveCustomHtml" on:submit|preventDefault={handleSubmit}>
+                    <input type="hidden" name="tributeId" value={ $selectedTribute.id } />
+                    <textarea
+                        name="customHtml"
+                        bind:value={customHtml}
+                        class="w-full h-40 p-2 border border-gray-300 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    ></textarea>
+                    <div class="mt-4 flex justify-end">
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     {/if}

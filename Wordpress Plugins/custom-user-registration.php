@@ -295,7 +295,30 @@ function get_tribute($request) {
    );
 }
 
-
+function update_tribute_custom_html($request) {
+   global $wpdb;
+  
+  $tribute_id = $request->get_param('tribute_id');
+    $params = $request->get_json_params();
+    $custom_html = $params['custom_html'];
+    
+    $result = $wpdb->update(
+        'wpa2_tributes',
+        array('id' => $tribute_id),
+        array('%s'),
+        array('%d')
+    );
+    
+    if ($result === false) {
+        return new WP_REST_Response([
+         ], 500);
+    }
+    
+    return new WP_REST_Response([
+        'message' => 'Custom HTML updated successfully',
+        'tribute_id' => $tribute_id
+    ], 200);
+}
  
  
 //     // Get WPA2 Tributes endpoint
@@ -463,30 +486,7 @@ function get_tribute($request) {
 
 
 
-#function update_tribute_custom_html($request) {
- #   global $wpdb;
- #   
- #   $tribute_id = $request->get_param('tribute_id');
- #   $params = $request->get_json_params();
- #   $custom_html = $params['custom_html'];
- #   
- #   $result = $wpdb->update(
- #       'wpa2_tributes',
- #       array('id' => $tribute_id),
-  #      array('%s'),
- #       array('%d')
-#    );
-    
-   # if ($result === false) {
-   #     return new WP_REST_Response([
-  #       ], 500);
-#    }
-    
-   # return new WP_REST_Response([
-  #      'message' => 'Custom HTML updated successfully',
- #       'tribute_id' => $tribute_id
-#    ], 200);
-#}
+
 
 
 // function custom_send_registration_email($request) {
