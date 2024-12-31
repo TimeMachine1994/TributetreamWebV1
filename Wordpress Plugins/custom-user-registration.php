@@ -72,7 +72,7 @@ add_action('rest_api_init', function() {
         'callback' => 'delete_tribute_event',
         'permission_callback' => 'is_user_logged_in'
     ]);
-    register_rest_route('tributestream/v1', '/tribute', [
+    register_rest_route('tributestream/v1', '/get_tribute', [
         'methods' => 'GET',
         'callback' => 'get_all_tributes',
         'permission_callback' => 'is_user_logged_in',
@@ -87,6 +87,30 @@ add_action('rest_api_init', function() {
         'callback' => 'update_tribute_custom_html',
         'permission_callback' => 'is_user_logged_in'
     ]);
+
+
+    //NEW REST ROUTE FOR CRUD TRIBUTE LOCATIONS
+  
+        register_rest_route( 'wpa2/v1', '/locations', [
+            'methods'  => 'POST',
+            'callback' => [ $this, 'create_location' ],
+        ]);
+
+        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
+            'methods'  => 'GET',
+            'callback' => [ $this, 'read_location' ],
+        ]);
+
+        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
+            'methods'  => 'PUT',
+            'callback' => [ $this, 'update_location' ],
+        ]);
+
+        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
+            'methods'  => 'DELETE',
+            'callback' => [ $this, 'delete_location' ],
+        ]);
+        //END NEW REST ROUTE FOR TRIBUTE LOCATIONS CRUD
 
 // Get all slugs (for search?)
 
@@ -320,6 +344,80 @@ function update_tribute_custom_html($request) {
     ], 200);
 }
  
+// START NEW CRUD OPS FOR TRIBUTE LOCATIONS
+
+public function create_location( $request ) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
+
+    $data = [
+        'Tribute_id'               => $request['Tribute_id'],
+        'Location_name'            => $request['Location_name'],
+        'Location_live_start_time' => $request['Location_live_start_time'],
+        'Created_at'               => current_time( 'mysql' ),
+        'Updated_at'               => current_time( 'mysql' ),
+        'Time_at_location'         => $request['Time_at_location'],
+    ];
+
+    $result = $wpdb->insert( $this->table_name, $data );
+
+    if ( $result ) {
+        return rest_ensure_response( [ 'message' => 'Location created successfully!', 'id' => $wpdb->insert_id ] );
+    } else {
+        return new WP_Error( 'create_failed', 'Failed to create location', [ 'status' => 500 ] );
+    }
+}
+
+public function read_location( $request ) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
+
+    $id = $request['id'];
+    $location = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$this->table_name} WHERE Id = %d", $id ), ARRAY_A );
+
+    if ( $location ) {
+        return rest_ensure_response( $location );
+    } else {
+        return new WP_Error( 'not_found', 'Location not found', [ 'status' => 404 ] );
+    }
+}
+
+public function update_location( $request ) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
+
+    $id = $request['id'];
+    $data = [
+        'Tribute_id'               => $request['Tribute_id'],
+        'Location_name'            => $request['Location_name'],
+        'Location_live_start_time' => $request['Location_live_start_time'],
+        'Updated_at'               => current_time( 'mysql' ),
+        'Time_at_location'         => $request['Time_at_location'],
+    ];
+
+    $result = $wpdb->update( $this->table_name, $data, [ 'Id' => $id ] );
+
+    if ( $result !== false ) {
+        return rest_ensure_response( [ 'message' => 'Location updated successfully!' ] );
+    } else {
+        return new WP_Error( 'update_failed', 'Failed to update location', [ 'status' => 500 ] );
+    }
+}
+
+public function delete_location( $request ) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
+
+    $id = $request['id'];
+    $result = $wpdb->delete( $this->table_name, [ 'Id' => $id ] );
+
+    if ( $result ) {
+        return rest_ensure_response( [ 'message' => 'Location deleted successfully!' ] );
+    } else {
+        return new WP_Error( 'delete_failed', 'Failed to delete location', [ 'status' => 500 ] );
+    }
+}
+// END NEW CRUD OPS FOR TRIBUTE LOCATIONS
  
 //     // Get WPA2 Tributes endpoint
 //     register_rest_route('custom/v1', '/wpa2_tributes', array(

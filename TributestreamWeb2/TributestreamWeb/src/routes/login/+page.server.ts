@@ -1,5 +1,6 @@
 import type { Actions } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
+import { userStore } from '$lib/stores/userStore';
 export const actions: Actions = {
     default: async ({ request, cookies, locals }) => {
         console.log('🚀 Starting login process...');
@@ -51,7 +52,28 @@ export const actions: Actions = {
             console.log('🍪 JWT cookie set successfully');
             console.log('🔑 JWT cookie value:', cookies.get('jwt'));
 
-
+            console.log('🌐 Making request to WordPress backend...');
+            const response2 = await fetch(`https://wp.tributestream.com/wp-json/wp/v2/users/me`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${result.token}`,
+                    'Content-Type': 'application/json'
+                },
+              
+            });
+        // Update the userStore with token and user details
+        userStore.set({
+            token: result.token,
+            displayName: result.user_display_name,
+            email: result.user_email,
+            nicename: result.user_nicename
+        });
+        console.log('📦 userStore updated:', {
+            token: result.token,
+            displayName: result.user_display_name,
+            email: result.user_email,
+            nicename: result.user_nicename
+        });
 
             throw redirect(303, '/dashboard');
 

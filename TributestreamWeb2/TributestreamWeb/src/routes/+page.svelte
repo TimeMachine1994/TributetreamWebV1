@@ -6,7 +6,7 @@
   import { authService } from '$lib/api/unified-tributestream-plugin/auth';
   import { registrationService } from '$lib/api/unified-tributestream-plugin/register';
   import { tributeService } from '$lib/api/unified-tributestream-plugin/tribute';
-
+  import { userStore } from '$lib/stores/userStore';
   // State variables
   let generatedPassword = '';
   let lovedOneName = $state('');
@@ -24,8 +24,7 @@
   let fullName = $state('');
   let email = $state('');
   let phone = $state('');
-  import { userIdStore } from '$lib/stores/userStore';
-  let userId = $userIdStore;
+   let userId = $userStore;
    
   // Get token from local storage
   function getToken() {
