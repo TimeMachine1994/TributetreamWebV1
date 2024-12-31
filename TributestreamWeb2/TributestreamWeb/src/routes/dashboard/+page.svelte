@@ -1,65 +1,102 @@
 <script lang="ts">
-    export const ssr = true;
-    export let data;
-
     import { writable } from 'svelte/store';
-    import { invalidate } from '$app/navigation';
 
-    let searchQuery = '';
-    const selectedTribute = writable(null);
+    // Initialize props and state
+    const { data } = $props();
 
-    $: filteredTributes = data.tributes.filter((tribute) =>
-        tribute.loved_one_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Type definition for a tribute
+    interface Tribute {
+        loved_one_name: string;
+        id: number;
+        slug: string;
+        custom_html?: string;
+    }
 
-    let customHtml = '';
+    // Declare state variables with Svelte 5's $state
+    let searchQuery = $state('');
+    let selectedTribute = $state<Tribute | null>(null);
+    let currentPage = $state(1);
+    const itemsPerPage = 10;
 
-    function openPanel(tribute) {
-        console.log('🟢 Opening panel for tribute:', tribute);
-        selectedTribute.set(tribute);
-        customHtml = tribute.custom_html || '';
+    // Reactive state-derived properties
+    const filteredTributes = $derived(() => {
+        console.log("Deriving filtered tributes");
+        const tributes = (data?.tributes || []) as Tribute[];
+        return tributes.filter((tribute) => {
+            // console.log("Filtering tribute:", tribute);
+            return tribute.loved_one_name.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+    });
+
+    const paginatedTributes = $derived(() => {
+        // console.log("Deriving paginated tributes");
+        const tributes = filteredTributes();
+        return tributes.slice(
+            (currentPage - 1) * itemsPerPage,
+            currentPage * itemsPerPage
+        );
+    });
+
+    const totalPages = $derived(() => {
+        // console.log("Deriving total pages");
+        const tributes = filteredTributes();
+        return Math.ceil(tributes.length / itemsPerPage);
+    });
+
+    // Navigation functions
+    function nextPage() {
+        console.log("Next page");
+        if (currentPage < totalPages()) currentPage++;
+    }
+
+    function previousPage() {
+        console.log("Previous page");
+        if (currentPage > 1) currentPage--;
+    }
+
+    function openPanel(tribute: Tribute) {
+        console.log("Opening panel for tribute:", tribute);
+        selectedTribute = tribute;
     }
 
     function closePanel() {
-        console.log('🟡 Closing panel');
-        selectedTribute.set(null);
+        console.log("Closing panel");
+        selectedTribute = null;
     }
 
-    async function handleSubmit(event) {
-        event.preventDefault();
-        console.log('🔵 Submitting form with tributeId:', $selectedTribute.id);
-        console.log('🔵 Custom HTML content:', customHtml);
 
-        const formData = new FormData(event.target);
-        for (const [key, value] of formData.entries()) {
-            console.log(`🟣 Form Data - ${key}:`, value);
+async function handleSave(event: Event) {
+    console.log("🔄 Saving custom HTML...");
+    
+    try {
+        const formData = new FormData(event.target as HTMLFormElement);
+        const tributeId = formData.get('tributeId');
+        const customHtml = formData.get('customHtml');
+
+        if (!tributeId || !customHtml) {
+            console.error('❌ Invalid input.');
+            return;
         }
 
-        try {
-            const response = await fetch('?/saveCustomHtml', {
-                method: 'POST',
-                body: formData,
-            });
+        const response = await fetch('?/saveCustomHtml', {
+            method: 'POST',
+            body: formData,
+        });
 
-            if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Server response:', result);
-
-            if (result.success) {
-                alert('Custom HTML updated successfully!');
-                invalidate(); // Refresh the data
-            } else {
-                console.error('❌ Server error message:', result.error);
-                alert(result.error || 'Failed to save custom HTML.');
-            }
-        } catch (error) {
-            console.error('❌ Error during form submission:', error);
-            alert('Failed to save custom HTML. Please try again.');
+        if (!response.ok) {
+            throw new Error('Failed to save custom HTML.');
         }
+
+        const result = await response.json();
+        console.log('✅ Save successful:', result);
+
+        // Optionally, refresh the page or close the panel
+        closePanel();
+        await goto(window.location.pathname); // Refresh the current page
+    } catch (error) {
+        console.error('❌ Error saving custom HTML:', error);
     }
+}
 </script>
 
 <div class="dashboard container mx-auto py-8">
@@ -75,18 +112,38 @@
         />
     </div>
 
-    <!-- Grid of Cards -->
-    {#if filteredTributes?.length > 0}
+    <!-- Pagination Controls -->
+    <div class="flex justify-center gap-4 mb-4">
+        <button 
+            on:click={previousPage}
+            disabled={currentPage === 1}
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+        >
+            Previous
+        </button>
+        <span class="py-2">Page {currentPage} of {totalPages()}</span>
+        <button 
+            on:click={nextPage}
+            disabled={currentPage === totalPages()}
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+        >
+            Next
+        </button>
+    </div>
+
+    <!-- Tribute Grid -->
+    {#if paginatedTributes()?.length > 0}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {#each filteredTributes as tribute}
-                <div
-                    class="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition"
+            {#each paginatedTributes() as tribute (tribute.id)}
+                <button
+                    class="bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition text-left"
                     on:click={() => openPanel(tribute)}
+                    aria-label="Open tribute details for {tribute.loved_one_name}"
                 >
                     <h2 class="text-lg font-semibold mb-2">{tribute.loved_one_name}</h2>
                     <p><strong>ID:</strong> {tribute.id}</p>
                     <p><strong>Slug:</strong> {tribute.slug}</p>
-                </div>
+                </button>
             {/each}
         </div>
     {:else}
@@ -94,10 +151,13 @@
     {/if}
 
     <!-- Detail Panel -->
-    {#if $selectedTribute}
+    {#if selectedTribute}
         <div
             class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
             on:click={closePanel}
+            role="dialog"
+            aria-labelledby="tribute-details-title"
+            aria-describedby="tribute-details-description"
         >
             <div
                 class="bg-white w-11/12 max-w-lg p-6 rounded-lg shadow-lg relative"
@@ -106,19 +166,20 @@
                 <button
                     class="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
                     on:click={closePanel}
+                    aria-label="Close tribute details"
                 >
                     ✖
                 </button>
-                <h2 class="text-2xl font-bold mb-4">Details for { $selectedTribute.loved_one_name }</h2>
-                <p><strong>ID:</strong> { $selectedTribute.id }</p>
+                <h2 id="tribute-details-title" class="text-2xl font-bold mb-4">Details for {selectedTribute.loved_one_name}</h2>
+                <p id="tribute-details-description"><strong>ID:</strong> {selectedTribute.id}</p>
                 <p><strong>Custom HTML:</strong></p>
 
                 <!-- Save Form -->
-                <form method="POST" action="?/saveCustomHtml" on:submit|preventDefault={handleSubmit}>
-                    <input type="hidden" name="tributeId" value={ $selectedTribute.id } />
+                <form on:submit|preventDefault={handleSave}>
+                    <input type="hidden" name="tributeId" value={selectedTribute.id} />
                     <textarea
                         name="customHtml"
-                        bind:value={customHtml}
+                        bind:value={selectedTribute.custom_html}
                         class="w-full h-40 p-2 border border-gray-300 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
                     ></textarea>
                     <div class="mt-4 flex justify-end">
@@ -130,6 +191,7 @@
                         </button>
                     </div>
                 </form>
+                
             </div>
         </div>
     {/if}

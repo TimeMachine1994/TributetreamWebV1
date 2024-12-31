@@ -1,6 +1,10 @@
 // app.d.ts
 declare global {
     namespace App {
+      interface Locals {
+        jwt?: string;
+      }
+
       interface Tribute {
         id: string;
         user_id: string;

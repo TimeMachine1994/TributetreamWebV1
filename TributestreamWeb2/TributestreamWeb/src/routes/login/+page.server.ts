@@ -44,7 +44,7 @@ export const actions: Actions = {
                 path: '/',
                 httpOnly: false,
                 sameSite: 'none',
-                secure: false,
+                secure: true,
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
             locals.jwt = result.token;
@@ -54,18 +54,6 @@ export const actions: Actions = {
 
 
             throw redirect(303, '/dashboard');
-
-
-            // Return the token in the action response
-            return {
-                success: true,
-                token: result.token
-                
-            };
-
- 
-
-    
 
     }
 };

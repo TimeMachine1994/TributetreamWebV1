@@ -1,6 +1,8 @@
 import type { Actions } from '@sveltejs/kit';
+export const ssr = true;
 
 export async function load({ locals }) {
+    
     console.log('📡 Making API Request to Tributes Endpoint');
     const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
         method: 'GET',
@@ -10,11 +12,11 @@ export async function load({ locals }) {
         },
     });
 
-    console.log('📥 API Response Status:', response.status);
-    console.log('📤 API Response Headers:', Object.fromEntries(response.headers.entries()));
+    // console.log('📥 API Response Status:', response.status);
+    // console.log('📤 API Response Headers:', Object.fromEntries(response.headers.entries()));
 
     const tributes = await response.json();
-    console.log('📦 Parsed Tributes Data:', tributes);
+    // console.log('📦 Parsed Tributes Data:', tributes);
 
     return {
         tributes,
@@ -22,7 +24,6 @@ export async function load({ locals }) {
         timestamp: new Date().toISOString(),
     };
 }
-
 export const actions: Actions = {
     saveCustomHtml: async ({ request, locals }) => {
         console.log('🟢 Action triggered: saveCustomHtml');
@@ -31,9 +32,6 @@ export const actions: Actions = {
         const tributeId = formData.get('tributeId');
         const customHtml = formData.get('customHtml');
 
-        console.log('🟣 Received tributeId:', tributeId);
-        console.log('🟣 Received customHtml:', customHtml);
-
         if (!tributeId || !customHtml) {
             console.error('❌ Invalid input received.');
             return { error: 'Invalid input. Both tributeId and customHtml are required.' };
@@ -41,7 +39,6 @@ export const actions: Actions = {
 
         try {
             console.log('🔵 Sending PUT request to update custom HTML.');
-            //FIX THIS!!!!! THJIS IS WHER EI LEFT OFF
             const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tribute-event/${tributeId}`, {
                 method: 'PUT',
                 headers: {
@@ -62,6 +59,7 @@ export const actions: Actions = {
             return {
                 success: true,
                 message: 'Custom HTML updated successfully!',
+                result,
             };
         } catch (error) {
             console.error('❌ Error saving custom HTML:', error);
@@ -71,3 +69,4 @@ export const actions: Actions = {
         }
     },
 };
+
