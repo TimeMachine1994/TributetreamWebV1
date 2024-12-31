@@ -2,7 +2,7 @@ import type { Actions } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
 import { userStore } from '$lib/stores/userStore';
 export const actions: Actions = {
-    default: async ({ request, cookies, locals }) => {
+    default: async ({ request, cookies, locals}) => {
         console.log('🚀 Starting login process...');
         // Extract form data from request
         const formData = await request.formData();
@@ -61,6 +61,9 @@ export const actions: Actions = {
                 },
               
             });
+            const userData = await response2.json();
+
+        
         // Update the userStore with token and user details
         userStore.set({
             token: result.token,
@@ -75,7 +78,7 @@ export const actions: Actions = {
             nicename: result.user_nicename
         });
 
-            throw redirect(303, '/dashboard');
+            throw redirect(303, '/dashboard', { user: userData });
 
     }
 };
