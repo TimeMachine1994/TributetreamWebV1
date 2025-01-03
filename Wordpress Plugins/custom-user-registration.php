@@ -1,765 +1,252 @@
 <?php
 /*
-Plugin Name: Custom User Registration
-The way this plugin work, is it exposes routes that lets us 
-write to the database using $wpdb. 
-
-The custom-user-registration file name is a misnomer. The file 
-below is strucuted as follows:
-
-Custom User Registration Functions 
-Custom Admin CRUD Functions
-Then, Custom user CruD Functions
+Plugin Name: TributeStream API
+Plugin URI: https://your-domain.com
+Description: REST API endpoints for TributeStream user management and tribute operations
+Version: 1.0
+Author: Your Name
+Author URI: https://your-domain.com
+License: GPL2
 */
-global $wpdb;
-add_action('rest_api_init', function() {
-#************************************
-#remove_action('rest_api_init', 'rest_send_cors_headers');
-#Start 12-30-24 Edit
-#Custom User Registration Functions 
-#************************************
-#Insert Here:
-#************************************
-// Register user registration route
-    register_rest_route('tributestream/v1', '/user-login', [
-        'methods' => 'POST',
-        'callback' => 'handle_user_login',
-        'permission_callback' => '__return_true'
-    ]);
 
-    register_rest_route('custom-user-registration/v1', '/register', [
-        'methods' => ['POST', 'GET'],
-        'callback' => 'handle_tributestream_registration',
-        'permission_callback' => '__return_true'
-    ]);
-// Get user role
-    register_rest_route('custom/v1', '/user-role', array(
-        'methods' => 'GET',
-        'callback' => 'custom_get_user_role',
-        'permission_callback' => 'is_user_logged_in'
-    ));
-
-//******************************  
-//Custom Admin CRUD Functions
-//******************************  
-// CRUD Tribute Events
-
-    register_rest_route('tributestream/v1', '/tribute/(?P<tribute_id>\d+)/events', [
-        'methods' => 'GET',
-        'callback' => 'get_tribute_events',
-        'permission_callback' => '__return_true'
-    ]);
-
-    register_rest_route('tributestream/v1', '/tribute-event', [
-        'methods' => 'POST',
-        'callback' => 'create_tribute_event',
-        'permission_callback' => 'is_user_logged_in'
-    ]);
-     
-    register_rest_route('custom/v1', '/slugs', array(
-        'methods' => 'GET',
-        'callback' => 'get_all_slugs',
-        'permission_callback' => '__return_true'
-    ));
-
-    register_rest_route('tributestream/v1', '/tribute-event/(?P<id>\d+)', [
-        'methods' => 'PUT',
-        'callback' => 'update_tribute_event',
-        'permission_callback' => 'is_user_logged_in'
-    ]);
-    register_rest_route('tributestream/v1', '/tribute-event/(?P<id>\d+)', [
-        'methods' => 'DELETE',
-        'callback' => 'delete_tribute_event',
-        'permission_callback' => 'is_user_logged_in'
-    ]);
-    register_rest_route('tributestream/v1', '/get_tribute', [
-        'methods' => 'GET',
-        'callback' => 'get_all_tributes',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
-    register_rest_route('tributestream/v1', '/tribute', [
-        'methods' => 'POST',
-        'callback' => 'create_tribute',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
-    register_rest_route('tributestream/v1', '/tribute/custom-html/(?P<tribute_id>\d+)', [
-        'methods' => 'PUT',
-        'callback' => 'update_tribute_custom_html',
-        'permission_callback' => 'is_user_logged_in'
-    ]);
+/**
+ * ------------------------------------------------------------------------
+ * IMPORTANT: ALWAYS TEST IN A STAGING ENVIRONMENT BEFORE PRODUCTION
+ * ------------------------------------------------------------------------
+ *
+ * This plugin demonstrates how to create custom WordPress REST API endpoints
+ * that interact with the MySQL database using the $wpdb object. It follows
+ * the recommended approach from the official WordPress REST API documentation:
+ *
+ *   - Use a custom namespace (e.g., 'tributestream/v1').
+ *   - Separate endpoints, e.g.:
+ *       /tributes
+ *       /tributes/(?P<tribute_id>\d+)/custom-html
+ *   - Provide callback functions for each HTTP method.
+ *   - Use a permission callback for authorization checks.
+ *
+ * This plugin defines two main routes under 'tributestream/v1':
+ *   1) GET /tributes
+ *   2) PUT /tributes/{tribute_id}/custom-html
+ *
+ * The code:
+ *   - Registers REST routes on the 'rest_api_init' action hook
+ *   - Implements callback functions to query and update the wpa2_tributes table
+ *   - Provides permission callbacks (demo: is_user_logged_in)
+ *   - Demonstrates how to handle arguments and return WP_REST_Response objects
+ *
+ * NOTE: For production, consider more robust permission checks (e.g.,
+ *       current_user_can('edit_posts')) and better error handling/logging.
+ */
 
 
-    //NEW REST ROUTE FOR CRUD TRIBUTE LOCATIONS
-  
-        register_rest_route( 'wpa2/v1', '/locations', [
-            'methods'  => 'POST',
-            'callback' => [ $this, 'create_location' ],
-        ]);
+/**
+ * Hook into rest_api_init to register custom routes for our plugin.
+ *
+ * Per WordPress REST API docs, we use a distinct namespace ("tributestream/v1"),
+ * and then define endpoints such as "/tributes" or "/tributes/(?P<tribute_id>\d+)".
+ */
+add_action('rest_api_init', function () {
 
-        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
-            'methods'  => 'GET',
-            'callback' => [ $this, 'read_location' ],
-        ]);
+    /**
+     * 1) Register the GET /tributestream/v1/tributes endpoint
+     *
+     *    This endpoint will retrieve all tributes from the wpa2_tributes table,
+     *    sorted by creation date in descending order.
+     *
+     *    - namespace:  tributestream/v1
+     *    - route:      /tributes
+     *    - method(s):  GET (readable)
+     *    - callback:   ts_get_all_tributes
+     *    - permission: is_user_logged_in (demo)
+     */
+    register_rest_route(
+        'tributestream/v1', // The custom namespace
+        '/tributes',        // The endpoint path
+        array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => 'ts_get_all_tributes',
+                // Official docs encourage a permission_callback
+                // to handle authentication/authorization logic
+                'permission_callback' => 'is_user_logged_in',
 
-        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
-            'methods'  => 'PUT',
-            'callback' => [ $this, 'update_location' ],
-        ]);
+                // Example of 'args' usage if you needed it:
+                // 'args' => array(
+                //    'some_param' => array(
+                //       'default' => 'mydefault',
+                //       'validate_callback' => function($param, $request, $key) {
+                //           return is_string($param);
+                //       },
+                //       'sanitize_callback' => 'sanitize_text_field',
+                //    ),
+                // ),
+            ),
+        )
+    );
 
-        register_rest_route( 'wpa2/v1', '/locations/(?P<id>\d+)', [
-            'methods'  => 'DELETE',
-            'callback' => [ $this, 'delete_location' ],
-        ]);
-        //END NEW REST ROUTE FOR TRIBUTE LOCATIONS CRUD
-
-// Get all slugs (for search?)
-
+    /**
+     * 2) Register the PUT /tributestream/v1/tributes/(?P<tribute_id>\d+)/custom-html endpoint
+     *
+     *    This endpoint updates the 'custom_html' field for a tribute by ID.
+     *
+     *    - namespace:  tributestream/v1
+     *    - route:      /tributes/(?P<tribute_id>\d+)/custom-html
+     *    - method(s):  PUT (editable)
+     *    - callback:   ts_update_tribute_custom_html
+     *    - permission: is_user_logged_in (demo)
+     *
+     *    Note: We're demonstrating a simple usage of regex placeholders:
+     *          (?P<tribute_id>\d+) means "capture a numeric ID"
+     *
+     *    The official docs recommend validating your arguments. Here, we
+     *    validate that 'tribute_id' is numeric.
+     */
+    register_rest_route(
+        'tributestream/v1', // The namespace
+        '/tributes/(?P<tribute_id>\d+)/custom-html', // The route
+        array(
+            array(
+                'methods'             => 'PUT',
+                'callback'            => 'ts_update_tribute_custom_html',
+                'permission_callback' => 'is_user_logged_in',
+                'args'                => array(
+                    'tribute_id' => array(
+                        // We'll ensure 'tribute_id' is numeric
+                        'validate_callback' => function($param, $request, $key) {
+                            return is_numeric($param);
+                        },
+                    ),
+                ),
+            ),
+        )
+    );
 });
 
-function handle_user_login(WP_REST_Request $request) {
-         $params = $request->get_json_params();
-         $username = sanitize_user($params['username']);
-         $password = $params['password'];
-    
-         // Make request to JWT plugin endpoint
-         $jwt_response = wp_remote_post(get_site_url() . '/wp-json/jwt-auth/v1/token', [
-             'body' => [
-                 'username' => $username,
-                 'password' => $password
-             ]
-         ]);
-    
-         if (is_wp_error($jwt_response)) {
-             return new WP_Error('jwt_auth_failed', 'Authentication failed', ['status' => 401]);
-         }
-    
-         $response_body = json_decode(wp_remote_retrieve_body($jwt_response), true);
-    
-         // Return the JWT token and user data
-         return new WP_REST_Response([
-             'token' => $response_body['token'],
-             'user_email' => $response_body['user_email'],
-             'user_nicename' => $response_body['user_nicename'],
-             'user_display_name' => $response_body['user_display_name']
-         ], 200);
-     }
-     
-function get_tribute_events($request) {
+
+/**
+ * ts_get_all_tributes
+ *
+ * Callback function for:
+ *   GET /tributestream/v1/tributes
+ *
+ * Queries the wpa2_tributes table and returns all records as a JSON response.
+ *
+ * @return WP_REST_Response
+ */
+function ts_get_all_tributes($request) {
     global $wpdb;
-    $tribute_id = $request->get_param('tribute_id');
 
-    $events = $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM wpa2_tribute_events WHERE tribute_id = %d ORDER BY event_date ASC",
-        $tribute_id
-    ));
+    error_log('Executing ts_get_all_tributes'); // Just a debug log example
 
-    return new WP_REST_Response($events, 200);
-}
-
-function get_all_slugs() {
-    global $wpdb;
-    $results = $wpdb->get_results("SELECT post_name FROM wp_posts WHERE post_status = 'publish' AND post_type = 'page'");
-    $slugs = array_map(function($row) {
-        return $row->post_name;
-    }, $results);
-    return $slugs;
-}
-
-function get_all_tributes() {
-    global $wpdb;
-    
+    // Query to retrieve all tributes
     $tributes = $wpdb->get_results(
-        "SELECT id, user_id, loved_one_name, slug, created_at, updated_at, custom_html, phone_number, number_of_streams 
-         FROM wpa2_tributes 
-         ORDER BY created_at DESC",
+        "
+        SELECT 
+            id, 
+            user_id, 
+            loved_one_name, 
+            slug, 
+            created_at, 
+            updated_at, 
+            custom_html, 
+            phone_number, 
+            number_of_streams
+        FROM wpa2_tributes
+        ORDER BY created_at DESC
+        ",
         ARRAY_A
     );
 
+    // Debugging logs
+    error_log('Last Query: ' . $wpdb->last_query);
+    error_log('Results: ' . print_r($tributes, true));
+
+    // Check for any database errors
     if ($wpdb->last_error) {
-        return new WP_REST_Response([
-            'error' => true,
-            'message' => 'Database error: ' . $wpdb->last_error
-        ], 500);
+        error_log('Database Error: ' . $wpdb->last_error);
+
+        // Return an error as a WP_REST_Response
+        return new WP_REST_Response(
+            array(
+                'error'   => true,
+                'message' => 'Database error: ' . $wpdb->last_error,
+            ),
+            500
+        );
     }
 
+    // Return data as JSON with a 200 OK status
     return new WP_REST_Response($tributes, 200);
 }
-// Function to handle user registration
-function handle_tributestream_registration($request) {
-    error_log('Registration attempt started');
-    
-    $params = $request->get_json_params();
-    
-    $username = sanitize_user($params['username']);
-    $email = sanitize_email($params['email']);
-    $password = $params['password'];
-    $meta = $params['meta'];
-    
-    $user_id = wp_create_user($username, $password, $email);
-    
-    if (is_wp_error($user_id)) {
-        error_log('Registration failed: ' . $user_id->get_error_message());
-        return new WP_Error('registration_failed', $user_id->get_error_message(), ['status' => 400]);
-    }
-    
-    update_user_meta($user_id, 'full_name', sanitize_text_field($meta['full_name']));
-    update_user_meta($user_id, 'loved_one_name', sanitize_text_field($meta['loved_one_name']));
-    update_user_meta($user_id, 'phone', sanitize_text_field($meta['phone']));
-    
-    return new WP_REST_Response(['user_id' => $user_id, 'message' => 'User registered successfully'], 201);
-}
-
-// Callback function to fetch the user's role
-function custom_get_user_role(WP_REST_Request $request) {
-    $user = wp_get_current_user();
-
-    if (!$user || empty($user->roles)) {
-        return new WP_Error('no_role', __('User has no role or is not logged in'), array('status' => 403));
-    }
-
-    return array(
-        'roles' => $user->roles
-    );
-}
 
 
-function create_tribute_event($request) {
+/**
+ * ts_update_tribute_custom_html
+ *
+ * Callback function for:
+ *   PUT /tributestream/v1/tributes/{tribute_id}/custom-html
+ *
+ * Updates the custom_html field for the given tribute ID in the wpa2_tributes table.
+ *
+ * Sample JSON body: { "custom_html": "<div>New HTML content</div>" }
+ *
+ * @param WP_REST_Request $request The request object containing the route parameters and body.
+ * @return WP_REST_Response
+ */
+function ts_update_tribute_custom_html($request) {
     global $wpdb;
-    $params = $request->get_json_params();
 
-    $result = $wpdb->insert(
-        'wpa2_tribute_events',
-        array(
-            'tribute_id' => $params['tribute_id'],
-            'event_name' => sanitize_text_field($params['event_name']),
-            'event_date' => $params['event_date'], // Assume date validation handled elsewhere
-            'event_location' => sanitize_text_field($params['event_location']),
-            'event_description' => sanitize_textarea_field($params['event_description'])
-        ),
-        array('%d', '%s', '%s', '%s', '%s')
-    );
+    // Retrieve the {tribute_id} matched via the route (?P<tribute_id>\d+)
+    $tribute_id = $request->get_param('tribute_id');
 
-    if ($result === false) {
-        return new WP_Error('db_insert_error', 'Failed to create event', array('status' => 500));
-    }
+    // Retrieve JSON body parameters
+    $params      = $request->get_json_params();
+    $custom_html = isset($params['custom_html']) ? $params['custom_html'] : '';
 
-    return new WP_REST_Response(['message' => 'Event created', 'id' => $wpdb->insert_id], 200);
-}
-
-
-
-
-
-function update_tribute_event($request) {
-    global $wpdb;
-    $event_id = $request->get_param('id');
-    $params = $request->get_json_params();
-
-    $wpdb->update(
-        'wpa2_tribute_events',
-        array(
-            'event_name' => sanitize_text_field($params['event_name']),
-            'event_date' => $params['event_date'],
-            'event_location' => sanitize_text_field($params['event_location']),
-            'event_description' => sanitize_textarea_field($params['event_description'])
-        ),
-        array('id' => $event_id)
-    );
-
-    return new WP_REST_Response(['message' => 'Event updated'], 200);
-}
-
-
-function delete_tribute_event($request) {
-    global $wpdb;
-    $event_id = $request->get_param('id');
-
-    $wpdb->delete('wpa2_tribute_events', ['id' => $event_id]);
-
-    return new WP_REST_Response(['message' => 'Event deleted'], 200);
-}
-
-
-
-function create_tribute($request) {
-    global $wpdb;
-   $params = $request->get_json_params();
-   $user_id = $params['user_id'];
-   $loved_one_name = sanitize_text_field($params['loved_one_name']);
-   $slug = sanitize_text_field($params['slug']);
-   
-    $result = $wpdb->insert(
-       'wpa2_tributes',
-       array(
-           'user_id' => $user_id,
-           'loved_one_name' => $loved_one_name,
-           'slug' => $slug
-       ),
-       array('%d', '%s', '%s')
-   );
-     if ($result === false) {
-       return new WP_Error('db_insert_error', 'Failed to insert tribute', array('status' => 500));
-   }
-   
-       return new WP_REST_Response(array('message' => 'Tribute created successfully', 'id' => $wpdb->insert_id), 200);
-
-}
-
-//Read Tribute
-function get_tribute($request) {
-   global $wpdb;
-   
-   $slug = $request->get_param('slug');
-   
-   return $wpdb->get_row(
-       $wpdb->prepare(
-           "SELECT *, custom_html FROM wpa2_tributes WHERE slug = %s",
-           $slug
-       )
-   );
-}
-
-function update_tribute_custom_html($request) {
-   global $wpdb;
-  
-  $tribute_id = $request->get_param('tribute_id');
-    $params = $request->get_json_params();
-    $custom_html = $params['custom_html'];
-    
+    // Use $wpdb->update to modify the custom_html column for the correct tribute
     $result = $wpdb->update(
-        'wpa2_tributes',
-        array('id' => $tribute_id),
-        array('%s'),
-        array('%d')
+        'wpa2_tributes',                          // Table name
+        array('custom_html' => $custom_html),     // SET custom_html = ...
+        array('id' => (int) $tribute_id),         // WHERE id = ...
+        array('%s'),                              // Data format for custom_html
+        array('%d')                               // Data format for id
     );
-    
+
+    // If $result === false, an error occurred
     if ($result === false) {
-        return new WP_REST_Response([
-         ], 500);
+        error_log('Database update failed: ' . $wpdb->last_error);
+
+        // Return error response
+        return new WP_REST_Response(
+            array(
+                'error'   => true,
+                'message' => 'Unable to update tribute in the database.'
+            ),
+            500
+        );
     }
-    
-    return new WP_REST_Response([
-        'message' => 'Custom HTML updated successfully',
-        'tribute_id' => $tribute_id
-    ], 200);
-}
- 
-// START NEW CRUD OPS FOR TRIBUTE LOCATIONS
 
-public function create_location( $request ) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
-
-    $data = [
-        'Tribute_id'               => $request['Tribute_id'],
-        'Location_name'            => $request['Location_name'],
-        'Location_live_start_time' => $request['Location_live_start_time'],
-        'Created_at'               => current_time( 'mysql' ),
-        'Updated_at'               => current_time( 'mysql' ),
-        'Time_at_location'         => $request['Time_at_location'],
-    ];
-
-    $result = $wpdb->insert( $this->table_name, $data );
-
-    if ( $result ) {
-        return rest_ensure_response( [ 'message' => 'Location created successfully!', 'id' => $wpdb->insert_id ] );
-    } else {
-        return new WP_Error( 'create_failed', 'Failed to create location', [ 'status' => 500 ] );
+    // If $result === 0, no rows were updated.
+    // Possibly the ID doesn't exist or no changes were needed.
+    if ($result === 0) {
+        return new WP_REST_Response(
+            array(
+                'message'    => 'No rows updated. Possibly invalid tribute_id or no changes provided.',
+                'tribute_id' => $tribute_id,
+            ),
+            200
+        );
     }
-}
 
-public function read_location( $request ) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
-
-    $id = $request['id'];
-    $location = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$this->table_name} WHERE Id = %d", $id ), ARRAY_A );
-
-    if ( $location ) {
-        return rest_ensure_response( $location );
-    } else {
-        return new WP_Error( 'not_found', 'Location not found', [ 'status' => 404 ] );
-    }
+    // If $result > 0, success
+    return new WP_REST_Response(
+        array(
+            'message'    => 'Custom HTML updated successfully.',
+            'tribute_id' => $tribute_id,
+        ),
+        200
+    );
 }
 
-public function update_location( $request ) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
-
-    $id = $request['id'];
-    $data = [
-        'Tribute_id'               => $request['Tribute_id'],
-        'Location_name'            => $request['Location_name'],
-        'Location_live_start_time' => $request['Location_live_start_time'],
-        'Updated_at'               => current_time( 'mysql' ),
-        'Time_at_location'         => $request['Time_at_location'],
-    ];
-
-    $result = $wpdb->update( $this->table_name, $data, [ 'Id' => $id ] );
-
-    if ( $result !== false ) {
-        return rest_ensure_response( [ 'message' => 'Location updated successfully!' ] );
-    } else {
-        return new WP_Error( 'update_failed', 'Failed to update location', [ 'status' => 500 ] );
-    }
-}
-
-public function delete_location( $request ) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'wpa2_tribute_locations';
-
-    $id = $request['id'];
-    $result = $wpdb->delete( $this->table_name, [ 'Id' => $id ] );
-
-    if ( $result ) {
-        return rest_ensure_response( [ 'message' => 'Location deleted successfully!' ] );
-    } else {
-        return new WP_Error( 'delete_failed', 'Failed to delete location', [ 'status' => 500 ] );
-    }
-}
-// END NEW CRUD OPS FOR TRIBUTE LOCATIONS
- 
-//     // Get WPA2 Tributes endpoint
-//     register_rest_route('custom/v1', '/wpa2_tributes', array(
-//         'methods' => 'GET',
-//         'callback' => 'get_wpa2_tributes',
-//         'permission_callback' => 'is_user_logged_in'
-//     ));
-
-//     // Get Streams endpoint
-//     register_rest_route('custom/v1', '/streams', array(
-//         'methods' => 'GET',
-//         'callback' => 'get_streams',
-//         'permission_callback' => 'custom_jwt_authenticate'
-//     ));
-
-//     // Update Tribute Custom HTML endpoint
-//     register_rest_route('custom/v1', '/wpa2_tributes/(?P<id>\d+)', array(
-//         'methods' => 'PATCH',
-//         'callback' => 'update_tribute_custom_html',
-//         'permission_callback' => 'custom_jwt_authenticate'
-//     ));
-
-//     register_rest_route('registration_email/v1', '/send-email', array(
-//         'methods' => 'POST',
-//         'callback' => 'custom_send_registration_email',
-//         'permission_callback' => '__return_true',
-//         'args' => array(
-//             'email' => array(
-//                 'required' => true,
-//                 'type' => 'string'
-//             ),
-//             'subject' => array(
-//                 'required' => true,
-//                 'type' => 'string'
-//             ),
-//             'message' => array(
-//                 'required' => true,
-//                 'type' => 'string'
-//             )
-//         )
-//     ));
-    
-//  register_rest_route('tributestream/v1', '/tribute/(?P<slug>[a-zA-Z0-9-]+)', array(
-//         'methods' => 'GET',
-//         'callback' => 'get_tribute',
-//         'args' => array(
-//             'slug' => array(
-//                 'validate_callback' => function($param, $request, $key) {
-//                     return is_string($param);
-//                 }
-//             ),
-//         ),
-//         'permission_callback' => '__return_true', // Adjust this based on your security requirements
-//     ));
-
-//     register_rest_route('tributestream/v1', '/tribute/(?P<id>\d+)', array(
-//         'methods' => 'PUT',
-//         'callback' => 'update_tribute',
-//         'permission_callback' => 'is_user_logged_in'
-//     ));
-
-//     register_rest_route('tributestream/v1', '/tribute/(?P<id>\d+)', array(
-//         'methods' => 'DELETE',
-//         'callback' => 'delete_tribute',
-//         'permission_callback' => 'is_user_logged_in'
-//     ));
-
-//     // Register route for adding a slug
-//     register_rest_route('tributestream/v1', '/add-slug', [ //MAKE SURE UPDATE AND ADD SLUG WORK WITH THE MYSQL DB
-//         'methods' => 'POST',
-//         'callback' => 'add_slug_to_table',
-//         'permission_callback' => '__return_true', // Adjust for security in production
-//     ]);
-
-
-
-//     // Register user registration route
-//     register_rest_route('custom-user-registration/v1', '/register', [
-//         'methods' => ['POST', 'GET'],
-//         'callback' => 'handle_tributestream_registration',
-//         'permission_callback' => '__return_true'
-//     ]);
-
-//     // Test endpoint for debugging
-//     register_rest_route('custom-user-registration/v1', '/test', [
-//         'methods' => 'GET',
-//         'callback' => function() {
-//             return new WP_REST_Response('Endpoint is working!', 200);
-//         },
-//         'permission_callback' => '__return_true'
-//     ]);
-    
-//         register_rest_route('tributestream/v1', '/tribute/(?P<tribute_id>\d+)/videos', [
-//         'methods' => 'GET',
-//         'callback' => 'get_tribute_videos',
-//         'permission_callback' => 'is_user_logged_in'
-//     ]);
-    
-//     register_rest_route('tributestream/v1', '/tribute/video', [
-//         'methods' => 'POST',
-//         'callback' => 'create_tribute_video',
-//         'permission_callback' => 'is_user_logged_in'
-//     ]);
-    
-//     register_rest_route('tributestream/v1', '/tribute/video/(?P<id>\d+)', [
-//         'methods' => 'PUT',
-//         'callback' => 'update_tribute_video',
-//         'permission_callback' => 'is_user_logged_in'
-//     ]);
-    
-//     register_rest_route('tributestream/v1', '/tribute/video/(?P<id>\d+)', [
-//         'methods' => 'DELETE',
-//         'callback' => 'delete_tribute_video',
-//         'permission_callback' => 'is_user_logged_in'
-//     ]);
-//     // Register the nonce endpoint
-//     register_rest_route('tributestream/v1', '/get-nonce', [
-//         'methods' => 'GET',
-//         'callback' => 'get_custom_nonce',
-//         'permission_callback' => '__return_true'
-//     ]);
-    
-    
-
-   
-//     register_rest_route('custom/v1', '/login', array(
-//     'methods' => 'POST',
-//     'callback' => 'custom_login_user',
-//     'permission_callback' => '__return_true', // Allow unauthenticated access
-//     ));
-
-// });
-
-// function custom_login_user(WP_REST_Request $request) {
-//     $params = $request->get_json_params();
-//     $username = sanitize_user($params['username']);
-//     $password = $params['password'];
-
-//     // Make request to JWT plugin endpoint
-//     $jwt_response = wp_remote_post(get_site_url() . '/wp-json/jwt-auth/v1/token', [
-//         'body' => [
-//             'username' => $username,
-//             'password' => $password
-//         ]
-//     ]);
-
-//     if (is_wp_error($jwt_response)) {
-//         return new WP_Error('jwt_auth_failed', 'Authentication failed', ['status' => 401]);
-//     }
-
-//     $response_body = json_decode(wp_remote_retrieve_body($jwt_response), true);
-
-//     // Return the JWT token and user data
-//     return new WP_REST_Response([
-//         'token' => $response_body['token'],
-//         'user_email' => $response_body['user_email'],
-//         'user_nicename' => $response_body['user_nicename'],
-//         'user_display_name' => $response_body['user_display_name']
-//     ], 200);
-// }
-// 
-
-
-
-
-
-
-
-
-// function custom_send_registration_email($request) {
-//     // Get parameters from request body
-//     $params = $request->get_params();
-    
-//     $email = $params['email'];
-//     $subject = $params['subject'];
-//     $message = $params['message'];
-//     $headers = array('Content-Type: text/plain; charset=UTF-8');
-
-//     $sent = wp_mail($email, $subject, $message, $headers);
-    
-//     if ($sent) {
-//         return new WP_REST_Response(['message' => 'Email sent successfully'], 200);
-//     } else {
-//         return new WP_REST_Response(['message' => 'Failed to send email'], 500);
-//     }
-// }
-
-// // Function to add a slug to the custom table DOUBLE CHECK THIS
-// function add_slug_to_table($request) {
-//     global $wpdb;
-//     $table_name = $wpdb->prefix . 'array_data';
-//     $slug = sanitize_text_field($request->get_param('slug'));
-
-//     // Check if slug exists
-//     $exists = $wpdb->get_var($wpdb->prepare(
-//         "SELECT COUNT(*) FROM $table_name WHERE array_value = %s",
-//         $slug
-//     ));
-
-//     if ($exists) {
-//         return new WP_REST_Response(['message' => 'Already added'], 200);
-//     }
-
-//     // Insert the slug
-//     $wpdb->insert($table_name, [
-//         'post_id' => 0, // Adjust as needed
-//         'array_key' => 'slug_key', // Adjust if you want a specific key
-//         'array_value' => $slug,
-//     ]);
-
-//     return new WP_REST_Response(['message' => 'Added'], 200);
-// }
-
-
-
-
- 
-
-// // added 11.15.24  and beyond: 
-
-// function create_tribute_video($request) {
-//     global $wpdb;
-//     $params = $request->get_json_params();
-    
-//     $result = $wpdb->insert(
-//         'wpa2_tribute_videos',
-//         array(
-//             'tribute_id' => $params['tribute_id'],
-//             'embed_code' => $params['embed_code'],
-//             'position' => $params['position'],
-//             'title' => $params['title'],
-//             'description' => $params['description']
-//         ),
-//         array('%d', '%s', '%d', '%s', '%s')
-//     );
-    
-//     return new WP_REST_Response(array(
-//         'message' => 'Video created successfully',
-//         'id' => $wpdb->insert_id
-//     ), 200);
-// }
-
-// // Get videos for a tribute
-// function get_tribute_videos($request) {
-//     global $wpdb;
-//     $tribute_id = $request->get_param('tribute_id');
-    
-//     $videos = $wpdb->get_results($wpdb->prepare(
-//         "SELECT * FROM wpa2_tribute_videos WHERE tribute_id = %d ORDER BY position ASC",
-//         $tribute_id
-//     ));
-    
-//     return new WP_REST_Response($videos, 200);
-// }
-
-// // Update video
-// function update_tribute_video($request) {
-//     global $wpdb;
-//     $video_id = $request->get_param('id');
-//     $params = $request->get_json_params();
-    
-//     $wpdb->update(
-//         'wpa2_tribute_videos',
-//         array(
-//             'embed_code' => $params['embed_code'],
-//             'position' => $params['position'],
-//             'title' => $params['title'],
-//             'description' => $params['description']
-//         ),
-//         array('id' => $video_id)
-//     );
-    
-//     return new WP_REST_Response(['message' => 'Video updated'], 200);
-// }
-
-// // Delete video
-// function delete_tribute_video($request) {
-//     global $wpdb;
-//     $video_id = $request->get_param('id');
-    
-//     $wpdb->delete('wpa2_tribute_videos', ['id' => $video_id]);
-//     return new WP_REST_Response(['message' => 'Video deleted'], 200);
-// }
- 
-//  function get_custom_nonce() {
-//     return new WP_REST_Response([
-//         'nonce' => wp_create_nonce('wp_rest')
-//     ], 200);
-// }
-
- 
-
-// #new custom stuff as of 12 20 2024
-
-// function get_wpa2_tributes() {
-//     global $wpdb;
-//     $table_name = $wpdb->prefix . 'tributes';
-    
-//     error_log("Starting get_wpa2_tributes function");
-//     error_log("Table name: " . $table_name);
-    
-//     $tributes = $wpdb->get_results(
-//         $wpdb->prepare("SELECT * FROM {$table_name}")
-//     );
-    
-//     error_log("Query executed. Last error: " . $wpdb->last_error);
-//     error_log("Results: " . print_r($tributes, true));
-    
-//     if ($wpdb->last_error) {
-//         error_log("Database error: " . $wpdb->last_error);
-//         return new WP_REST_Response([
-//             'error' => true,
-//             'message' => 'Database error',
-//             'details' => $wpdb->last_error
-//         ], 500);
-//     }
-    
-//     return new WP_REST_Response($tributes, 200);
-// }
-
-
-
-// function get_streams() {
-//     global $wpdb;
-//     $streams = $wpdb->get_results(
-//         "SELECT * FROM wp_wpa2_streams",
-//         ARRAY_A
-//     );
-//     return new WP_REST_Response($streams, 200);
-// }
-
-// function update_tribute_custom_html($request) {
-//     global $wpdb;
-//     $tribute_id = $request['id'];
-//     $custom_html = $request->get_param('custom_html');
-    
-//     $result = $wpdb->update(
-//         'wp_wpa2_tributes',
-//         array('custom_html' => $custom_html),
-//         array('id' => $tribute_id)
-//     );
-    
-//     return new WP_REST_Response(['success' => true], 200);
-// }
-// #end of custom stuff 
+/* End of plugin file */
