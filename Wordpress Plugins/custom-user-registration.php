@@ -1,12 +1,12 @@
 <?php
 /*
 Plugin Name: TributeStream API
-Plugin URI: https://your-domain.com
+Plugin URI:  https://your-domain.com
 Description: REST API endpoints for TributeStream user management and tribute operations
-Version: 1.0
-Author: Your Name
-Author URI: https://your-domain.com
-License: GPL2
+Version:     1.0.1
+Author:      Your Name
+Author URI:  https://your-domain.com
+License:     GPL2
 */
 
 /**
@@ -16,71 +16,75 @@ License: GPL2
  *
  * This plugin demonstrates how to create custom WordPress REST API endpoints
  * that interact with the MySQL database using the $wpdb object. It follows
- * the recommended approach from the official WordPress REST API documentation:
+ * WordPress REST API best practices:
  *
  *   - Use a custom namespace (e.g., 'tributestream/v1').
  *   - Separate endpoints, e.g.:
  *       /tributes
  *       /tributes/(?P<tribute_id>\d+)/custom-html
- *   - Provide callback functions for each HTTP method.
+ *   - Provide callback functions for each HTTP method (GET, POST, PUT, DELETE).
  *   - Use a permission callback for authorization checks.
+ *   - Sanitize and validate data via 'sanitize_callback', 'validate_callback',
+ *     and $wpdb->prepare().
  *
  * This plugin defines two main routes under 'tributestream/v1':
- *   1) GET /tributes
- *   2) PUT /tributes/{tribute_id}/custom-html
+ *   1) GET  /tributestream/v1/tributes
+ *   2) PUT  /tributestream/v1/tributes/(?P<tribute_id>\d+)/custom-html
  *
  * The code:
  *   - Registers REST routes on the 'rest_api_init' action hook
- *   - Implements callback functions to query and update the wpa2_tributes table
- *   - Provides permission callbacks (demo: is_user_logged_in)
+ *   - Implements callback functions to query and update the tributes table
+ *   - Uses permission callbacks (demo: is_user_logged_in) 
  *   - Demonstrates how to handle arguments and return WP_REST_Response objects
  *
- * NOTE: For production, consider more robust permission checks (e.g.,
- *       current_user_can('edit_posts')) and better error handling/logging.
+ * For production, consider more robust permission checks:
+ *    current_user_can('edit_posts'), or other capabilities relevant to your needs.
+ * Also, ensure thorough error handling/logging and data sanitization.
  */
 
+// Prevent direct access to this file for security
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
 
 /**
- * Hook into rest_api_init to register custom routes for our plugin.
- *
- * Per WordPress REST API docs, we use a distinct namespace ("tributestream/v1"),
- * and then define endpoints such as "/tributes" or "/tributes/(?P<tribute_id>\d+)".
+ * Register custom routes for TributeStream under the 'rest_api_init' hook.
  */
-add_action('rest_api_init', function () {
+add_action( 'rest_api_init', function () {
 
     /**
      * 1) Register the GET /tributestream/v1/tributes endpoint
      *
-     *    This endpoint will retrieve all tributes from the wpa2_tributes table,
+     *    This endpoint will retrieve all tributes from the table,
      *    sorted by creation date in descending order.
      *
      *    - namespace:  tributestream/v1
      *    - route:      /tributes
-     *    - method(s):  GET (readable)
+     *    - method:     GET (READABLE)
      *    - callback:   ts_get_all_tributes
      *    - permission: is_user_logged_in (demo)
      */
     register_rest_route(
-        'tributestream/v1', // The custom namespace
-        '/tributes',        // The endpoint path
+        'tributestream/v1',    // The custom namespace
+        '/tributes',           // The endpoint path
         array(
             array(
-                'methods'             => 'GET',
+                'methods'             => WP_REST_Server::READABLE,  // or 'GET'
                 'callback'            => 'ts_get_all_tributes',
-                // Official docs encourage a permission_callback
-                // to handle authentication/authorization logic
                 'permission_callback' => 'is_user_logged_in',
-
-                // Example of 'args' usage if you needed it:
-                // 'args' => array(
-                //    'some_param' => array(
-                //       'default' => 'mydefault',
-                //       'validate_callback' => function($param, $request, $key) {
-                //           return is_string($param);
-                //       },
-                //       'sanitize_callback' => 'sanitize_text_field',
-                //    ),
-                // ),
+                /**
+                 * Example 'args' usage if you needed to handle GET parameters:
+                 *
+                 * 'args' => array(
+                 *   'some_param' => array(
+                 *       'default'           => 'mydefault',
+                 *       'validate_callback' => function($param, $request, $key) {
+                 *           return is_string($param);
+                 *       },
+                 *       'sanitize_callback' => 'sanitize_text_field',
+                 *   ),
+                 * ),
+                 */
             ),
         )
     );
@@ -92,37 +96,45 @@ add_action('rest_api_init', function () {
      *
      *    - namespace:  tributestream/v1
      *    - route:      /tributes/(?P<tribute_id>\d+)/custom-html
-     *    - method(s):  PUT (editable)
+     *    - method:     PUT (EDITABLE)
      *    - callback:   ts_update_tribute_custom_html
      *    - permission: is_user_logged_in (demo)
      *
-     *    Note: We're demonstrating a simple usage of regex placeholders:
-     *          (?P<tribute_id>\d+) means "capture a numeric ID"
-     *
-     *    The official docs recommend validating your arguments. Here, we
-     *    validate that 'tribute_id' is numeric.
+     *    We use '(?P<tribute_id>\d+)' to capture an integer ID.
      */
     register_rest_route(
         'tributestream/v1', // The namespace
         '/tributes/(?P<tribute_id>\d+)/custom-html', // The route
         array(
             array(
-                'methods'             => 'PUT',
+                'methods'             => WP_REST_Server::EDITABLE,  // or 'PUT'
                 'callback'            => 'ts_update_tribute_custom_html',
                 'permission_callback' => 'is_user_logged_in',
+
+                // Validate the 'tribute_id' route parameter as an integer
                 'args'                => array(
                     'tribute_id' => array(
-                        // We'll ensure 'tribute_id' is numeric
-                        'validate_callback' => function($param, $request, $key) {
-                            return is_numeric($param);
+                        'validate_callback' => function ( $param, $request, $key ) {
+                            return is_numeric( $param );
                         },
+                        /**
+                         * We can also sanitize 'tribute_id' using absint
+                         * if we want to cast it to an absolute integer:
+                         * 'sanitize_callback' => 'absint'
+                         */
                     ),
+                    /**
+                     * Optionally, define how you want to sanitize the
+                     * custom_html field in the PUT body, if using request arguments:
+                     * 'custom_html' => array(
+                     *    'sanitize_callback' => 'wp_kses_post',
+                     * ),
+                     */
                 ),
             ),
         )
     );
 });
-
 
 /**
  * ts_get_all_tributes
@@ -130,41 +142,51 @@ add_action('rest_api_init', function () {
  * Callback function for:
  *   GET /tributestream/v1/tributes
  *
- * Queries the wpa2_tributes table and returns all records as a JSON response.
+ * Queries the tributes table and returns all records as a JSON response.
  *
+ * @param WP_REST_Request $request The incoming REST request object.
  * @return WP_REST_Response
  */
-function ts_get_all_tributes($request) {
+function ts_get_all_tributes( $request ) {
     global $wpdb;
 
-    error_log('Executing ts_get_all_tributes'); // Just a debug log example
+    // Debug log (optional)
+    error_log( 'Executing ts_get_all_tributes' );
 
-    // Query to retrieve all tributes
-    $tributes = $wpdb->get_results(
-        "
+    /**
+     * Construct a query to retrieve all tributes from a table named "{$wpdb->prefix}tributes".
+     * If your actual table name is different (e.g. wpa2_tributes), adjust accordingly.
+     *
+     * Note: There's no dynamic user input here, so prepare() isn't strictly required.
+     *       If you incorporate user-provided parameters, always use $wpdb->prepare().
+     */
+    $table_name = $wpdb->prefix . 'tributes';
+
+    // Query to retrieve all tributes, ordering by created_at descending
+    $query = "
         SELECT 
-            id, 
-            user_id, 
-            loved_one_name, 
-            slug, 
-            created_at, 
-            updated_at, 
-            custom_html, 
-            phone_number, 
+            id,
+            user_id,
+            loved_one_name,
+            slug,
+            created_at,
+            updated_at,
+            custom_html,
+            phone_number,
             number_of_streams
-        FROM wpa2_tributes
+        FROM {$table_name}
         ORDER BY created_at DESC
-        ",
-        ARRAY_A
-    );
+    ";
+
+    $tributes = $wpdb->get_results( $query, ARRAY_A );
 
     // Debugging logs
-    error_log('Last Query: ' . $wpdb->last_query);
-    error_log('Results: ' . print_r($tributes, true));
+    error_log( 'Last Query: ' . $wpdb->last_query );
+    error_log( 'Results: ' . print_r( $tributes, true ) );
 
     // Check for any database errors
-    if ($wpdb->last_error) {
-        error_log('Database Error: ' . $wpdb->last_error);
+    if ( $wpdb->last_error ) {
+        error_log( 'Database Error: ' . $wpdb->last_error );
 
         // Return an error as a WP_REST_Response
         return new WP_REST_Response(
@@ -177,9 +199,8 @@ function ts_get_all_tributes($request) {
     }
 
     // Return data as JSON with a 200 OK status
-    return new WP_REST_Response($tributes, 200);
+    return new WP_REST_Response( $tributes, 200 );
 }
-
 
 /**
  * ts_update_tribute_custom_html
@@ -187,49 +208,65 @@ function ts_get_all_tributes($request) {
  * Callback function for:
  *   PUT /tributestream/v1/tributes/{tribute_id}/custom-html
  *
- * Updates the custom_html field for the given tribute ID in the wpa2_tributes table.
+ * Updates the custom_html field for the given tribute ID in the tributes table.
  *
- * Sample JSON body: { "custom_html": "<div>New HTML content</div>" }
+ * Example JSON body:
+ * {
+ *   "custom_html": "<div>Your new HTML content</div>"
+ * }
  *
- * @param WP_REST_Request $request The request object containing the route parameters and body.
+ * @param WP_REST_Request $request The request object containing route parameters and body.
  * @return WP_REST_Response
  */
-function ts_update_tribute_custom_html($request) {
+function ts_update_tribute_custom_html( $request ) {
     global $wpdb;
 
-    // Retrieve the {tribute_id} matched via the route (?P<tribute_id>\d+)
-    $tribute_id = $request->get_param('tribute_id');
+    // Retrieve the {tribute_id} matched via the route '(?P<tribute_id>\d+)'
+    $tribute_id = $request->get_param( 'tribute_id' );
 
     // Retrieve JSON body parameters
     $params      = $request->get_json_params();
-    $custom_html = isset($params['custom_html']) ? $params['custom_html'] : '';
+    $custom_html = isset( $params['custom_html'] ) ? $params['custom_html'] : '';
 
-    // Use $wpdb->update to modify the custom_html column for the correct tribute
+    // If you want to sanitize HTML to allow certain tags, you can do:
+    // $custom_html = wp_kses_post($custom_html);
+
+    // Reference the tributes table
+    $table_name = $wpdb->prefix . 'tributes';
+
+    /**
+     * For robust security, use $wpdb->update with a prepared statement.
+     * $wpdb->update automatically prepares the SQL under the hood using
+     * the provided format arrays.
+     *
+     * Provide data formats for each column to avoid SQL injection:
+     *  - custom_html => %s
+     *  - id => %d
+     */
     $result = $wpdb->update(
-        'wpa2_tributes',                          // Table name
-        array('custom_html' => $custom_html),     // SET custom_html = ...
-        array('id' => (int) $tribute_id),         // WHERE id = ...
-        array('%s'),                              // Data format for custom_html
-        array('%d')                               // Data format for id
+        $table_name,
+        array( 'custom_html' => $custom_html ),  // column => data
+        array( 'id' => (int) $tribute_id ),      // where clause
+        array( '%s' ),                           // data format for SET
+        array( '%d' )                            // data format for WHERE
     );
 
-    // If $result === false, an error occurred
-    if ($result === false) {
-        error_log('Database update failed: ' . $wpdb->last_error);
+    // If $result === false, a query error occurred
+    if ( false === $result ) {
+        error_log( 'Database update failed: ' . $wpdb->last_error );
 
         // Return error response
         return new WP_REST_Response(
             array(
                 'error'   => true,
-                'message' => 'Unable to update tribute in the database.'
+                'message' => 'Unable to update tribute in the database.',
             ),
             500
         );
     }
 
-    // If $result === 0, no rows were updated.
-    // Possibly the ID doesn't exist or no changes were needed.
-    if ($result === 0) {
+    // If $result === 0, no rows were updated (ID doesn't exist or no changes)
+    if ( 0 === $result ) {
         return new WP_REST_Response(
             array(
                 'message'    => 'No rows updated. Possibly invalid tribute_id or no changes provided.',
@@ -248,5 +285,3 @@ function ts_update_tribute_custom_html($request) {
         200
     );
 }
-
-/* End of plugin file */

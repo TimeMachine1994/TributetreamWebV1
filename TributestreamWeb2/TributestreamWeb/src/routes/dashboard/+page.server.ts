@@ -4,7 +4,7 @@ export const ssr = true;
 export async function load({ locals }) {
     
     console.log('📡 Making API Request to Tributes Endpoint');
-    const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/get_tribute', {
+    const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${locals.jwt}`,
