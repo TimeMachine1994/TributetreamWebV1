@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
+  import { preventDefault } from 'svelte/legacy';../../account-settings/$types.js
 
   let { data = {} } = $props();
     const { userData = {} } = data;
