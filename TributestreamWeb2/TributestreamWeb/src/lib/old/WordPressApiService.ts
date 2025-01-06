@@ -1,7 +1,7 @@
 // src/lib/services/WordPressApiService.ts
 
 import type { RequestEvent } from '@sveltejs/kit';
-import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { fetchWithAuth } from './utils/fetchWithAuth';
 
 // Define the base URL for your WordPress API
 const WORDPRESS_API_BASE_URL = 'https://wp.tributestream.com/wp-json/custom/v1';

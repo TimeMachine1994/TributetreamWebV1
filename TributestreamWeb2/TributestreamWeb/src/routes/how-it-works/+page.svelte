@@ -1,7 +1,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte';
-    import CardSteps from '../../lib/components/CardSteps.svelte';
+    import CardSteps from '../../lib/old/components/CardSteps.svelte';
     import { Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 
     let pageTitle = 'How does it work?';

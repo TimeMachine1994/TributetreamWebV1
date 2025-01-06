@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { api } from '../src/lib/api/apiHandler';
+import { api } from '../src/lib/old/api/apiHandler';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 

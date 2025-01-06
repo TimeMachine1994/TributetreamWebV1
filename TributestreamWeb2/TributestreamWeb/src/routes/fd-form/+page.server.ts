@@ -35,6 +35,13 @@ export const actions: Actions = {
             });
         }
 
+        // SEND FORM DATA TO THE DATABASE AND GET THE DIRECTOR ID
+        // 1. create the user based on the data input
+        // 2. save the rest of the form data to the meta field 
+        // 3. offer to continue to the next step or reset the form.
+        
+
+
         // Prepare email data
         const emailData = {
             to: 'rockodo@gmail.com', // Replace with your recipient

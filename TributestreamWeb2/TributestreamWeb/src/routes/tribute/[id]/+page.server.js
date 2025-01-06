@@ -3,7 +3,7 @@
 // ==============================
 
 import { redirect } from '@sveltejs/kit';
-import { apiFetch, validateToken } from '$lib/utils/api';
+import { apiFetch, validateToken } from '$lib/old/utils/api';
 
 export async function load({ params }) {
     const isAuthenticated = await validateToken();

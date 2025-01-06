@@ -4,7 +4,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import TributeInitialForm from '../components/TributeInitialForm.svelte';
-    import TributeDetailsForm from '../components/TributeDetailsForm.svelte';
+    import TributeDetailsForm from './TributeDetailsForm.svelte';
     import { API_CONFIG } from '../config/api';
     import type { FormState, UIState, ValidationState } from '../types';
     

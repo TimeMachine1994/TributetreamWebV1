@@ -1,4 +1,3 @@
 <script lang="ts">
-
-</script>
-  Navbar test
+ </script>
+  Navbar test  

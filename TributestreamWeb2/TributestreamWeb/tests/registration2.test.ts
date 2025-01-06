@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { registrationService } from '../src/lib/api/unified-tributestream-plugin/register';
+import { registrationService } from '../src/lib/old/api/unified-tributestream-plugin/register';
 
 const server = setupServer(
     http.post('http://localhost/tributestream/v1/register', async ({ request }) => {
