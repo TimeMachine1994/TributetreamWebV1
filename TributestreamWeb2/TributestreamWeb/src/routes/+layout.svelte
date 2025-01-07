@@ -5,7 +5,23 @@ let { data, children } = $props();
 // User state
 let user = $state(data.user || null);
  
+ const fdForm = {
+    directorFirstName: '',
+    directorLastName: '',
+    deceasedFirstName: '',
+    deceasedLastName: '',
+    deceasedDOB: '',
+    deceasedDOD: '',
+    familyMemberEmail: '',
+    familyMemberPhone: '',
+    familyMemberDOB: '',
+    initialMemorialName: '',
+    initialMemorialAddress: '', 
+    initialMemorialTime: '',   
+    initialMemorialDate: '',   
+ }
 
+const calculator = {livestreamAtFuneralHome: '', selectedPackage: ''};
 // This is data from the JWT token response
 let isLoggedIn = $derived(!!user);
 let id = $state(user?.id);

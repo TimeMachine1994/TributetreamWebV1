@@ -4,6 +4,7 @@ declare global {
       interface Locals {
         jwt?: string;
       }
+ 
 
       interface Tribute {
         id: string;
