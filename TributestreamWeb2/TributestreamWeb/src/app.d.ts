@@ -18,11 +18,7 @@ declare global {
         number_of_streams: number | null;
       }
   
-      interface PageData {
-        tributes: Tribute[]; // An array of tributes
-        requestId: string;
-        timestamp: string;
-      }
+
     }
   }
   

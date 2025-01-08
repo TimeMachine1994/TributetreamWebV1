@@ -1,5 +1,8 @@
 <script lang="ts"> 
 import Navbar from '$lib/Navbar.svelte';
+import Footer from '$lib/Footer.svelte';
+
+
 let { data, children } = $props();
 
 // User state
@@ -53,6 +56,9 @@ let selectedPackage = $state(calculator?.selectedPackage);
 
 
 </script>
- 
 <Navbar />
+
 {@render children()}
+
+<Footer />
+

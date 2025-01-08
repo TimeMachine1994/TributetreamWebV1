@@ -1,4 +1,7 @@
-// File: src/routes/+layout.server.js
+// File: src/routes/+layout.server.ts
+
+
+
 export async function load({ locals, cookies }) {
     console.log('🔧 [Layout Server] load() triggered');
   
@@ -27,3 +30,4 @@ export async function load({ locals, cookies }) {
     }
   }
   
+
