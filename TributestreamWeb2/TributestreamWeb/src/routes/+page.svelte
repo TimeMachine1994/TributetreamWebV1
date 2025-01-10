@@ -52,12 +52,13 @@ function generateRandomPassword(): string {
    We Connect Families, One Link at a Time.
  </h1>
 
-<form method="POST" action="/?submit_create" class="w-full max-w-lg mx-auto p-6 bg-white/80 rounded-lg shadow-lg">
+<form method="POST" class="w-full max-w-lg mx-auto p-6 bg-white/80 rounded-lg shadow-lg">
   <div class="mb-6">
     <label for="lovedOneName" class="block text-gray-700 text-sm font-bold mb-2">Loved One's Name</label>
     <input 
       type="text" 
       id="lovedOneName" 
+      name="lovedOneName" 
       bind:value={lovedOneName}
       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       placeholder="Enter your loved one's name"
@@ -73,6 +74,7 @@ function generateRandomPassword(): string {
     <input 
       type="text" 
       id="userName" 
+      name="userName"
       bind:value={userName}
       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       placeholder="Enter your name"
@@ -84,7 +86,8 @@ function generateRandomPassword(): string {
     <label for="userEmail" class="block text-gray-700 text-sm font-bold mb-2">Your Email</label>
     <input 
       type="email" 
-      id="userEmail" 
+      id="userEmail"
+      name="userEmail" 
       bind:value={userEmail}
       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       placeholder="Enter your email"
@@ -100,6 +103,7 @@ function generateRandomPassword(): string {
     <input 
       type="tel" 
       id="userPhone" 
+      name="userPhone"
       bind:value={userPhone}
       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
       placeholder="Enter your phone number"

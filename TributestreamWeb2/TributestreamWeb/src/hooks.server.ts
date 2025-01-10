@@ -12,7 +12,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     const jwt = event.cookies.get('jwt');
     event.locals.jwt = jwt;
     console.log('🔍 JWT in Hook:', jwt);
- 
+
  
 
     // Continue resolving the request

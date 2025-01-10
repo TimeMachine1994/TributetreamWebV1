@@ -3,6 +3,13 @@ declare global {
     namespace App {
       interface Locals {
         jwt?: string;
+        user?: {
+          id: string;
+          username: string;
+          nicename: string;
+          email: string;
+          // Add other user properties here
+        }
       }
  
 
