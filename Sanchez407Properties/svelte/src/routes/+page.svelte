@@ -3,24 +3,7 @@
   import headerLogo from '$lib/assets/headerLogo.png';
 </script>
 
-<header class="bg-white shadow-md">
-  <nav class="container mx-auto px-4 py-2 flex items-center justify-between">
-    <div class="flex items-center">
-      <img src={headerLogo} alt="Sanchez407 Properties Logo" class="h-12 w-auto">
-    </div>
-    <div class="flex gap-4">
-      <button class="px-4 py-2 text-gray-700 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-        Floor Plan
-      </button>
-      <button class="px-4 py-2 text-gray-700 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-        Contact Us
-      </button>
-      <button class="px-4 py-2 text-gray-700 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-        Apply Now
-      </button>
-    </div>
-  </nav>
-</header>
+
 <body>
     <main class="container mx-auto px-4 py-8">
 
@@ -31,7 +14,7 @@
                 Picture a space where you can work on personal projects, plan start-ups, 
                 and even organize board-game or video-game nights to unwind. All while 
                 living in a quiet, clean environment that encourages focus during the day 
-                and camaraderie in the evenings.
+                and relaxation at night.
                 <br />
                 Located just minutes from Orlando’s bustling business centers, our home 
                 is purpose-built for those striving to build their future. Whether you're 

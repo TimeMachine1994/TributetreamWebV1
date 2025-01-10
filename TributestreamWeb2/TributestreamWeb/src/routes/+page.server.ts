@@ -2,9 +2,7 @@ import type { Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types'; 
  
 export const load: PageServerLoad = async ({ params }) => {
-  const response = await fetch('/api/user');
-  const data = await response.json();
-  return { data };
+
 };
 
 export const actions = {
@@ -39,10 +37,17 @@ export const actions = {
             
             if (result.success) {
               const user_id = result.user_id;
-              return { success: true, user_id, password };
+              
+              const response2 = await fetch('/api/createPage')
+              {}
+              const result2 = await fetch('/api/createPage')
+              {}
+
+
+
             }
       
-            return { success: false };      
+            return { fowardTo: FOWARD_PAGE_HERE};      
       
   
     }
