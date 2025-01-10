@@ -130,9 +130,11 @@ export const actions = {
                 nicename: authResult.user_nicename
             };
 
+            // WORKING ON MAKING THE USER DATA IS STORED IN A STATE OBJECT
+                        });
+            
             console.log('JWT token stored in locals.jwt:', locals.jwt);
             console.log('User object stored in locals.user:', locals.user);
-            throw redirect(303, '/success');
             // -----------------------------------------
             // 5) Create a Page for the User
             // -----------------------------------------
@@ -140,10 +142,7 @@ export const actions = {
 
        
  
- 
-            return {
-                
-            };
+  
 
         } catch (error) {
             console.error('Unexpected error:', error);
@@ -152,5 +151,7 @@ export const actions = {
                 message: 'An unexpected error occurred.'
             };
         }
+
+        throw redirect(303, '/success');
     }
 } satisfies Actions;
