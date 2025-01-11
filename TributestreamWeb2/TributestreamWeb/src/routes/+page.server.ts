@@ -1,157 +1,107 @@
-import type { Actions } from './$types';
+// src/routes/api/page.server.ts
 import { redirect } from '@sveltejs/kit';
-/**
- * This `actions` object handles form submissions. The "default" action is
- * invoked when you submit the form without a specific `?/action=foo`.
- */
+import type { Actions } from './$types';
+
 export const actions = {
     default: async ({ request, fetch, locals, cookies }) => {
-        try {
-            // -----------------------------------------
-            // 1) Extract Form Data
-            // -----------------------------------------
-            console.log('Extracting form data...');
-            const formData = await request.formData();
-
-            // Fields from the form. Adjust keys as needed to match <input name="...">
-            const username = formData.get('userName');
-            const email = formData.get('userEmail');
-
-            console.log('Extracted username:', username);
-            console.log('Extracted email:', email);
-
-            // Validate presence
-            if (!username || !email) {
-                console.error('Missing username or email');
-                return {
-                    success: false,
-                    message: 'Username and email are required.'
-                };
-            }
-
-            // -----------------------------------------
-            // 2) Generate Random Password
-            // -----------------------------------------
-            console.log('Generating random password...');
-            const length = 12;
+        const generatePassword = (): string => {
+            console.log('Generating a secure password.');
+            const length = 16;
             const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
-            let password = '';
+            const array = new Uint8Array(length);
+            crypto.getRandomValues(array);
+            const password = Array.from(array)
+                .map(x => charset[x % charset.length])
+                .join('');
+            console.log('Password generated:', password);
+            return password;
+        };
 
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * charset.length);
-                password += charset[randomIndex];
-            }
+        let password = '';
+        password = generatePassword();
 
-            console.log('Generated password:', password);
+        try {
+            // Parse and validate form data
+            const formData = await request.formData();
+            const data = {
+                userName: formData.get('userName'),
+                userEmail: formData.get('userEmail'),
+                phoneNumber: formData.get('userPhone'),
+                lovedOneName: formData.get('lovedOneName')
+            } as Record<string, any>;
 
-            // -----------------------------------------
-            // 3) Register the User (via /api/register)
-            // -----------------------------------------
-            console.log('Sending data to /api/register...');
+            console.log('Parsed form data:', data);
+
+            // Register user
             const registerResponse = await fetch('/api/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username,
-                    email,
-                    password
+                    username: data.userName,
+                    email: data.userEmail,
+                    password: password
                 })
             });
 
             if (!registerResponse.ok) {
-                console.error('Register API error:', registerResponse.statusText);
-                const errorDetails = await registerResponse.text();
-                console.error('Register API error details:', errorDetails);
-                return {
-                    success: false,
-                    message: 'Failed to register user.'
-                };
+                return fail(registerResponse.status, { error: true, message: 'Registration failed' });
             }
 
             const registerResult = await registerResponse.json();
-            console.log('Register API response:', registerResult);
+            const userId = registerResult.user_id;
 
-         
+            console.log('User registered with ID:', userId);
 
-            // Grab user_id from registration success
-            const user_id = registerResult.user_id;
-            console.log('Registered user ID:', user_id);
-
-            // -----------------------------------------
-            // 4) Immediately Log the User In (via /api/auth)
-            // -----------------------------------------
-            console.log('Logging in the newly registered user with /api/auth...');
+            // Authenticate user
             const authResponse = await fetch('/api/auth', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                // Use the same username and password
-                body: JSON.stringify({ username, password })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: data.userName,
+                    password: password,
+                })
             });
 
             if (!authResponse.ok) {
-                console.error('Auth API error:', authResponse.statusText);
-                const errorDetails = await authResponse.text();
-                console.error('Auth API error details:', errorDetails);
-                return {
-                    success: false,
-                    message: 'Login failed after registration.'
-                };
+                return fail(authResponse.status, { error: true, message: 'Authentication failed' });
             }
 
             const authResult = await authResponse.json();
-            console.log('Auth API response:', authResult);
+            cookies.set('jwt', authResult.token, { httpOnly: true, secure: true, path: '/' });
 
-            // The typical WordPress JWT response includes a token and user info
-            if (!authResult.token) {
-                console.error('No token returned from Auth API:', authResult);
-                return {
-                    success: false,
-                    message: 'Login failed: no token received.'
-                };
-            }
-            // After authResult is received
-            cookies.set('jwt', authResult.token, {
-                httpOnly: true, // Prevents client-side access
-                path: '/',       // Makes the cookie accessible site-wide
-                secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-                maxAge: 60 * 60 * 24 * 7 // Expires in 7 days
+            console.log('User authenticated and JWT set.');
+
+            // Write user metadata
+            console.log('Sending metadata:', {
+                user_id: userId,
+                meta_key: 'phone_number',
+                meta_value: data.phoneNumber
             });
-            // Store user/token in `locals` so it can be accessed in subsequent
-            // server-side load functions or the same request lifecycle.
-            locals.jwt = authResult.token;
-            locals.user = {
-                id: user_id,
-                username: authResult.user_display_name,
-                email: authResult.user_email,
-                nicename: authResult.user_nicename
-            };
 
-            // WORKING ON MAKING THE USER DATA IS STORED IN A STATE OBJECT
-                        });
-            
-            console.log('JWT token stored in locals.jwt:', locals.jwt);
-            console.log('User object stored in locals.user:', locals.user);
-            // -----------------------------------------
-            // 5) Create a Page for the User
-            // -----------------------------------------
-           
+            const metaResponse = await fetch('/api/user-meta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    meta_key: 'phone_number',
+                    meta_value: data.phoneNumber
+                })
+            });
 
-       
- 
-  
+            if (!metaResponse.ok) {
+                const errorData = await metaResponse.json();
+                console.error('Error from meta endpoint:', errorData);
+                return fail(metaResponse.status, { error: true, message: errorData.message });
+            }
 
-        } catch (error) {
+            console.log('Metadata written successfully.');
+         } catch (error) {
             console.error('Unexpected error:', error);
-            return {
-                success: false,
-                message: 'An unexpected error occurred.'
-            };
+            throw error(500, 'An unexpected error occurred.');
         }
 
-        throw redirect(303, '/success');
-    }
+        redirect(302, '/success');
+     }
 } satisfies Actions;

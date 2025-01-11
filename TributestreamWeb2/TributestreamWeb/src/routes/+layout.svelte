@@ -8,6 +8,7 @@ let { data, children } = $props();
 // User state
 let user = $state(data.user || null);
  
+
  const fdForm = {
     directorFirstName: '',
     directorLastName: '',
@@ -38,10 +39,11 @@ let displayName = $state(user?.displayName);
 let fdFirstName = $state();
 let fdLastName = $state(fdForm?.directorLastName);
 let familyMemberDOB = $state(fdForm?.familyMemberDOB);
-let deceasedFirstName = $state(fdForm?.deceasedFirstName);
+let lovedOnesName = $state(fdForm?.deceasedFirstName);
 let deceasedLastName = $state(fdForm?.deceasedLastName);
 let deceasedDOB = $state(fdForm?.deceasedDOB);
 let deceasedDOD = $state(fdForm?.deceasedDOD);
+let loved
 let familyMemberEmail = $state(fdForm?.familyMemberEmail);
 let familyMemberPhone = $state(fdForm?.familyMemberPhone);
 let initialMemorialName = $state(fdForm?.initialMemorialName); 
