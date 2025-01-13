@@ -13,7 +13,11 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.jwt = jwt;
     console.log('🔍 JWT in Hook:', jwt);
 
- 
+    const user_id = event.cookies.get('user_id');
+    event.locals.user_id = user_id;
+    console.log('🔍 user_id in hook:', user_id);
+
+
 
     // Continue resolving the request
     const response = await resolve(event);

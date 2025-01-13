@@ -3,9 +3,13 @@
 
 // State variables
 // State variables using $state rune
+const uuid1 = crypto.randomUUID();
+const uuid2 = crypto.randomUUID();
+
 let lovedOneName = $state('adfasfd');
-let userName = $state('asdfasdf');
-let userEmail = $state('adfsas@gmail.com');
+let userName = $state(uuid1);
+let userEmail =$state();
+ userEmail = `${crypto.randomUUID()}@gmail.com`;
 let userPhone = $state('407-221-5922');
 let error = $state('');
 let showSecondPage = $state(false);
