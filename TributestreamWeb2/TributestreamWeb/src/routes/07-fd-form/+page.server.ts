@@ -1,5 +1,7 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
+
+// Function to generate a slug from the deceased's first and last name
 function generateSlug(firstName: string, lastName: string): string {
     return `${firstName.trim().toLowerCase()}_${lastName.trim().toLowerCase()}`.replace(/\s+/g, '_');
 }
@@ -148,77 +150,58 @@ export const actions = {
 
             console.log('✅ Metadata written successfully.');
 
-            console.log('🔀 Redirecting to success page...');
+            // Add the tribute-table API call here
+            try {
+                console.log('🚀 Starting tribute-table API call...');
+                
+                // Generate the slug
+                const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
 
-        } catch (error) {
+                // Prepare the payload
+                const tributePayload = {
+                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`, // Match expected field name
+                    slug, // Ensure it's slugified
+                    user_id: userId // Ensure it's the correct user ID
+                };
+                
+                console.log('📦 Sending tribute payload:', tributePayload);
+                
+                const tributeResponse = await fetch('/api/tribute-table', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authResult.token}`
+                    },
+                    body: JSON.stringify(tributePayload)
+                });
+                
+                if (!tributeResponse.ok) {
+                    const tributeError = await tributeResponse.json();
+                    console.error('❌ Tribute API call failed:', tributeError);
+                    throw fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
+                }
+                
+                console.log('✅ Tribute data saved successfully.');
+                
+
+                if (!tributeResponse.ok) {
+                    const tributeError = await tributeResponse.json();
+                    console.error('❌ Tribute API call failed:', tributeError);
+                    return fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
+                }
+
+                console.log('✅ Tribute data saved successfully.');
+
+            } catch (error) {
+                console.error('💥 Error during tribute-table API call:', error);
+                throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
+            }
+
+            console.log('🔀 Redirecting to success page...');
+         } catch (error) {
             console.error('💥 Unexpected error:', error);
             throw fail(500, { error: true, message: 'An unexpected error occurred.' });
         }
-
-
-        try {
-    console.log('🚀 Starting tribute-table API call...');
-
-    // Generate the slug
-    const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
-
-    // Prepare the payload
-    const tributePayload = {
-        loved_ones_name: slug,
-        user_id: userId, // Retrieved from the registration process
-        memorial_details: {
-            director: {
-                firstName: data.directorFirstName,
-                lastName: data.directorLastName
-            },
-            familyMember: {
-                firstName: data.familyMemberFirstName,
-                lastName: data.familyMemberLastName,
-                dob: data.familyMemberDOB
-            },
-            deceased: {
-                firstName: data.deceasedFirstName,
-                lastName: data.deceasedLastName,
-                dob: data.deceasedDOB,
-                dop: data.deceasedDOP
-            },
-            contact: {
-                email: data.email,
-                phone: data.phone
-            },
-            memorial: {
-                locationName: data.locationName,
-                locationAddress: data.locationAddress,
-                time: data.memorialTime,
-                date: data.memorialDate
-            }
-        }
-    };
-
-    // Call the tribute-table endpoint
-    const tributeResponse = await fetch('/api/tribute-table', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authResult.token}`
-        },
-        body: JSON.stringify(tributePayload)
-    });
-
-    if (!tributeResponse.ok) {
-        const tributeError = await tributeResponse.json();
-        console.error('❌ Tribute API call failed:', tributeError);
-        return fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
-    }
-
-    console.log('✅ Tribute data saved successfully.');
-
-} catch (error) {
-    console.error('💥 Error during tribute-table API call:', error);
-    throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
-}
-
-        throw redirect(302, '/submisison-confirmed');
-
+        throw redirect(303, '/07-fd-form/confirmation');
     }
 } satisfies Actions;
