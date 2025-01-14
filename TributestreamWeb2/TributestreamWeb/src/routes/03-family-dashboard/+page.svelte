@@ -1,5 +1,5 @@
-<script>
-    export let steps = [
+<script lang="ts">
+  let { steps = [
       {
         number: "1",
         title: "RESERVE",
@@ -24,7 +24,7 @@
         description:
           "Return to the shareable link to watch the memorial anytime for 1 year.",
       },
-    ];
+    ] } = $props();
   </script>
   
   <div class="bg-gray-900 text-white py-10 px-5">

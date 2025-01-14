@@ -1,5 +1,7 @@
 <!-- @migration-task Error while migrating Svelte code: Unexpected token
 https://svelte.dev/e/js_parse_error -->
+<!-- @migration-task Error while migrating Svelte code: Unexpected token
+https://svelte.dev/e/js_parse_error -->
 import { userIdStore } from '$lib/stores/userStore';
 import { generateRandomPassword, slugify } from '$lib/utils/createAccount';
 import { goto } from '$app/navigation';

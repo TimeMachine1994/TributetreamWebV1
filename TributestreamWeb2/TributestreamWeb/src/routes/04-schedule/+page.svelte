@@ -94,7 +94,7 @@
 
   {#if isLoading}
     <div class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     </div>
   {/if}
 
@@ -109,7 +109,7 @@
       {#each tributes as tribute (tribute.id)}
         <div 
           class="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:bg-gray-50"
-          on:click={() => openDialog(tribute)}
+          onclick={() => openDialog(tribute)}
         >
           <h2 class="text-xl font-semibold">{tribute.loved_one_name}</h2>
           <div class="mt-2 text-gray-600">
@@ -122,7 +122,7 @@
 
     <div class="flex justify-center gap-2 mt-6">
       <button
-        on:click={() => handlePageChange(currentPage - 1)}
+        onclick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
         class="px-4 py-2 bg-gray-100 rounded disabled:opacity-50"
       >
@@ -134,7 +134,7 @@
       </span>
       
       <button
-        on:click={() => handlePageChange(currentPage + 1)}
+        onclick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         class="px-4 py-2 bg-gray-100 rounded disabled:opacity-50"
       >
@@ -154,18 +154,18 @@
       <textarea
         class="w-full min-h-[200px] rounded-md border border-gray-300 p-2"
         bind:value={customHtml}
-      />
+></textarea>
     </div>
     <div class="flex justify-end gap-2">
       <button
         class="px-4 py-2 bg-gray-100 rounded"
-        on:click={() => dialogOpen = false}
+        onclick={() => dialogOpen = false}
       >
         Cancel
       </button>
       <button
         class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        on:click={handleSubmit}
+        onclick={handleSubmit}
       >
         Save Changes
       </button>

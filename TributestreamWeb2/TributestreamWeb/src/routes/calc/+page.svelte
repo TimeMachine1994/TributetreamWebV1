@@ -173,7 +173,7 @@ const currentPage = {
                 type="text"
                 class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
                 bind:value={formData.lovedOnesName}
-                on:input={convertText}
+                oninput={convertText}
                 placeholder="Loved One's Name"
             />
 
@@ -211,13 +211,13 @@ const currentPage = {
             <label class="col-span-4 text-white text-center">Are we livestreaming at the funeral home?</label>
             <button
                 class="col-span-2 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                on:click={() => livestreamAtFuneralHome = true}
+                onclick={() => livestreamAtFuneralHome = true}
             >
                 Yes
             </button>
             <button
                 class="col-span-2 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                on:click={() => livestreamAtFuneralHome = false}
+                onclick={() => livestreamAtFuneralHome = false}
             >
                 No
             </button>
@@ -225,7 +225,7 @@ const currentPage = {
             <div class="col-span-3"></div>
             <button
                 class="col-span-1 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                on:click={() => currentPage.set(2)}
+                onclick={() => currentPage.set(2)}
             >
                 Next
             </button>
@@ -243,20 +243,20 @@ const currentPage = {
                 {#if livestreamAtFuneralHome !== false}
                     <button
                         class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                        on:click={() => selectPackage('Solo')}
+                        onclick={() => selectPackage('Solo')}
                     >
                         Solo
                     </button>
                 {/if}
                 <button
                     class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                    on:click={() => selectPackage('Anywhere')}
+                    onclick={() => selectPackage('Anywhere')}
                 >
                     Anywhere
                 </button>
                 <button
                     class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                    on:click={() => selectPackage('Legacy')}
+                    onclick={() => selectPackage('Legacy')}
                 >
                     Legacy
                 </button>
@@ -334,7 +334,7 @@ const currentPage = {
 
             <button
                 class="w-full bg-gray-500 hover:bg-gray-400 rounded-full p-3 text-white mt-4"
-                on:click={submitForm}
+                onclick={submitForm}
                 disabled={isSubmitting}
             >
                 {#if isSubmitting} Processing... {:else} Submit {/if}

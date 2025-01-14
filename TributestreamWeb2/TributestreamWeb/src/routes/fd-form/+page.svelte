@@ -4,7 +4,17 @@
   let { fdForm } = $props();
   let formData = $state(fdForm);
 </script>
- 
+ <form method="POST">
+	<label>
+		Email
+		<input name="email" type="email">
+	</label>
+	<label>
+		Password
+		<input name="password" type="password">
+	</label>
+	<button>Log in</button>
+</form>
 <form method="post">
   <fieldset>
     <legend>Funeral Director Information</legend>
@@ -124,5 +134,5 @@
     />
   </fieldset>
 
-  <button type="submit">Submit</button>
+  <button>Submit</button>
 </form>

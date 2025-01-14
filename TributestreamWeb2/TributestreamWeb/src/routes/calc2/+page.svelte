@@ -14,8 +14,8 @@
     placeholder="Your Name"
   />
   
-  <button on:click={previousPage}>Back</button>
-  <button on:click={nextPage}>Next</button>
+  <button onclick={previousPage}>Back</button>
+  <button onclick={nextPage}>Next</button>
   
   <!-- Access store values with $ prefix -->
   <div>Current Page: {$currentPage}</div>
