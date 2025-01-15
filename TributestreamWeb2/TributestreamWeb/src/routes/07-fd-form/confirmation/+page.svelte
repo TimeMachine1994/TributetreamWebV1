@@ -1,48 +1,24 @@
-<script>
-    export let data;
+<script lang="ts">
+import Calc from '$lib/Calc.svelte';
 
-    // Destructure meta values into individual variables
-    const {
-        nickname,
-        first_name,
-        last_name,
-        description,
-        rich_editing,
-        syntax_highlighting,
-        comment_shortcuts,
-        admin_color,
-        use_ssl,
-        show_admin_bar_front,
-        locale,
-        wpa2_capabilities,
-        wpa2_user_level,
-        memorial_form_data
-    } = data.userMeta;
+
 </script>
+<div class="flex flex-col items-center justify-center text-center p-8">
+    <p class="text-xl mb-4">Tributestream offers their sinciere condolences for your loss.</p>
+    <p class="text-lg mb-6">Scan the QR code below to see a free sample of what your custom page will look like.</p>
 
-<main class="p-6">
-    <h1 class="text-2xl font-bold mb-4">User Meta Data</h1>
+    <div class="flex justify-center items-center mb-8">
+        <div class="p-6 bg-white rounded-lg shadow-md">
+            <a href="https://www.google.com" target="_blank">
+                <button class="w-[100px] h-[100px] bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors duration-200" aria-label="QR Code Scanner"></button>
+            </a>
+        </div>
+    </div>
 
-    <ul class="list-disc ml-6">
-        <li><strong>Nickname:</strong> {nickname}</li>
-        <li><strong>First Name:</strong> {first_name}</li>
-        <li><strong>Last Name:</strong> {last_name}</li>
-        <li><strong>Description:</strong> {description}</li>
-        <li><strong>Rich Editing:</strong> {rich_editing}</li>
-        <li><strong>Syntax Highlighting:</strong> {syntax_highlighting}</li>
-        <li><strong>Comment Shortcuts:</strong> {comment_shortcuts}</li>
-        <li><strong>Admin Color:</strong> {admin_color}</li>
-        <li><strong>Use SSL:</strong> {use_ssl}</li>
-        <li><strong>Show Admin Bar Front:</strong> {show_admin_bar_front}</li>
-        <li><strong>Locale:</strong> {locale}</li>
-        <li><strong>WPA2 Capabilities:</strong> {wpa2_capabilities}</li>
-        <li><strong>WPA2 User Level:</strong> {wpa2_user_level}</li>
-        <li><strong>Memorial Form Data:</strong> {memorial_form_data}</li>
-    </ul>
-</main>
+    <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 mb-2">
+        Click Here
+    </button>
+    <p class="text-lg">To Complete The Reservation Process</p>
+</div>
 
-<style>
-    main {
-        font-family: Arial, sans-serif;
-    }
-</style>
+<Calc/>
