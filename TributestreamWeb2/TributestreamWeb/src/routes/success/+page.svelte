@@ -1,6 +1,10 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    export let form: { message?: string } | null;
+  interface Props {
+    form: { message?: string } | null;
+  }
+
+  let { form }: Props = $props();
   
     let formData = {
       directorFirstName: '',

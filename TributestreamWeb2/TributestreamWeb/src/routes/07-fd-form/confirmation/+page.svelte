@@ -1,8 +1,15 @@
 <script lang="ts">
+    import type { PageData } from './$types';
+    let { data }: { data: PageData } = $props();
+    const appId = data.appId;
+    const locationId = data.locationId;
+     
+ 
+    let paymentStatus = $state('');
+
 import Calc from '$lib/Calc.svelte';
-
-
-</script>
+import CcForm from '$lib/CcForm.svelte';
+ </script>
 <div class="flex flex-col items-center justify-center text-center p-8">
     <p class="text-xl mb-4">Tributestream offers their sinciere condolences for your loss.</p>
     <p class="text-lg mb-6">Scan the QR code below to see a free sample of what your custom page will look like.</p>
@@ -20,6 +27,8 @@ import Calc from '$lib/Calc.svelte';
     </button>
     <p class="text-lg">To Complete The Reservation Process</p>
 </div>
+
+<CcForm appId={appId} locationId={locationId}/>
 
 <Calc/>
 Billing Information:

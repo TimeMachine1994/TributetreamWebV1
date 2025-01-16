@@ -1,6 +1,8 @@
 import { error } from '@sveltejs/kit';
+import { SQUARE_SANDBOX_APP_ID, SQUARE_SANDBOX_ACCESS_TOKEN, SQUARE_LOCATION_ID } from '$env/static/private';
 
-export const load = async ({ fetch, cookies }) => {
+export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
+
     console.log('🚀 Loading user meta data.');
 
     const user_id = cookies.get('user_id');
@@ -42,7 +44,10 @@ export const load = async ({ fetch, cookies }) => {
             return acc;
         }, {});
 
+        const appId = SQUARE_SANDBOX_APP_ID;
+        const locationId = SQUARE_LOCATION_ID;
         return {
+            appId, locationId,
             userMeta: metaObject,
         };
     } catch (err) {
