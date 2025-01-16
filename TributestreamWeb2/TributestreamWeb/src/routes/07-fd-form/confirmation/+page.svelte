@@ -4,8 +4,6 @@
     const appId = data.appId;
     const locationId = data.locationId;
      
- 
-    let paymentStatus = $state('');
 
 import Calc from '$lib/Calc.svelte';
 import CcForm from '$lib/CcForm.svelte';

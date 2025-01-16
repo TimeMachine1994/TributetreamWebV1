@@ -1,12 +1,14 @@
 <!-- @migration-task Error while migrating Svelte code: Unexpected character '“'
 https://svelte.dev/e/js_parse_error -->
 <script lang="ts">
-  let {appId, locationId} = $props();
 
-    let card;
-    async function handlePaymentMethodSubmission() {
+
+  let {appId, locationId} = $props();
+  let paymentStatus = $state('');
+  let card = $state('');;
+  async function handlePaymentMethodSubmission() {
   try {
-    paymentStatus = “”;
+    paymentStatus = 'Processing payment...';
     const token = await tokenize(card);
     const paymentResponse = await fetch('/api/payment', {
       method: 'POST',
@@ -59,8 +61,9 @@ https://svelte.dev/e/js_parse_error -->
     }
   }
 </script>
-<form on:submit|preventDefault={handlePaymentMethodSubmission}>
-  {#await setup()}
+ 
+ <form on:submit|preventDefault={handlePaymentMethodSubmission}>
+  {#await initializePaymentForm()}
     <p>Loading...</p>
   {:catch error}
     <p>{error}</p>
