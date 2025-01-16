@@ -1,14 +1,58 @@
 <script lang="ts">
+    
+    import Calc from '$lib/Calc.svelte';
+    import CcForm from '$lib/CcForm.svelte';
     import type { PageData } from './$types';
     let { data }: { data: PageData } = $props();
     const appId = data.appId;
     const locationId = data.locationId;
-     
+    let fdFormData = data.userMeta.memorial_form_data;
+    console.log('Form Data (Raw):', fdFormData);
+    let card = $state('');;
 
-import Calc from '$lib/Calc.svelte';
-import CcForm from '$lib/CcForm.svelte';
+    // Parse and flatten the JSON string
+    let flattenedFormData: any = {};
+    if (fdFormData) {
+        try {
+            const parsedData = JSON.parse(fdFormData);
+
+            // Flattening logic
+            flattenedFormData = {
+                directorFirstName: parsedData.director.firstName,
+                directorLastName: parsedData.director.lastName,
+                familyMemberFirstName: parsedData.familyMember.firstName,
+                familyMemberLastName: parsedData.familyMember.lastName,
+                familyMemberDob: parsedData.familyMember.dob,
+                deceasedFirstName: parsedData.deceased.firstName,
+                deceasedLastName: parsedData.deceased.lastName,
+                deceasedDob: parsedData.deceased.dob,
+                deceasedDop: parsedData.deceased.dop,
+                contactEmail: parsedData.contact.email,
+                contactPhone: parsedData.contact.phone,
+                memorialLocationName: parsedData.memorial.locationName,
+                memorialLocationAddress: parsedData.memorial.locationAddress,
+                memorialTime: parsedData.memorial.time,
+                memorialDate: parsedData.memorial.date
+            };
+
+            console.log('Flattened Form Data:', flattenedFormData);
+        } catch (error) {
+            console.error('Failed to parse and flatten JSON data:', error);
+        }
+    }
+ 
+ 
+    const originalData = $state({
+        firstName: flattenedFormData.familyMemberFirstName || '',
+        lastName: flattenedFormData.familyMemberLastName || '',
+        email: flattenedFormData.contactEmail || '',
+        phone: flattenedFormData.contactPhone || '',
+        address: flattenedFormData.memorialLocationAddress || '',
+    });
+  
+
  </script>
-<div class="flex flex-col items-center justify-center text-center p-8">
+ <div class="flex flex-col items-center justify-center text-center p-8">
     <p class="text-xl mb-4">Tributestream offers their sinciere condolences for your loss.</p>
     <p class="text-lg mb-6">Scan the QR code below to see a free sample of what your custom page will look like.</p>
 
@@ -26,27 +70,7 @@ import CcForm from '$lib/CcForm.svelte';
     <p class="text-lg">To Complete The Reservation Process</p>
 </div>
 
-<CcForm appId={appId} locationId={locationId}/>
 
 <Calc/>
-Billing Information:
-First Name Last name, Address, City, State, Zip Code, Phone Number, Email Address, Phone Number
-CC Form
-Click here to pay
- 
-directorFirstName: formData.get('director-first-name'),
-directorLastName: formData.get('director-last-name'),
-familyMemberFirstName: formData.get('family-member-first-name'),
-familyMemberLastName: formData.get('family-member-last-name'),
-familyMemberDOB: formData.get('family-member-dob'),
-deceasedFirstName: formData.get('deceased-first-name'),
-deceasedLastName: formData.get('deceased-last-name'),
-deceasedDOB: formData.get('deceased-dob'),
-deceasedDOP: formData.get('deceased-dop'),
-email: formData.get('email-address'),
-phone: formData.get('phone-number'),
-locationName: formData.get('location-name'),
-locationAddress: formData.get('location-address'),
-memorialTime: formData.get('memorial-time'),
-memorialDate: formData.get('memorial-date'),
-//this is what is available via props
+
+<CcForm appId={appId} locationId={locationId} initialData={originalData}/>

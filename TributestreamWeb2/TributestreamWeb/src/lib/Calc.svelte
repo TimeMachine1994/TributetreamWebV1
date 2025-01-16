@@ -370,9 +370,4 @@ function removeLocation(index) {
   </div>
 </div>
 
-text-sm
-Please confirm your billing information below:
-Point of Contact Name:
-Address:
-Click Here to sign your name that  you agree to the Tributestream Terms of Service. 
-Pruchase:
+ 

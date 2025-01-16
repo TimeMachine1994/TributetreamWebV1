@@ -58,6 +58,22 @@ let { data, children } = $props();
 
 
 </script>
+
+<style>
+    :global(body) {
+        background-color: white;
+        color: black;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
+
+    :global(*) {
+        color: inherit;
+    }
+</style>
+
 <Navbar />
 
 {@render children()}

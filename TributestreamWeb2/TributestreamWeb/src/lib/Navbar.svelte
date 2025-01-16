@@ -37,25 +37,12 @@
 <script lang="ts">
     /* Importing necessary functions and components */
     import { onMount } from 'svelte'; /* Svelte lifecycle function */
-    import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton'; /* Skeleton UI components */
-    import type { DrawerSettings } from '@skeletonlabs/skeleton'; /* Type-only import for DrawerSettings */
+    //import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton'; /* Skeleton UI components */
+    //import type { DrawerSettings } from '@skeletonlabs/skeleton'; /* Type-only import for DrawerSettings */
     import { goto } from '$app/navigation'; /* Function to navigate to a new page */
     import '../app.postcss'; /* Importing global styles */
     import '@fortawesome/fontawesome-free/css/all.min.css'
-
-/*********** START Intialize stores and drawer ***********/
-    initializeStores();
-
-    const drawerStore = getDrawerStore();
-
-    function openDrawer() { 
-        drawerStore.open() 
-    }
-
-    function closeDrawer() { 
-        drawerStore.close() 
-    }
-/*********** END Intialize stores and drawer ***********/
+ 
 
 /*********** START Handle Authentication Actions ***********/
   /* Reactive variable to check login status */
@@ -85,57 +72,7 @@
 </script>
     
 <!--*********** START Drawer Component Logic **********-->
-
-<!-- Drawer Component for Mobile Navigation -->
-<Drawer>
-  
-      <!-- Drawer Contents -->
-      <div class="p-4">
-        <!-- Close Button -->
-        <button class="focus:outline-none mb-4" onclick={closeDrawer}>
-          <!-- Close Icon SVG -->
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-        <!-- Navigation Menu Items -->
-        <ul class="space-y-4">
-          <li>
-            <a href="/why-tributestream" class="text-black hover:text-gray-700" onclick={closeDrawer}>
-              Why Tributestream?
-            </a>
-          </li>
-          <li>
-            <a href="/how-it-works" class="text-black hover:text-gray-700" onclick={closeDrawer}>
-              How does it work?
-            </a>
-          </li>
-          <li>
-            <a href="/contact" class="text-black hover:text-gray-700" onclick={closeDrawer}>
-              Contact Us
-            </a>
-          </li>
-          <li>
-            <a href="/schedule" class="text-black hover:text-gray-700" onclick={closeDrawer}>
-              Schedule Now
-            </a>
-          </li>
-          <li>
-            <!-- Login/Account Settings Button -->
-            <button
-              onclick={() => { handleAuthAction(); closeDrawer; }}
-              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
-            >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
-          </li>
-        </ul>
-      </div>
-</Drawer>
-
-<!--*********** END Drawer Component Logic **********-->
+ 
 
  
 <!-- Header Section -->
@@ -173,24 +110,9 @@
             </a>
           </li>
           <li>
-            <!-- Login/Account Settings Button -->
-            <button
-              onclick={handleAuthAction}
-              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black"
-            >
-              {isLoggedIn ? 'Account Settings' : 'Login'}
-            </button>
-          </li>
-        </ul>
-      </nav>
-      <!-- On smaller screens, show the hamburger menu -->
-      <button class="md:hidden focus:outline-none" onclick={openDrawer}>
-        <!-- Hamburger Icon SVG -->
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
+          </nav>
+          
+         
+   
     </div>
 </header>

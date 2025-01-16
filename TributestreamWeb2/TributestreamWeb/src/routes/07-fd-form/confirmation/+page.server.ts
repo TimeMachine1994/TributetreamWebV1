@@ -46,6 +46,8 @@ export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
 
         const appId = SQUARE_SANDBOX_APP_ID;
         const locationId = SQUARE_LOCATION_ID;
+
+        
         return {
             appId, locationId,
             userMeta: metaObject,
