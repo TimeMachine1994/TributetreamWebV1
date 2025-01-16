@@ -22,3 +22,24 @@ import Calc from '$lib/Calc.svelte';
 </div>
 
 <Calc/>
+Billing Information:
+First Name Last name, Address, City, State, Zip Code, Phone Number, Email Address, Phone Number
+CC Form
+Click here to pay
+ 
+directorFirstName: formData.get('director-first-name'),
+directorLastName: formData.get('director-last-name'),
+familyMemberFirstName: formData.get('family-member-first-name'),
+familyMemberLastName: formData.get('family-member-last-name'),
+familyMemberDOB: formData.get('family-member-dob'),
+deceasedFirstName: formData.get('deceased-first-name'),
+deceasedLastName: formData.get('deceased-last-name'),
+deceasedDOB: formData.get('deceased-dob'),
+deceasedDOP: formData.get('deceased-dop'),
+email: formData.get('email-address'),
+phone: formData.get('phone-number'),
+locationName: formData.get('location-name'),
+locationAddress: formData.get('location-address'),
+memorialTime: formData.get('memorial-time'),
+memorialDate: formData.get('memorial-date'),
+//this is what is available via props
