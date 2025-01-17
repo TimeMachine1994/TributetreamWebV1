@@ -109,95 +109,95 @@
       showSecondPage = false;
       isBlurred = false;
   }
+// Looks like handleSuibmit should actually be serverside.... since we are regsitgering the user, etc.... when I get to work, look at the page.server.ts, change from default to named form action, and use that one and test and finalize that works and sends you to the schedule page. 
+//   async function handleSubmit() {
+//       console.log("Handling form submission. Current user data:", user);
+//       let isFormValid = $derived(
+//           user.username && user.email && user.password && user.loved_one_name && user.slug
+//       );
 
-  async function handleSubmit() {
-      console.log("Handling form submission. Current user data:", user);
-      let isFormValid = $derived(
-          user.username && user.email && user.password && user.loved_one_name && user.slug
-      );
+//       if (!isFormValid) {
+//           error = 'Please fill in all required fields.';
+//           console.log("Form validation failed:", error);
+//           return;
+//       }
 
-      if (!isFormValid) {
-          error = 'Please fill in all required fields.';
-          console.log("Form validation failed:", error);
-          return;
-      }
+//       console.log("Form is valid. Proceeding with submission...");
 
-      console.log("Form is valid. Proceeding with submission...");
+//       let loading = $state(true);
+//       error = '';
+//       let success = $state(false);
 
-      let loading = $state(true);
-      error = '';
-      let success = $state(false);
+//       try {
+//           console.log("Sending registration request...");
+//           const registerResponse = await fetch('/api/register', {
+//               method: 'POST',
+//               headers: { 'Content-Type': 'application/json' },
+//               body: JSON.stringify({
+//                   username: user.username,
+//                   email: user.email,
+//                   password: user.password,
+//               }),
+//           });
 
-      try {
-          console.log("Sending registration request...");
-          const registerResponse = await fetch('/api/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  username: user.username,
-                  email: user.email,
-                  password: user.password,
-              }),
-          });
+//           if (!registerResponse.ok) {
+//               const errorData = await registerResponse.json();
+//               throw new Error(errorData.message || 'Registration failed.');
+//           }
 
-          if (!registerResponse.ok) {
-              const errorData = await registerResponse.json();
-              throw new Error(errorData.message || 'Registration failed.');
-          }
+//           const registerData = await registerResponse.json();
+//           console.log("Registration successful. Data:", registerData);
+//           user_id = registerData.id;
 
-          const registerData = await registerResponse.json();
-          console.log("Registration successful. Data:", registerData);
-          user_id = registerData.id;
+//           console.log("Sending authentication request...");
+//           const authResponse = await fetch('/api/auth', {
+//               method: 'POST',
+//               headers: { 'Content-Type': 'application/json' },
+//               body: JSON.stringify({
+//                   username: user.username,
+//                   password: user.password,
+//               }),
+//           });
 
-          console.log("Sending authentication request...");
-          const authResponse = await fetch('/api/auth', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  username: user.username,
-                  password: user.password,
-              }),
-          });
+//           if (!authResponse.ok) {
+//               const errorData = await authResponse.json();
+//               throw new Error(errorData.message || 'Authentication failed.');
+//           }
 
-          if (!authResponse.ok) {
-              const errorData = await authResponse.json();
-              throw new Error(errorData.message || 'Authentication failed.');
-          }
+//           const authData = await authResponse.json();
+//           console.log("Authentication successful. Token:", authData.token);
+//           token = authData.token;
 
-          const authData = await authResponse.json();
-          console.log("Authentication successful. Token:", authData.token);
-          token = authData.token;
+//           console.log("Creating tribute...");
+//           const tributeResponse = await fetch('/api/create-page', {
+//               method: 'POST',
+//               headers: {
+//                   'Authorization': `Bearer ${token}`,
+//                   'Content-Type': 'application/json',
+//               },
+//               body: JSON.stringify({
+//                   user_id,
+//                   loved_one_name: user.loved_one_name,
+//                   slug: user.slug,
+//               }),
+//           });
 
-          console.log("Creating tribute...");
-          const tributeResponse = await fetch('/api/create-page', {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                  user_id,
-                  loved_one_name: user.loved_one_name,
-                  slug: user.slug,
-              }),
-          });
+//           if (!tributeResponse.ok) {
+//               const errorData = await tributeResponse.json();
+//               throw new Error(errorData.message || 'Creating tribute failed.');
+//           }
 
-          if (!tributeResponse.ok) {
-              const errorData = await tributeResponse.json();
-              throw new Error(errorData.message || 'Creating tribute failed.');
-          }
+//           const tributeData = await tributeResponse.json();
+//           console.log("Tribute created successfully. Data:", tributeData);
 
-          const tributeData = await tributeResponse.json();
-          console.log("Tribute created successfully. Data:", tributeData);
-
-          success = true;
-      } catch (err) {
-          console.error("Error during submission:", err.message);
-          error = err.message;
-      } finally {
-          loading = false;
-          console.log("Submission process completed");
-      }
+//           success = true;
+//       } catch (err) {
+//           console.error("Error during submission:", err.message);
+//           error = err.message;
+//       } finally {
+//           loading = false;
+//           console.log("Submission process completed");
+//       }
   }
 </script>
 
