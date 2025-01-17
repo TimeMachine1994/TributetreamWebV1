@@ -1,5 +1,5 @@
 <script lang="ts">
-    
+    import SelectableSquares from '$lib/SelectableSquares.svelte';
     import Calc from '$lib/Calc.svelte';
     import CcForm from '$lib/CcForm.svelte';
     import type { PageData } from './$types';
@@ -70,7 +70,7 @@
     <p class="text-lg">To Complete The Reservation Process</p>
 </div>
 
-
+<SelectableSquares />
 <Calc/>
 
 <CcForm appId={appId} locationId={locationId} initialData={originalData}/>
