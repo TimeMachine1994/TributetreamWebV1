@@ -1,6 +1,4 @@
 <script>
-  import { preventDefault } from 'svelte/legacy';
-
     import { onMount } from 'svelte';
   
     let username = $state('');

@@ -1,8 +1,18 @@
 <script lang="ts">
+import { onMount } from 'svelte';
+import NotificationBannerA from '$lib/NotificationBannerA.svelte';
+let tribute = $state(false);
+let isPaid = $state(false); // Simulate a payment state; you can fetch this from a store or API
+
+
  
-  let tribute = $state(false)
 </script>
 
+<NotificationBannerA {isPaid} />
+
+    <!-- Import the NotificationBanner Component -->
+   
+ 
 <!-- Hero Section -->
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
     <!-- Hero with gradient overlay -->

@@ -1,138 +1,172 @@
-<script lang="ts">
-  
-
+<script>
   let { fdForm } = $props();
   let formData = $state(fdForm);
 </script>
- <form method="POST">
-	<label>
-		Email
-		<input name="email" type="email">
-	</label>
-	<label>
-		Password
-		<input name="password" type="password">
-	</label>
-	<button>Log in</button>
-</form>
-<form method="post">
-  <fieldset>
-    <legend>Funeral Director Information</legend>
-    <label for="directorFirstName">First Name:</label>
-    <input 
-      id="directorFirstName"
-      name="directorFirstName"
-      bind:value={formData.directorFirstName}
-      required
-    />
 
-    <label for="directorLastName">Last Name:</label>
-    <input
-      id="directorLastName"
-      name="directorLastName"
-      bind:value={formData.directorLastName}
-      required
-    />
-  </fieldset>
+<section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
 
-  <fieldset>
-    <legend>Deceased Information</legend>
-    <label for="deceasedFirstName">First Name:</label>
-    <input
-      id="deceasedFirstName"
-      name="deceasedFirstName"
-      bind:value={formData.deceasedFirstName}
-      required
-    />
+    <!-- Director's Name -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="director-name">Director's Name</label>
+      <div class="flex space-x-4">
+        <input
+          name="director-first-name"
+          type="text"
+          id="director-first-name"
+          placeholder="First Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+        <input
+          name="director-last-name"
+          type="text"
+          id="director-last-name"
+          placeholder="Last Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+      </div>
+    </div>
 
-    <label for="deceasedLastName">Last Name:</label>
-    <input
-      id="deceasedLastName"
-      name="deceasedLastName"
-      bind:value={formData.deceasedLastName}
-      required
-    />
+    <!-- Family Member Name -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="family-member-name">Family Member Name</label>
+      <div class="flex space-x-4">
+        <input
+          name="family-member-first-name"
+          type="text"
+          id="family-member-first-name"
+          placeholder="First Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+        <input
+          name="family-member-last-name"
+          type="text"
+          id="family-member-last-name"
+          placeholder="Last Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+      </div>
+    </div>
 
-    <label for="deceasedDOB">Date of Birth:</label>
-    <input
-      type="date"
-      id="deceasedDOB"
-      name="deceasedDOB"
-      bind:value={formData.deceasedDOB}
-      required
-    />
+    <!-- Family Member Date of Birth -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="family-member-dob">Family Member Date of Birth</label>
+      <input
+        name="family-member-dob"
+        type="date"
+        id="family-member-dob"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+    </div>
 
-    <label for="deceasedDOD">Date of Death:</label>
-    <input
-      type="date"
-      id="deceasedDOD"
-      name="deceasedDOD"
-      bind:value={formData.deceasedDOD}
-      required
-    />
-  </fieldset>
+    <!-- Deceased Name -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="deceased-name">Deceased Name</label>
+      <div class="flex space-x-4">
+        <input
+          name="deceased-first-name"
+          type="text"
+          id="deceased-first-name"
+          placeholder="First Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+        <input
+          name="deceased-last-name"
+          type="text"
+          id="deceased-last-name"
+          placeholder="Last Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+      </div>
+    </div>
 
-  <fieldset>
-    <legend>Family Member Contact</legend>
-    <label for="familyMemberEmail">Email:</label>
-    <input
-      type="email"
-      id="familyMemberEmail"
-      name="familyMemberEmail"
-      bind:value={formData.familyMemberEmail}
-      required
-    />
+    <!-- Deceased Date of Birth -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="deceased-dob">Deceased Date of Birth</label>
+      <input
+        name="deceased-dob"
+        type="date"
+        id="deceased-dob"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+    </div>
 
-    <label for="familyMemberPhone">Phone:</label>
-    <input
-      type="tel"
-      id="familyMemberPhone"
-      name="familyMemberPhone"
-      bind:value={formData.familyMemberPhone}
-    />
+    <!-- Deceased Date of Passing -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="deceased-dop">Deceased Date of Passing</label>
+      <input
+        name="deceased-dop"
+        type="date"
+        id="deceased-dop"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+    </div>
 
-    <label for="familyMemberDOB">Date of Birth:</label>
-    <input
-      type="date"
-      id="familyMemberDOB"
-      name="familyMemberDOB"
-      bind:value={formData.familyMemberDOB}
-    />
-  </fieldset>
+    <!-- Contact Information -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="contact-info">Contact Information</label>
+      <div class="flex space-x-4">
+        <input
+          name="email-address"
+          type="email"
+          id="email-address"
+          placeholder="Email Address"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+        <input
+          name="phone-number"
+          type="tel"
+          id="phone-number"
+          placeholder="Phone Number"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+      </div>
+    </div>
 
-  <fieldset>
-    <legend>Memorial Service Details</legend>
-    <label for="initialMemorialName">Name:</label>
-    <input
-      id="initialMemorialName"
-      name="initialMemorialName"
-      bind:value={formData.initialMemorialName}
-      required
-    />
+    <!-- Memorial Information -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="memorial-info">Memorial Information</label>
+      <div class="flex space-x-4">
+        <input
+          name="location-name"
+          type="text"
+          id="location-name"
+          placeholder="Location Name"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+        <input
+          name="location-address"
+          type="text"
+          id="location-address"
+          placeholder="Location Address"
+          class="border rounded w-full py-2 px-3 text-gray-700"
+        />
+      </div>
+    </div>
+    <div class="flex space-x-4">
+      <input
+        name="memorial-time"
+        type="time"
+        id="memorial-time"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+      <input
+        name="memorial-date"
+        type="date"
+        id="memorial-date"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+    </div>
 
-    <label for="initialMemorialAddress">Address:</label>
-    <input
-      id="initialMemorialAddress"
-      name="initialMemorialAddress"
-      bind:value={formData.initialMemorialAddress}
-    />
-
-    <label for="initialMemorialTime">Time:</label>
-    <input
-      type="time"
-      id="initialMemorialTime"
-      name="initialMemorialTime"
-      bind:value={formData.initialMemorialTime}
-    />
-
-    <label for="initialMemorialDate">Date:</label>
-    <input
-      type="date"
-      id="initialMemorialDate"
-      name="initialMemorialDate"
-      bind:value={formData.initialMemorialDate}
-    />
-  </fieldset>
-
-  <button>Submit</button>
-</form>
+    <!-- Submit Button -->
+    <div class="flex justify-end">
+      <button
+        type="submit"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Submit
+      </button>
+    </div>
+  </form>
+</section>
