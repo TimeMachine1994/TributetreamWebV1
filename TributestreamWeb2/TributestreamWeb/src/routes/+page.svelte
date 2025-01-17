@@ -16,16 +16,17 @@
     const uuid1 = crypto.randomUUID();
     const uuid2 = crypto.randomUUID(); 
     function slugify(text: string): string {
-    console.log("Slugifying text:", text);
-     const slug = text
-        .toString()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-')
-        .replace(/^-+/, '')
-        .replace(/-+$/, '');
-    console.log("Generated slug:", slug);
+      console.log("Slugifying text:", text);
+      const slug = text
+          .toString()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
+      console.log("Generated slug:", slug);
+    slugifiedName =  slug;
     return slug;
   }
 
@@ -173,11 +174,12 @@
         </p>
   
         <!-- Main form -->
-        <form class="w-full max-w-md">
+        <form method="POST" action="?/homeRegister" class="w-full max-w-md">
           {#if !showSecondForm}
             <!-- Input for loved one's name -->
             <input
               type="text"
+              name="lovedOneName"
               placeholder="Loved One's Name Here"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center"
               bind:value={lovedOneName}
@@ -235,18 +237,21 @@
             <!-- Additional input fields -->
             <input
               type="text"
+              name="userInfo.name"
               placeholder="Your Name"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.name}
             />
             <input
               type="email"
+              name="userInfo.email"
               placeholder="Email Address"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.email}
             />
             <input
               type="tel"
+              name="userInfo.phone"
               placeholder="Phone Number"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.phone}
@@ -261,9 +266,10 @@
               >
                 <i class="fas fa-arrow-left"></i>
               </button>
-              <button 
-                type="button" 
-                class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
+              <input type="hidden" name="lovedOneName" value={lovedOneName} />
+<input type="hidden" name="slugifiedName" value={slugifiedName} />
+              <button type="submit" formaction="?/homeRegister"
+                 class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
               >
                 Create Tribute
               </button>

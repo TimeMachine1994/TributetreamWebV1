@@ -1,11 +1,6 @@
 <script lang="ts">
  
-    let { data } = $props();
-    
-    const { tribute } = data;
-    
-
-    console.log('Tribute data loaded:', tribute);
+  let tribute = $state(false)
 </script>
 
 <!-- Hero Section -->
@@ -18,7 +13,7 @@
     <div class="absolute inset-0 bg-gradient-to-b from-[#D5BA7F]/40 to-transparent z-10"></div>
     <div class="container mx-auto px-4 z-20 text-center">
         <h1 class="text-4xl md:text-6xl mb-4 text-white font-['Fanwood_Text'] italic">
-            Celebration of Life for {tribute?.loved_one_name || 'Loading...'}
+            Celebration of Life for NAME HERE
         </h1>
     </div>
 </section>

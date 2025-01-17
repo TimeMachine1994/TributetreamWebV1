@@ -1,13 +1,11 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
-  
-
 export const actions = {
     homeRegister: async ({ request, fetch, locals, cookies }) => {
-
         let password = '';
-        let slug = $state()
+        let slug = '';
+
         const generatePassword = (): string => {
             console.log('🔐 Generating a secure password.');
             const length = 16;
@@ -22,6 +20,7 @@ export const actions = {
         };
 
         try {
+            console.log('🔄 Starting homeRegister action...');
             console.log('🔄 Generating password...');
             password = generatePassword();
 
@@ -33,7 +32,7 @@ export const actions = {
                 name: formData.get('userInfo.name'),
                 email: formData.get('userInfo.email'),
                 phone: formData.get('userInfo.phone'),
-             };
+            };
             console.log('✅ Form data parsed:', data);
 
             if (!data.email || !data.lovedOneName || !data.name || !data.phone) {
@@ -53,13 +52,13 @@ export const actions = {
             });
 
             if (!registerResponse.ok) {
-                console.error('❌ Registration failed:', registerResponse.status);
+                console.error('❌ Registration failed with status:', registerResponse.status);
                 return fail(registerResponse.status, { error: true, message: 'Registration failed' });
             }
 
             const registerResult = await registerResponse.json();
             const userId = registerResult.user_id;
-            console.log('✅ User registered with ID:', userId);
+            console.log('✅ User registered successfully. User ID:', userId);
 
             console.log('🔄 Authenticating user...');
             const authResponse = await fetch('/api/auth', {
@@ -72,13 +71,14 @@ export const actions = {
             });
 
             if (!authResponse.ok) {
-                console.error('❌ Authentication failed:', authResponse.status);
+                console.error('❌ Authentication failed with status:', authResponse.status);
                 return fail(authResponse.status, { error: true, message: 'Authentication failed' });
             }
 
             const authResult = await authResponse.json();
-            console.log('✅ User authenticated. JWT token received:', authResult.token);
+            console.log('✅ User authenticated successfully. JWT Token:', authResult.token);
 
+            console.log('🔒 Setting cookies for authentication...');
             cookies.set('jwt', authResult.token, { httpOnly: true, secure: true, path: '/' });
             cookies.set('user_id', userId, {
                 httpOnly: true,
@@ -98,9 +98,9 @@ export const actions = {
                         phone: data.phone
                     },
                     lovedOneName: data.lovedOneName,
-                    slugifiedName: data.slugifiedName, 
-                }
-            )};
+                    slugifiedName: data.slugifiedName,
+                })
+            };
 
             const metaResponse = await fetch('/api/user-meta', {
                 method: 'POST',
@@ -113,27 +113,21 @@ export const actions = {
 
             if (!metaResponse.ok) {
                 const metaError = await metaResponse.json();
-                console.error('❌ Metadata write failed:', metaError);
+                console.error('❌ Metadata write failed with error:', metaError);
                 return fail(metaResponse.status, { error: true, message: metaError.message });
             }
 
             console.log('✅ Metadata written successfully.');
 
-            // Add the tribute-table API call here
+            console.log('🚀 Starting tribute-table API call...');
             try {
-                console.log('🚀 Starting tribute-table API call...');
-                
-              
-               
-
-                // Prepare the payload
                 const tributePayload = {
-                    loved_one_name: data.lovedOneName, // Match expected field name
-                    slug: data.slugifiedName, // Ensure it's slugified
-                    user_id: userId // Ensure it's the correct user ID
+                    loved_one_name: data.lovedOneName,
+                    slug: data.slugifiedName,
+                    user_id: userId
                 };
-                
-                console.log('📦 Sending tribute payload:', tributePayload);
+                console.log('📦 Tribute payload:', tributePayload);
+
                 slug = data.slugifiedName;
                 const tributeResponse = await fetch('/api/tribute-table', {
                     method: 'POST',
@@ -143,15 +137,6 @@ export const actions = {
                     },
                     body: JSON.stringify(tributePayload)
                 });
-                
-                if (!tributeResponse.ok) {
-                    const tributeError = await tributeResponse.json();
-                    console.error('❌ Tribute API call failed:', tributeError);
-                    throw fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
-                }
-                
-                console.log('✅ Tribute data saved successfully.');
-                
 
                 if (!tributeResponse.ok) {
                     const tributeError = await tributeResponse.json();
@@ -160,17 +145,17 @@ export const actions = {
                 }
 
                 console.log('✅ Tribute data saved successfully.');
-
             } catch (error) {
                 console.error('💥 Error during tribute-table API call:', error);
                 throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
             }
 
             console.log('🔀 Redirecting to success page...');
-         } catch (error) {
-            console.error('💥 Unexpected error:', error);
+        } catch (error) {
+            console.error('💥 Unexpected error occurred:', error);
             throw fail(500, { error: true, message: 'An unexpected error occurred.' });
         }
-        throw redirect(303, '/celebration-of-life-for-${slug}');
+        throw redirect(303, `/celebration-of-life-for-${slug}`);
+
     }
 } satisfies Actions;
