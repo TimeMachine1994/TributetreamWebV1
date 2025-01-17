@@ -1,10 +1,13 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
-export const actions = {
-    default: async ({ request, fetch, locals, cookies }) => {
-        console.log('🚀 Starting default action.');
+  
 
+export const actions = {
+    homeRegister: async ({ request, fetch, locals, cookies }) => {
+
+        let password = '';
+        let slug = $state()
         const generatePassword = (): string => {
             console.log('🔐 Generating a secure password.');
             const length = 16;
@@ -18,7 +21,6 @@ export const actions = {
             return password;
         };
 
-        let password = '';
         try {
             console.log('🔄 Generating password...');
             password = generatePassword();
@@ -26,21 +28,26 @@ export const actions = {
             console.log('📝 Parsing form data...');
             const formData = await request.formData();
             const data = {
-               userName: formData.get('userName'),
-                userEmail: formData.get('userEmail'),
-                phoneNumber: formData.get('userPhone'),
-                lovedOneName: formData.get('lovedOneName')
-            } as Record<string, any>;
+                lovedOneName: formData.get('lovedOneName'),
+                slugifiedName: formData.get('slugifiedName'),
+                name: formData.get('userInfo.name'),
+                email: formData.get('userInfo.email'),
+                phone: formData.get('userInfo.phone'),
+             };
             console.log('✅ Form data parsed:', data);
 
+            if (!data.email || !data.lovedOneName || !data.name || !data.phone) {
+                console.error('❌ Missing required fields:', data);
+                return fail(400, { error: true, message: 'Required fields are missing.' });
+            }
 
             console.log('🔄 Registering user...');
             const registerResponse = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: data.userName,
-                    email: data.userEmail,
+                    username: data.email,
+                    email: data.email,
                     password: password
                 })
             });
@@ -59,7 +66,7 @@ export const actions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: data.userName,
+                    username: data.email,
                     password: password
                 })
             });
@@ -70,62 +77,100 @@ export const actions = {
             }
 
             const authResult = await authResponse.json();
-            console.log('✅ User authenticated. JWT token received.');
+            console.log('✅ User authenticated. JWT token received:', authResult.token);
 
-            console.log('🔑 Setting JWT cookie...');
             cookies.set('jwt', authResult.token, { httpOnly: true, secure: true, path: '/' });
-
-            console.log('🔄 Setting user_id cookie...');
             cookies.set('user_id', userId, {
                 httpOnly: true,
                 secure: true,
                 path: '/',
-                maxAge: 60 * 60 * 24 * 7 // Expires in 7 days
+                maxAge: 60 * 60 * 24 * 7 // 7 days
             });
 
             console.log('📝 Writing user metadata...');
-// Assuming 'authResult.token' is set earlier in the server.ts logic
-console.log('🔑 JWT Token from authResult:', authResult.token);
+            const metaPayload = {
+                user_id: userId,
+                meta_key: 'home_form_data',
+                meta_value: JSON.stringify({
+                    userInfo: {
+                        name: data.name,
+                        email: data.email,
+                        phone: data.phone
+                    },
+                    lovedOneName: data.lovedOneName,
+                    slugifiedName: data.slugifiedName, 
+                }
+            )};
 
-if (!authResult.token) {
-    throw new Error('Authentication token is missing');
-}
-
-const metaResponse = await fetch('/api/user-meta', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authResult.token}` // Use the token directly from authResult
-    },
-    body: JSON.stringify({
-        user_id: userId,
-        meta_key: 'phone_number',
-        meta_value: data.phoneNumber
-    })
-});
-
-if (!metaResponse.ok) {
-    const errorData = await metaResponse.json();
-    console.error('❌ Error from user-meta endpoint:', errorData);
-    throw new Error(errorData.message || 'Failed to write user metadata');
-}
-
-console.log('✅ Metadata successfully written.');
-
+            const metaResponse = await fetch('/api/user-meta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authResult.token}`
+                },
+                body: JSON.stringify(metaPayload)
+            });
 
             if (!metaResponse.ok) {
-                const errorData = await metaResponse.json();
-                console.error('❌ Error from meta endpoint:', errorData);
-                return fail(metaResponse.status, { error: true, message: errorData.message });
+                const metaError = await metaResponse.json();
+                console.error('❌ Metadata write failed:', metaError);
+                return fail(metaResponse.status, { error: true, message: metaError.message });
             }
 
             console.log('✅ Metadata written successfully.');
-        } catch (error) {
+
+            // Add the tribute-table API call here
+            try {
+                console.log('🚀 Starting tribute-table API call...');
+                
+              
+               
+
+                // Prepare the payload
+                const tributePayload = {
+                    loved_one_name: data.lovedOneName, // Match expected field name
+                    slug: data.slugifiedName, // Ensure it's slugified
+                    user_id: userId // Ensure it's the correct user ID
+                };
+                
+                console.log('📦 Sending tribute payload:', tributePayload);
+                slug = data.slugifiedName;
+                const tributeResponse = await fetch('/api/tribute-table', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authResult.token}`
+                    },
+                    body: JSON.stringify(tributePayload)
+                });
+                
+                if (!tributeResponse.ok) {
+                    const tributeError = await tributeResponse.json();
+                    console.error('❌ Tribute API call failed:', tributeError);
+                    throw fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
+                }
+                
+                console.log('✅ Tribute data saved successfully.');
+                
+
+                if (!tributeResponse.ok) {
+                    const tributeError = await tributeResponse.json();
+                    console.error('❌ Tribute API call failed:', tributeError);
+                    return fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
+                }
+
+                console.log('✅ Tribute data saved successfully.');
+
+            } catch (error) {
+                console.error('💥 Error during tribute-table API call:', error);
+                throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
+            }
+
+            console.log('🔀 Redirecting to success page...');
+         } catch (error) {
             console.error('💥 Unexpected error:', error);
             throw fail(500, { error: true, message: 'An unexpected error occurred.' });
         }
-
-        console.log('🔀 Redirecting to success page...');
-        throw redirect(302, '/success');
+        throw redirect(303, '/celebration-of-life-for-${slug}');
     }
 } satisfies Actions;
