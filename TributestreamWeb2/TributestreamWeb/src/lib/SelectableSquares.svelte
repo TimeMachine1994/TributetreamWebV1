@@ -72,92 +72,115 @@
   .selected .bookmark-icon {
       fill: rgba(255, 0, 0, 1);
   }
+
+  .calculator-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, padding 0.5s ease;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 0 16px;
+  }
+
+  .calculator-panel.open {
+      max-height: 200px;
+      padding: 16px;
+  }
 </style>
 
 <!-- Squares Layout -->
-<div class="flex justify-center gap-8 p-8">
-    <!-- Package 1 -->
-    <div
-        class={`w-[20vw] h-auto glass-square gradient-solo ${
-            selectedSquare === 0 ? 'selected' : selectedSquare === null ? '' : 'faded'
-        }`}
-        on:click={() => handleSquareClick(0)}
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="bookmark-icon"
+<div class="flex flex-col items-center gap-8 p-8">
+    <div class="flex justify-center gap-8">
+        <!-- Package 1 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-solo ${
+                selectedSquare === 0 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(0)}
         >
-            <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
-        </svg>
-        <h3 class="title">Tributestream Solo</h3>
-        <i>Offline Recording</i>
-        <p class="price">$550</p>
-        <ul>
-            <li>Professional Videographer</li>
-            <li>2 Hours of Record Time</li>
-            <li>Custom URL</li>
-            <li>1 Year of Complimentary Hosting</li>
-            <li>Complimentary Download of Recording</li>
-        </ul>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
+            >
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Solo</h3>
+            <i>Offline Recording</i>
+            <p class="price">$550</p>
+            <ul>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Record Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Recording</li>
+            </ul>
+        </div>
+
+        <!-- Package 2 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-gold ${
+                selectedSquare === 1 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(1)}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
+            >
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Gold</h3>
+            <i>Livestream Recording</i>
+            <p class="price">$1,100</p>
+            <ul>
+                <li>Professional Livestream Technician</li>
+                <li>Remote Livestream Producer</li>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Broadcast Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Livestream</li>
+            </ul>
+        </div>
+
+        <!-- Package 3 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-legacy ${
+                selectedSquare === 2 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(2)}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
+            >
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Legacy</h3>
+            <i>Livestream Production</i>
+            <p class="price">$2,799</p>
+            <ul>
+                <li>B-Roll Videographer</li>
+                <li>Pre-Site Visit by Production Manager</li>
+                <li>Post Production Editing</li>
+                <li>Professional Livestream Technician</li>
+                <li>Remote Livestream Producer</li>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Broadcast Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Livestream</li>
+            </ul>
+        </div>
     </div>
 
-    <!-- Package 2 -->
-    <div
-        class={`w-[20vw] h-auto glass-square gradient-gold ${
-            selectedSquare === 1 ? 'selected' : selectedSquare === null ? '' : 'faded'
-        }`}
-        on:click={() => handleSquareClick(1)}
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="bookmark-icon"
-        >
-            <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
-        </svg>
-        <h3 class="title">Tributestream Gold</h3>
-        <i>Livestream Recording</i>
-        <p class="price">$1,100</p>
-        <ul>
-            <li>Professional Livestream Technician</li>
-            <li>Remote Livestream Producer</li>
-            <li>Professional Videographer</li>
-            <li>2 Hours of Broadcast Time</li>
-            <li>Custom URL</li>
-            <li>1 Year of Complimentary Hosting</li>
-            <li>Complimentary Download of Livestream</li>
-        </ul>
-    </div>
-
-    <!-- Package 3 -->
-    <div
-        class={`w-[20vw] h-auto glass-square gradient-legacy ${
-            selectedSquare === 2 ? 'selected' : selectedSquare === null ? '' : 'faded'
-        }`}
-        on:click={() => handleSquareClick(2)}
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="bookmark-icon"
-        >
-            <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
-        </svg>
-        <h3 class="title">Tributestream Legacy</h3>
-        <i>Livestream Production</i>
-        <p class="price">$2,799</p>
-        <ul>
-            <li>B-Roll Videographer</li>
-            <li>Pre-Site Visit by Production Manager</li>
-            <li>Post Production Editing</li>
-            <li>Professional Livestream Technician</li>
-            <li>Remote Livestream Producer</li>
-            <li>Professional Videographer</li>
-            <li>2 Hours of Broadcast Time</li>
-            <li>Custom URL</li>
-            <li>1 Year of Complimentary Hosting</li>
-            <li>Complimentary Download of Livestream</li>
-        </ul>
+    <!-- Calculator Panel -->
+    <div class={`calculator-panel ${selectedSquare !== null ? 'open' : ''}`}>
+        <h3>Calculator</h3>
+        <p>Use this space to calculate additional costs or features for your selection.</p>
+        <!-- Add calculator elements here -->
     </div>
 </div>

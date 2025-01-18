@@ -57,7 +57,7 @@
   
 
  </script>
- <SelectableSquares />
+<SelectableSquares />
 <Calc/>
 
 <CcForm appId={appId} locationId={locationId} initialData={originalData}/>

@@ -1,345 +1,236 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
+    let selectedSquare: number | null = $state(null);
+    import Calc from '$lib/Calc.svelte';
 
-
-    // end additions 1-28-24
-
-
-   // Declare reactive state variables using $state
-let livestreamAtFuneralHome = $state(null); // Reactive variable for whether the livestream is at a funeral home
-let selectedPackage = $state(''); // Reactive variable for the selected package
-let additionalLocations = $state({ secondAddress: false, thirdAddress: false }); // Reactive object for additional locations
-let livestreamDuration = $state(2); // Default duration for the livestream
-let masterPrice = $state(0); // Reactive variable for the base price of the selected package
-let urlFriendlyText = $state("your_loved_ones_name_here"); // Reactive variable for URL-friendly text
-
-// Constant object for package prices (does not need to be reactive)
-const packagePrices = { 'Solo': 399, 'Anywhere': 499, 'Legacy': 799 };
-
-// Reactive object to store form data
-let calcFormData = $state({
-    lovedOnesName: '',
-    livestreamDate: '',
-    yourName: '',
-    email: '',
-    phoneNumber: '',    
-    secondAddress: '',
-    thirdAddress: ''
-});
-
-
-
-// Derived values
-let additionalCharge = $derived(() => {
-    return (additionalLocations.secondAddress ? 399 : 0) +
-           (additionalLocations.thirdAddress ? 329 : 0) +
-           (livestreamDuration > 2 ? (livestreamDuration - 2) * 99 : 0);
-});
-
-let totalCost = $derived(() => {
-    const charge = additionalCharge(); // Invoke additionalCharge to get the computed value
-    return masterPrice + charge; // Add masterPrice and charge
-});
-
-// Effect for conditional logic
-$effect(() => {
-    if (selectedPackage === 'Solo' && (additionalLocations.secondAddress || additionalLocations.thirdAddress)) {
-        selectPackage('Anywhere'); // Call function to update selectedPackage
-    }
-});
-
- // Derived values for additional charges
-let additionalCharges = $derived(() => {
-    const charges = [];
-    if (additionalLocations.secondAddress) {
-        charges.push({ item: 'Location B', price: 399 });
-    }
-    if (additionalLocations.thirdAddress) {
-        charges.push({ item: 'Location C', price: 329 });
-    }
-    if (livestreamDuration > 2) {
-        let extraHours = livestreamDuration - 2;
-        charges.push({ item: `Additional Livestream Time (${extraHours}h)`, price: extraHours * 99 });
-    }
-    return charges;
-});
-
-
-// Reactive state for currentPage
-let currentPageValue = $state(1); // Internal reactive value
-
-// Create a store-like object with a `subscribe` method
-const currentPage = {
-    subscribe(callback: (value: number) => void) {
-        // Call the callback initially and whenever currentPageValue changes
-        callback(currentPageValue);
-
-        // Create a reactive effect to update subscribers
-        $effect(() => {
-            callback(currentPageValue);
-        });
-
-        // Return an unsubscribe function (no-op since $effect handles cleanup automatically)
-        return () => {};
-    },
-
-    // Method to update the value
-    set(value: number) {
-        currentPageValue = value; // Update the reactive value
-    }
-};
-
-// Usage example in a Svelte template
-/*
-{#if $currentPage === 1}
-    <p>Page 1 Content</p>
-{/if}
-*/
-
-
-
-    function selectPackage(packageName) {
-        selectedPackage = packageName;
-        masterPrice = packagePrices[packageName];
-    }
-
-    async function submitForm() {
-    try {
-        isSubmitting = true;
-
-        const response = await fetch('https://tributestream.com/wp-json/book_now/v1/process_booking', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                lovedOnesName: formData.lovedOnesName,
-                livestreamDate: formData.livestreamDate,
-                yourName: formData.yourName,
-                email: formData.email,
-                phoneNumber: formData.phoneNumber,
-                secondAddress: formData.secondAddress,
-                thirdAddress: formData.thirdAddress,
-                selectedPackage: selectedPackage,
-                livestreamAtFuneralHome: livestreamAtFuneralHome,
-                additionalLocations: JSON.stringify(additionalLocations),
-                livestreamDuration: livestreamDuration,
-                masterPrice: masterPrice,
-                totalCost: totalCost,
-                urlFriendlyText: urlFriendlyText
-            })
-        });
-
-        const data = await response.json();
-        if (data && data.url) {
-            invoiceUrl = data.url;
-            window.location.href = invoiceUrl;
-        } else {
-            console.error('Error fetching invoice URL', data);
-        }
-    } catch (error) {
-        console.error('Error submitting form:', error);
-    } finally {
-        isSubmitting = false;
-    }
-}
-
-
-
-
-
-    // my functions
-    
-    function convertText(){
-         urlFriendlyText = formData.lovedOnesName.replace(/\s+/g, '_');
-         urlFriendlyText = urlFriendlyText.toLowerCase();
-         return urlFriendlyText;
+    // Function to handle square selection
+    function handleSquareClick(index: number) {
+        selectedSquare = selectedSquare === index ? null : index;
     }
 </script>
-{#if $currentPage === 1}
-<div class="min-h-screen bg-gray-700 flex items-center justify-center">
-    <!-- Form Section -->
-    <div class="bg-gray-800 border-2 border-gray-900 shadow-2xl rounded-lg">
-        <!-- Display the custom link -->
-        <div class="text-white text-center p-4">
-            <p>Your Loved One's Custom Link:</p>
-            <p>Tributestream.com/celebration_of_life_for_{urlFriendlyText}</p>
+
+<style>
+  /* Custom CSS for the 3D glass effect */
+  .glass-square {
+      backdrop-filter: blur(10px) saturate(150%);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 8px 30px rgba(0, 0, 0, 0.1) inset;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.3s ease;
+      padding: 16px;
+      position: relative;
+  }
+  .glass-square:hover {
+      transform: scale(1.1) translateZ(10px);
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.4), 0 12px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .selected {
+      border-color: #000000;
+      border-width: 2px;
+      opacity: 1;
+  }
+
+  .faded {
+      opacity: 0.5;
+      filter: blur(2px);
+  }
+
+  .gradient-solo {
+      background: linear-gradient(to bottom right, #ffffff, #e0e0ff);
+  }
+
+  .gradient-gold {
+      background: linear-gradient(to bottom right, #fff8dc, #ffe066);
+  }
+
+  .gradient-legacy {
+      background: linear-gradient(to bottom right, #b8860b, #e5c078);
+  }
+
+  .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+  }
+
+  .price {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 16px 0;
+  }
+
+  .bookmark-icon {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      fill: rgba(255, 0, 0, 0.5);
+      transition: fill 0.3s ease;
+  }
+
+  .selected .bookmark-icon {
+      fill: rgba(255, 0, 0, 1);
+  }
+
+  /* Updated Calculator Panel */
+  .calculator-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, padding 0.5s ease;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 0 16px;
+      box-sizing: border-box; /* Ensure padding is included in height calculation */
+  }
+
+  .calculator-panel.open {
+      max-height: none;
+      min-height: 150px;
+      padding: 16px;
+  }
+  /* Prevent unintended gaps */
+  body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%; /* Ensure the body takes the full height of the viewport */
+      overflow-x: hidden; /* Prevent horizontal overflow */
+  }
+
+  .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(5, 1fr);
+      height: auto; /* Ensure the grid height adjusts to content */
+  }
+
+  .flex {
+      flex-grow: 1;
+      align-items: center;
+      justify-content: center;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+      .calculator-panel.open {
+          max-height: calc(100vh - 20%);
+      }
+  }
+
+  /* Responsive layout for the grid */
+  .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(5, 1fr);
+  }
+</style>
+
+<!-- Squares Layout -->
+<div class="flex flex-col items-center gap-8 p-8">
+    <div class="flex justify-center gap-8">
+        <!-- Package 1 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-solo ${
+                selectedSquare === 0 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(0)}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
+            >
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Solo</h3>
+            <i>Offline Recording</i>
+            <p class="price">$550</p>
+            <ul>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Record Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Recording</li>
+            </ul>
         </div>
-        
-        <!-- Input Fields -->
-        <div class="p-6 grid grid-cols-4 gap-5">
-            <label class="col-span-4 text-white text-center">Loved One's Name</label>
-            <input
-                type="text"
-                class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
-                bind:value={formData.lovedOnesName}
-                oninput={convertText}
-                placeholder="Loved One's Name"
-            />
 
-            <label class="col-span-4 text-white text-center">Livestream Date</label>
-            <input
-                type="date"
-                class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
-                bind:value={formData.livestreamDate}
-            />
-
-            <label class="col-span-4 text-white text-center">Your Name</label>
-            <input
-                type="text"
-                class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
-                bind:value={formData.yourName}
-                placeholder="Your Name"
-            />
-
-            <label class="col-span-4 text-white text-center">Email</label>
-            <input
-                type="email"
-                class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
-                bind:value={formData.email}
-                placeholder="Email"
-            />
-
-            <label class="col-span-4 text-white text-center">Phone Number</label>
-            <input
-                type="tel"
-                class="col-span-4 bg-gray-800 border-2 border-gray-900 text-white rounded-lg"
-                bind:value={formData.phoneNumber}
-                placeholder="Phone Number"
-            />
-            
-            <label class="col-span-4 text-white text-center">Are we livestreaming at the funeral home?</label>
-            <button
-                class="col-span-2 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                onclick={() => livestreamAtFuneralHome = true}
+        <!-- Package 2 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-gold ${
+                selectedSquare === 1 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(1)}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
             >
-                Yes
-            </button>
-            <button
-                class="col-span-2 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                onclick={() => livestreamAtFuneralHome = false}
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Gold</h3>
+            <i>Livestream Recording</i>
+            <p class="price">$1,100</p>
+            <ul>
+                <li>Professional Livestream Technician</li>
+                <li>Remote Livestream Producer</li>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Broadcast Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Livestream</li>
+            </ul>
+        </div>
+
+        <!-- Package 3 -->
+        <div
+            class={`w-[20vw] h-auto glass-square gradient-legacy ${
+                selectedSquare === 2 ? 'selected' : selectedSquare === null ? '' : 'faded'
+            }`}
+            on:click={() => handleSquareClick(2)}
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="bookmark-icon"
             >
-                No
-            </button>
-            
-            <div class="col-span-3"></div>
-            <button
-                class="col-span-1 bg-gray-500 hover:bg-gray-400 rounded-full text-white"
-                onclick={() => currentPage.set(2)}
-            >
-                Next
-            </button>
+                <path d="M6 2c-1.1 0-2 .9-2 2v18l8-5 8 5V4c0-1.1-.9-2-2-2H6z" />
+            </svg>
+            <h3 class="title">Tributestream Legacy</h3>
+            <i>Livestream Production</i>
+            <p class="price">$2,799</p>
+            <ul>
+                <li>B-Roll Videographer</li>
+                <li>Pre-Site Visit by Production Manager</li>
+                <li>Post Production Editing</li>
+                <li>Professional Livestream Technician</li>
+                <li>Remote Livestream Producer</li>
+                <li>Professional Videographer</li>
+                <li>2 Hours of Broadcast Time</li>
+                <li>Custom URL</li>
+                <li>1 Year of Complimentary Hosting</li>
+                <li>Complimentary Download of Livestream</li>
+            </ul>
         </div>
     </div>
+
+
 </div>
-{:else}
-<div class="min-h-screen bg-gray-700 flex items-center justify-center">
-    <!-- Package Selection and Summary -->
-    <div class="bg-gray-800 border-2 border-gray-900 shadow-2xl rounded-lg grid grid-cols-4 gap-2">
-        <!-- Package Selection -->
-        <div class="col-span-2 p-4">
-            <div class="text-center text-white mb-4">Select a Package:</div>
-            <div class="flex justify-center space-x-2">
-                {#if livestreamAtFuneralHome !== false}
-                    <button
-                        class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                        onclick={() => selectPackage('Solo')}
-                    >
-                        Solo
-                    </button>
-                {/if}
-                <button
-                    class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                    onclick={() => selectPackage('Anywhere')}
-                >
-                    Anywhere
-                </button>
-                <button
-                    class="bg-gray-500 hover:bg-gray-400 rounded-full p-2 text-white"
-                    onclick={() => selectPackage('Legacy')}
-                >
-                    Legacy
-                </button>
-            </div>
 
-            <!-- Livestream Duration Slider -->
-            <div class="text-center text-white mt-4">
-                Livestream Duration: {livestreamDuration} hours
-            </div>
-            <input
-                type="range"
-                min="1"
-                max="8"
-                bind:value={livestreamDuration}
-                class="w-full mt-2"
-            />
-
-            <!-- Additional Locations -->
-            <label class="block mt-4 text-white">
-                <input type="checkbox" bind:checked={additionalLocations.secondAddress} />
-                Livestream at a second address?
-            </label>
-            {#if additionalLocations.secondAddress}
-                <input
-                    type="text"
-                    bind:value={formData.secondAddress}
-                    placeholder="Enter second address"
-                    class="bg-gray-800 border-2 border-gray-900 text-white rounded-lg w-full mt-2"
-                />
-            {/if}
-
-            <label class="block mt-4 text-white">
-                <input type="checkbox" bind:checked={additionalLocations.thirdAddress} />
-                Livestream at a third address?
-            </label>
-            {#if additionalLocations.thirdAddress}
-                <input
-                    type="text"
-                    bind:value={formData.thirdAddress}
-                    placeholder="Enter third address"
-                    class="bg-gray-800 border-2 border-gray-900 text-white rounded-lg w-full mt-2"
-                />
-            {/if}
-        </div>
-
-        <!-- Summary Section -->
-        <div class="col-span-2 p-4">
-            <div class="text-center text-white mb-4">Summary</div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-white">
-                    <thead>
-                        <tr>
-                            <th class="border px-2 text-right">Services</th>
-                            <th class="border px-2 text-right">Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="border px-2 text-right">Base Price</td>
-                            <td class="border px-2 text-right">${masterPrice}</td>
-                        </tr>
-                        {#each additionalCharges as charge}
-                            <tr>
-                                <td class="border px-2 text-right">{charge.item}</td>
-                                <td class="border px-2 text-right">${charge.price}</td>
-                            </tr>
-                        {/each}
-                        <tr>
-                            <td class="border px-2 text-right font-bold">Total Cost</td>
-                            <td class="border px-2 text-right font-bold">${totalCost}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <button
-                class="w-full bg-gray-500 hover:bg-gray-400 rounded-full p-3 text-white mt-4"
-                onclick={submitForm}
-                disabled={isSubmitting}
-            >
-                {#if isSubmitting} Processing... {:else} Submit {/if}
-            </button>
-        </div>
+<div class="grid grid-cols-5 gap-4">
+    <div class="col-span-1">
+        <!-- Column 1 content -->
+    </div>
+    <div class="col-span-3">
+    <!-- Calculator Panel -->
+    <div class={`calculator-panel ${selectedSquare !== null ? 'open' : ''}`}>
+   
+     <!-- Add calculator elements here -->
+      <Calc />
+    </div>    </div>
+    <div class="col-span-1">
+        <!-- Column 3 content -->
     </div>
 </div>
-{/if}
+
