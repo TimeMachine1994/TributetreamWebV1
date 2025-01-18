@@ -202,6 +202,6 @@ export const actions = {
             console.error('💥 Unexpected error:', error);
             throw fail(500, { error: true, message: 'An unexpected error occurred.' });
         }
-        throw redirect(303, '/07-fd-form/confirmation');
+        throw redirect(303, '/fd-form/confirmation');
     }
 } satisfies Actions;

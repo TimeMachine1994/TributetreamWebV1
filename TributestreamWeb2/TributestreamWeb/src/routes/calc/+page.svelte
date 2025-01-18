@@ -1,6 +1,8 @@
 <script lang="ts">
     let selectedSquare: number | null = $state(null);
     import Calc from '$lib/Calc.svelte';
+    let { userMeta } = $props();
+    console.log(userMeta);
 
     // Function to handle square selection
     function handleSquareClick(index: number) {
@@ -125,6 +127,7 @@
       grid-template-columns: repeat(5, 1fr);
   }
 </style>
+
 
 <!-- Squares Layout -->
 <div class="flex flex-col items-center gap-8 p-8">

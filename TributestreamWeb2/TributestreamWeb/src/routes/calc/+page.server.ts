@@ -1,24 +1,24 @@
 import { error } from '@sveltejs/kit';
 import { SQUARE_SANDBOX_APP_ID, SQUARE_SANDBOX_ACCESS_TOKEN, SQUARE_LOCATION_ID } from '$env/static/private';
 import { redirect } from '@sveltejs/kit';
-export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ fetch, cookies, }) => {
 
     console.log('🚀 Loading user meta data.');
      const user_id = cookies.get('user_id');
     if (!user_id) {
         console.error('❌ Missing "user_id" query parameter.');
-         throw error(400, 'user_id is required as a query parameter.');
     }
 
     const token = cookies.get('jwt');
     if (!token) {
         console.error('❌ Missing JWT token in cookies.');
-         throw error(401, 'Authentication required');
     }
     // If both checks pass, continue, otherwise redirect
     if (!token || !user_id) {
         console.error('❌ Authentication or user ID check failed.');
-        redirect(303, '/');
+        redirect(303, '/login');
     }
     try {
         const apiUrl = `https://wp.tributestream.com/wp-json/tributestream/v1/user-meta/${user_id}`;
@@ -44,16 +44,14 @@ export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
         // Create an object with keys as meta_key and values as meta_value
         const metaObject = meta.reduce((acc, { meta_key, meta_value }) => {
             acc[meta_key] = meta_value;
+            console.log(acc);
             return acc;
         }, {});
 
-        const appId = SQUARE_SANDBOX_APP_ID;
-        const locationId = SQUARE_LOCATION_ID;
-
         
         return {
-            appId, locationId,
-            userMeta: metaObject,
+           
+            meta,
         };
     } catch (err) {
         console.error('💥 Error in server load function:', err);
