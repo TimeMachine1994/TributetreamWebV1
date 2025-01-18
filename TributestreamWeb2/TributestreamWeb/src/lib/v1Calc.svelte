@@ -1,6 +1,18 @@
 <script lang="ts">
  
+//  import { onMount } from "svelte";
  
+//   let value = $state(0); // Start at 0%
+//   onMount(() => {
+//     const interval = setInterval(() => {
+//       if (value < 50) {
+//         value += 1; // Increment the value
+//       } else {
+//         clearInterval(interval); // Stop the animation at 50%
+//       }
+//     }, 20); // Adjust speed by changing this delay
+//   });
+// State for form data
 let formData = $state({
   package: 'Solo', // Default package
   livestreamDate: '',
@@ -75,8 +87,79 @@ function removeLocation(index) {
 }
     </script>
 
- 
- 
+
+<!-- <ProgressRadial 
+  value={value} 
+  stroke={40} 
+  font={56} 
+  strokeLinecap="round" 
+  transition="transition-[stroke-dashoffset] ease-in-out duration-500" 
+  width="w-36" 
+  meter="stroke-blue-500" 
+  track="stroke-gray-200" 
+  fill="fill-blue-600"
+>
+  {value}%
+</ProgressRadial> -->
+<section>
+  <div>
+      <h2>Choose Your Package</h2>
+      <p>Select the package that best suits your needs for an unforgettable livestream experience.</p>
+      
+      <!-- Package 1 -->
+      <div style="border: 1px solid #ccc; padding: 16px; margin: 16px;">
+          <h3>Tributestream Solo</h3>
+          <i>Offline Recording</i>
+          <p><strong>$550</strong></p>
+          <ul>
+              <li>Professional Videographer</li>
+              <li>2 Hours of Record Time</li>
+              <li>Custom URL</li>
+              <li>1 Year of Complimentary Hosting</li>
+              <li>Complimentary Download of Recording</li>
+          </ul>
+          <button>Select Package</button>
+      </div>
+
+      <!-- Package 2 -->
+      <div style="border: 1px solid #ccc; padding: 16px; margin: 16px;">
+          <h3>Tributestream Gold</h3>
+          <i>Livestream Recording</i>
+          <p><strong>$1,100</strong></p>
+          <ul>
+              <li>Professional Livestream Technician</li>
+              <li>Remote Livestream Producer</li>
+              <li>Professional Videographer</li>
+              <li>2 Hours of Broadcast Time</li>
+              <li>Custom URL</li>
+              <li>1 Year of Complimentary Hosting</li>
+              <li>Complimentary Download of Livestream</li>
+          </ul>
+          <button>Select Package</button>
+      </div>
+
+      <!-- Package 3 -->
+      <div style="border: 1px solid #ccc; padding: 16px; margin: 16px;">
+          <h3>Tributestream Legacy</h3>
+          <i>Livestream Production</i>
+          <p><strong>$2,799</strong></p>
+          <ul>
+              <li>B-Roll Videographer</li>
+              <li>Pre-Site Visit by Production Manager</li>
+              <li>Post Production Editing</li>
+              <li>Professional Livestream Technician</li>
+              <li>Remote Livestream Producer</li>
+              <li>Professional Videographer</li>
+              <li>2 Hours of Broadcast Time</li>
+              <li>Custom URL</li>
+              <li>1 Year of Complimentary Hosting</li>
+              <li>Complimentary Download of Livestream</li>
+          </ul>
+          <button>Select Package</button>
+      </div>
+  </div>
+</section>
+
 
 <section class="bg-white dark:bg-gray-900">
     <div class="max-w-screen-xl px-4 py-8 mx-auto lg:py-24 lg:px-6">
