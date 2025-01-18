@@ -14,7 +14,7 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 8px 30px rgba(0, 0, 0, 0.1) inset;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 12px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.3s ease;
       padding: 16px;
       position: relative;
   }
@@ -26,6 +26,12 @@
   .selected {
       border-color: #000000;
       border-width: 2px;
+      opacity: 1;
+  }
+
+  .faded {
+      opacity: 0.5;
+      filter: blur(2px);
   }
 
   .gradient-solo {
@@ -73,7 +79,7 @@
     <!-- Package 1 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-solo ${
-            selectedSquare === 0 ? 'selected' : ''
+            selectedSquare === 0 ? 'selected' : 'faded'
         }`}
         on:click={() => handleSquareClick(0)}
     >
@@ -99,7 +105,7 @@
     <!-- Package 2 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-gold ${
-            selectedSquare === 1 ? 'selected' : ''
+            selectedSquare === 1 ? 'selected' : 'faded'
         }`}
         on:click={() => handleSquareClick(1)}
     >
@@ -127,7 +133,7 @@
     <!-- Package 3 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-legacy ${
-            selectedSquare === 2 ? 'selected' : ''
+            selectedSquare === 2 ? 'selected' : 'faded'
         }`}
         on:click={() => handleSquareClick(2)}
     >
