@@ -3,7 +3,7 @@
 
     // Function to handle square selection
     function handleSquareClick(index: number) {
-        selectedSquare = index;
+        selectedSquare = selectedSquare === index ? null : index;
     }
 </script>
 
@@ -79,7 +79,7 @@
     <!-- Package 1 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-solo ${
-            selectedSquare === 0 ? 'selected' : 'faded'
+            selectedSquare === 0 ? 'selected' : selectedSquare === null ? '' : 'faded'
         }`}
         on:click={() => handleSquareClick(0)}
     >
@@ -105,7 +105,7 @@
     <!-- Package 2 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-gold ${
-            selectedSquare === 1 ? 'selected' : 'faded'
+            selectedSquare === 1 ? 'selected' : selectedSquare === null ? '' : 'faded'
         }`}
         on:click={() => handleSquareClick(1)}
     >
@@ -133,7 +133,7 @@
     <!-- Package 3 -->
     <div
         class={`w-[20vw] h-auto glass-square gradient-legacy ${
-            selectedSquare === 2 ? 'selected' : 'faded'
+            selectedSquare === 2 ? 'selected' : selectedSquare === null ? '' : 'faded'
         }`}
         on:click={() => handleSquareClick(2)}
     >
