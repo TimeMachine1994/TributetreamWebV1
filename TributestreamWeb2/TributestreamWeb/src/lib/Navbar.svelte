@@ -37,30 +37,47 @@
 <script lang="ts">
     /* Importing necessary functions and components */
     import { onMount } from 'svelte'; /* Svelte lifecycle function */
-    //import { Drawer, getDrawerStore, initializeStores } from '@skeletonlabs/skeleton'; /* Skeleton UI components */
-    //import type { DrawerSettings } from '@skeletonlabs/skeleton'; /* Type-only import for DrawerSettings */
     import { goto } from '$app/navigation'; /* Function to navigate to a new page */
     import '../app.postcss'; /* Importing global styles */
     import '@fortawesome/fontawesome-free/css/all.min.css'
  
-
 /*********** START Handle Authentication Actions ***********/
-  /* Reactive variable to check login status */
+  /* Reactive variables */
   let isLoggedIn = $state(false);
+  let userRole = $state('');
 
   /* onMount lifecycle function to check if the user is logged in */
   onMount(() => {
     /* Checks if a JWT token exists in localStorage */
     isLoggedIn = !!localStorage.getItem('jwtToken');
+    /* Get user role from localStorage if it exists */
+    userRole = localStorage.getItem('userRole') || '';
   });
+
+  /* Function to handle portal navigation */
+  function handlePortalClick() {
+    if (!isLoggedIn) {
+      goto('/login');
+      return;
+    }
+
+    switch(userRole) {
+      case 'admin':
+        goto('/admin-dashboard');
+        break;
+      case 'family':
+        goto('/family-dashboard');
+        break;
+      default:
+        goto('/family-dashboard'); // Default to family dashboard
+    }
+  }
 
   /* Function to handle authentication actions */
   function handleAuthAction() {
     if (isLoggedIn) {
-      // If the user is logged in, navigate to account settings page
       goto('/account-settings');
     } else {
-      // If the user is not logged in, navigate to login page
       goto('/login');
     }
   }
@@ -110,9 +127,14 @@
             </a>
           </li>
           <li>
-          </nav>
-          
-         
-   
+            <button 
+              on:click={handlePortalClick}
+              class="bg-[#D5BA7F] text-black py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
+            >
+              My Portal
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
 </header>

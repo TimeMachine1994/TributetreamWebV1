@@ -70,10 +70,19 @@ let password = $state('WorldOfTribute!!123$$$@');
       
       <button
         type="submit"
-        class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out mb-4"
       >
         Log In
       </button>
     </form>
+
+    <div class="text-center mt-4">
+      <a 
+        href="/forgot-password" 
+        class="text-black hover:text-[#D5BA7F] transition-all duration-300 ease-in-out text-sm"
+      >
+        Forgot Password?
+      </a>
+    </div>
   </div>
 </div>

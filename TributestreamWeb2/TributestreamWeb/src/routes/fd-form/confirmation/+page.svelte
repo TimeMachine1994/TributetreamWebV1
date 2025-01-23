@@ -42,10 +42,11 @@
                     total: 0,      // Default value for required field
                     duration: 0,   // Default value for required field
                     locations: [], // Default value for required field
-                    livestreamDate: parsedData.memorial.date,
-                    livestreamStartTime: parsedData.memorial.time,
+                    livestreamDate: parsedData.memorial.date || '',
+                    livestreamStartTime: parsedData.memorial.time || '',
                     ...(store.orderData.details || {}) // Spread existing details after defaults
-                }
+                },
+                selectedPackage: undefined // Ensure calculator is initially hidden
             });
 
         } catch (error) {
@@ -57,5 +58,7 @@
 
 <div class="max-w-[90vw] mx-auto px-4 space-y-8">
     <SelectableSquares />
-    <Calc initialStartTime={memorialFormData?.memorial?.time || ''} />
+    <Calc 
+        initialStartTime={memorialFormData?.memorial?.time || ''} 
+    />
 </div>
