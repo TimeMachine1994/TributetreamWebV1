@@ -31,8 +31,14 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     // Check if trying to access admin routes
-    if (event.url.pathname.startsWith('/admin-dashboard')) {
+    if (event.url.pathname.startsWith('/admin') || event.url.pathname.startsWith('/admin-dashboard')) {
         console.log('🔒 [Hook] Checking admin route access...');
+        
+        // Redirect /admin to /admin-dashboard
+        if (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) {
+            console.log('↪️ [Hook] Redirecting /admin to /admin-dashboard');
+            throw redirect(303, '/admin-dashboard');
+        }
         
         // Redirect to login if not authenticated
         if (!jwt || !userData) {
@@ -40,11 +46,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             throw redirect(303, '/login');
         }
 
-        // Check admin status using roles and capabilities
-        const isAdmin = (userData.roles || []).includes('administrator') || 
-                       (userData.capabilities || {}).manage_options === true;
-
-        if (!isAdmin) {
+        // Check admin status
+        if (!userData.isAdmin) {
             console.log('🚫 [Hook] User is not an admin, redirecting to dashboard');
             throw redirect(303, '/dashboard');
         }

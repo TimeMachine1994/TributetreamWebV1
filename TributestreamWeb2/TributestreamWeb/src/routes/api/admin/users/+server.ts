@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WORDPRESS_API_BASE = 'https://wp.tributestream.com/wp-json/wp/v2';
+const WORDPRESS_API_BASE = 'https://wp.tributestream.com/wp-json/tributestream/v1/admin';
 
 export const GET: RequestHandler = async ({ url, cookies, locals }) => {
     console.log('📥 Received GET request for users endpoint');
@@ -30,7 +30,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
     if (count) {
         console.log('🔄 Fetching users count...');
         try {
-            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=1`;
+            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=1&count=true`;
             console.log('🌐 Making request to:', apiUrl);
             const response = await fetch(apiUrl, {
                 headers: {
@@ -55,7 +55,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
     if (recent) {
         console.log('🔄 Fetching recent users...');
         try {
-            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=5&orderby=id&order=desc`;
+            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=5`;
             console.log('🌐 Making request to:', apiUrl);
             const response = await fetch(apiUrl, {
                 headers: {
@@ -105,20 +105,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
                 }, { status: response.status });
             }
 
-            const fullUserData = await response.json();
-            
-            const userData = {
-                id: fullUserData.id,
-                name: fullUserData.name,
-                email: fullUserData.email,
-                nickname: fullUserData.nickname,
-                firstName: fullUserData.first_name,
-                lastName: fullUserData.last_name,
-                avatar: fullUserData.avatar_urls,
-                description: fullUserData.description,
-                url: fullUserData.url,
-                roles: fullUserData.roles
-            };
+            const userData = await response.json();
 
             console.log('✅ Successfully fetched user:', { id: userData.id, name: userData.name });
             return json(userData, { 
@@ -140,15 +127,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
     // Otherwise, fetch paginated list of users
     console.log('🔄 Fetching paginated users list...');
     try {
-        const queryParams = new URLSearchParams({
-            per_page: perPage.toString(),
-            page: page.toString(),
-            search: search,
-            orderby: 'id',
-            order: 'desc'
-        });
-
-        const apiUrl = `${WORDPRESS_API_BASE}/users?${queryParams}`;
+        const apiUrl = `${WORDPRESS_API_BASE}/users?page=${page}&per_page=${perPage}${search ? `&search=${search}` : ''}`;
         console.log('🌐 Making request to:', apiUrl);
         const response = await fetch(apiUrl, {
             headers: {
@@ -167,35 +146,15 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
             return json({ error: 'Failed to fetch users', details: message }, { status: response.status });
         }
 
-        const users = await response.json();
-        const total = parseInt(response.headers.get('X-WP-Total') || '0');
-        const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '0');
-
+        const data = await response.json();
         console.log('✅ Successfully fetched users:', {
-            total,
-            totalPages,
-            currentPage: page,
-            usersReceived: users.length
+            total: data.total,
+            totalPages: data.total_pages,
+            currentPage: data.current_page,
+            usersReceived: data.users.length
         });
 
-        return json({
-            users: users.map((user: any) => ({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                nickname: user.nickname,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                avatar: user.avatar_urls,
-                description: user.description,
-                url: user.url,
-                roles: user.roles
-            })),
-            total,
-            totalPages,
-            page,
-            perPage
-        });
+        return json(data);
     } catch (error) {
         console.error('💥 Error fetching users:', error);
         return json({ error: 'Failed to fetch users' }, { status: 500 });
