@@ -7,10 +7,21 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
         throw redirect(303, '/login');
     }
 
-    // Check if this is an admin session
-    const session = cookies.get('session');
-    if (session === 'admin-session') {
-        throw redirect(302, '/admin-dashboard');
+    // Get user data from cookie
+    const userCookie = cookies.get('user');
+    if (!userCookie) {
+        throw redirect(303, '/login');
+    }
+
+    try {
+        const userData = JSON.parse(userCookie);
+        // If user is admin, redirect them to admin page
+        if (userData.isAdmin) {
+            throw redirect(303, '/admin');
+        }
+    } catch (error) {
+        console.error('Error parsing user cookie:', error);
+        throw redirect(303, '/login');
     }
 
     return {};

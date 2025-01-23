@@ -1,5 +1,16 @@
 // src/login/+page.svelte
-<script>
+<script lang="ts">
+import { goto } from '$app/navigation';
+import { page } from '$app/stores';
+import { onMount } from 'svelte';
+
+// Check if user is already logged in and redirect
+onMount(() => {
+  if ($page.data.user) {
+    const isAdmin = $page.data.user.isAdmin;
+    goto(isAdmin ? '/admin' : '/schedule');
+  }
+});
 
 ///Main Stores
 

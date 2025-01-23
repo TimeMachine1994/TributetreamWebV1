@@ -12,7 +12,15 @@ declare global {
           isAdmin: boolean;
         }
       }
- 
+
+      interface PageData {
+        user: {
+          displayName: string;
+          email: string;
+          nicename: string;
+          isAdmin: boolean;
+        } | null;
+      }
 
       interface Tribute {
         id: string;

@@ -38,21 +38,14 @@
     /* Importing necessary functions and components */
     import { onMount } from 'svelte'; /* Svelte lifecycle function */
     import { goto } from '$app/navigation'; /* Function to navigate to a new page */
+    import { page } from '$app/stores'; /* For accessing page data including cookies */
     import '../app.postcss'; /* Importing global styles */
     import '@fortawesome/fontawesome-free/css/all.min.css'
  
 /*********** START Handle Authentication Actions ***********/
-  /* Reactive variables */
-  let isLoggedIn = $state(false);
-  let userRole = $state('');
-
-  /* onMount lifecycle function to check if the user is logged in */
-  onMount(() => {
-    /* Checks if a JWT token exists in localStorage */
-    isLoggedIn = !!localStorage.getItem('jwtToken');
-    /* Get user role from localStorage if it exists */
-    userRole = localStorage.getItem('userRole') || '';
-  });
+  /* Reactive variables using runes */
+  let isLoggedIn = $derived(!!$page.data.user);
+  let isAdmin = $derived($page.data.user?.isAdmin ?? false);
 
   /* Function to handle portal navigation */
   function handlePortalClick() {
@@ -61,15 +54,10 @@
       return;
     }
 
-    switch(userRole) {
-      case 'admin':
-        goto('/admin-dashboard');
-        break;
-      case 'family':
-        goto('/family-dashboard');
-        break;
-      default:
-        goto('/family-dashboard'); // Default to family dashboard
+    if (isAdmin) {
+      goto('/admin');
+    } else {
+      goto('/schedule');
     }
   }
 
