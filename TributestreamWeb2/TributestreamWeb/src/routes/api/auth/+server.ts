@@ -47,7 +47,9 @@ export async function POST({ request }) {
       // Step 4: Parse WordPress response
       const data = await response.json();
       console.log('📝 [Auth API] Parsed response JSON from WordPress:');
-      console.log('   Response Data:', data);
+      console.log('   Response Data:', JSON.stringify(data, null, 2));
+      console.log('   User Roles:', data.roles || 'No roles found');
+      console.log('   User Capabilities:', data.capabilities || 'No capabilities found');
 
       // Step 5: Handle non-OK responses
       if (!response.ok) {
@@ -66,7 +68,9 @@ export async function POST({ request }) {
               token: data.token,
               user_display_name: data.user_display_name,
               user_email: data.user_email,
-              user_nicename: data.user_nicename
+              user_nicename: data.user_nicename,
+              roles: data.roles || [],
+              capabilities: data.capabilities || {}
           }),
           {
               status: 200,
@@ -74,10 +78,7 @@ export async function POST({ request }) {
           }
       );
   } catch (error) {
-      console.error('🚨 [Auth API] Error occurred while authenticating with WordPress:');
-          console.log('Response Headers:', Object.fromEntries(response.headers));
-
-      console.error(error);
+      console.error('🚨 [Auth API] Error occurred while authenticating with WordPress:', error);
       return new Response(JSON.stringify({ message: 'Internal server error' }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' }

@@ -1,31 +1,60 @@
-import type { Handle } from '@sveltejs/kit';
+import { redirect, type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    console.log('🔄 Hook Intercepting Request');
+    console.log('🔄 [Hook] Intercepting Request:', event.url.pathname);
 
+    // Get all cookies for logging
     const cookies = event.cookies.getAll();
-    console.log('🍪 All cookies:', cookies);
-    console.log( event.cookies.get('jwt'));
-    // Retrieve the JWT from cookies
-  
-    // Attach the JWT to `locals`
+    console.log('🍪 [Hook] All cookies:', cookies);
+
+    // Get JWT and user data
     const jwt = event.cookies.get('jwt');
+    const userCookie = event.cookies.get('user');
+    
+    // Attach JWT to locals for API requests
     event.locals.jwt = jwt;
-    console.log('🔍 JWT in Hook:', jwt);
+    
+    // Parse user data if available
+    let userData = null;
+    if (userCookie) {
+        try {
+            userData = JSON.parse(userCookie);
+            event.locals.user = userData;
+            console.log('👤 [Hook] User data parsed:', {
+                displayName: userData.displayName,
+                roles: userData.roles,
+                isAdmin: userData.isAdmin
+            });
+        } catch (error) {
+            console.error('❌ [Hook] Error parsing user cookie:', error);
+        }
+    }
 
-    const user_id = event.cookies.get('user_id');
-    event.locals.user_id = user_id;
-    console.log('🔍 user_id in hook:', user_id);
+    // Check if trying to access admin routes
+    if (event.url.pathname.startsWith('/admin-dashboard')) {
+        console.log('🔒 [Hook] Checking admin route access...');
+        
+        // Redirect to login if not authenticated
+        if (!jwt || !userData) {
+            console.log('⚠️ [Hook] No authentication found, redirecting to login');
+            throw redirect(303, '/login');
+        }
 
+        // Check admin status using roles and capabilities
+        const isAdmin = (userData.roles || []).includes('administrator') || 
+                       (userData.capabilities || {}).manage_options === true;
 
+        if (!isAdmin) {
+            console.log('🚫 [Hook] User is not an admin, redirecting to dashboard');
+            throw redirect(303, '/dashboard');
+        }
+
+        console.log('✅ [Hook] Admin access granted');
+    }
 
     // Continue resolving the request
     const response = await resolve(event);
-
-    // Log the final response status
-    console.log('✅ Response Status:', response.status);
+    console.log('✅ [Hook] Response Status:', response.status);
 
     return response;
 };
-
- 

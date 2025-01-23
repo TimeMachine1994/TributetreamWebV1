@@ -3,9 +3,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, cookies, fetch }) => {
     // First check if user is logged in
-    if (!locals.jwt) {
-        throw redirect(303, '/login');
-    }
+ 
 
     // Get user data from cookie
     const userCookie = cookies.get('user');

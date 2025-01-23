@@ -1,45 +1,11 @@
-// src/login/+page.svelte
 <script lang="ts">
-import { goto } from '$app/navigation';
-import { page } from '$app/stores';
-import { onMount } from 'svelte';
-
-// Check if user is already logged in and redirect
-onMount(() => {
-  if ($page.data.user) {
-    const isAdmin = $page.data.user.isAdmin;
-    goto(isAdmin ? '/admin' : '/schedule');
-  }
-});
-
-///Main Stores
-
-   // Declare reactive state variables using $state
-let livestreamAtFuneralHome = $state(null); // Reactive variable for whether the livestream is at a funeral home
-let selectedPackage = $state(''); // Reactive variable for the selected package
-let additionalLocations = $state({ secondAddress: false, thirdAddress: false }); // Reactive object for additional locations
-let livestreamDuration = $state(2); // Default duration for the livestream
-let masterPrice = $state(0); // Reactive variable for the base price of the selected package
-let urlFriendlyText = $state("your_loved_ones_name_here"); // Reactive variable for URL-friendly text
-// Reactive object to store form data
-let formData = $state({
-    lovedOnesName: '',
-    livestreamDate: '',
-    yourName: '',
-    email: '',
-    phoneNumber: '',
-    secondAddress: '',
-    thirdAddress: ''
-});
 import { enhance } from '$app/forms';
+
 let { form } = $props();
 
-
-
-
 // Auto-filled credentials for demo
-let username = $state('admints');
-let password = $state('WorldOfTribute!!123$$$@');
+let username = $state('');
+let password = $state('');
 </script>
 
 <div class="flex min-h-screen items-center justify-center">

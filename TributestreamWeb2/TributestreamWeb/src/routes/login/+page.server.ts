@@ -68,14 +68,17 @@ export const actions: Actions = {
                 });
             }
 
-            // Set user data
+            // Set user data with roles and capabilities
             cookies.set(
                 'user',
                 JSON.stringify({
                     displayName: result.user_display_name,
                     email: result.user_email,
                     nicename: result.user_nicename,
-                    isAdmin: result.user_nicename === 'admints' || result.user_email === 'AustinBryanFilm@gmail.com'
+                    roles: result.roles || [],
+                    capabilities: result.capabilities || {},
+                    isAdmin: (result.roles || []).includes('administrator') || 
+                            (result.capabilities || {}).manage_options === true
                 }),
                 {
                     path: '/',
@@ -96,9 +99,10 @@ export const actions: Actions = {
             return fail(500, { error: 'No response data from login' });
         }
 
-        // Define redirect path based on admin status (outside try-catch)
-        const isAdmin = result.user_nicename === 'admints' || result.user_email === 'AustinBryanFilm@gmail.com';
-        const redirectPath = isAdmin ? '/admin' : '/schedule';
+        // Define redirect path based on admin role/capability
+        const isAdmin = (result.roles || []).includes('administrator') || 
+                       (result.capabilities || {}).manage_options === true;
+        const redirectPath = isAdmin ? '/admin-dashboard' : '/dashboard';
         
         throw redirect(303, redirectPath);
     }
