@@ -35,46 +35,80 @@
 
     // Fetch dashboard data
     async function fetchDashboardData() {
+        console.log('🔄 Starting dashboard data fetch...');
         try {
+            console.log('📊 Attempting to fetch users count...');
             // Fetch users count
-            const usersResponse = await fetch('/api/user_data?count=true', {
+            const usersResponse = await fetch('/api/admin/users?count=true', {
                 headers: {
                     'Accept': 'application/json'
                 }
             });
-            if (!usersResponse.ok) throw new Error('Failed to fetch users count');
+            if (!usersResponse.ok) {
+                console.error('❌ Users count fetch failed:', usersResponse.status, usersResponse.statusText);
+                throw new Error('Failed to fetch users count');
+            }
             const usersData = await usersResponse.json();
+            console.log('✅ Users count data received:', usersData);
             stats.totalUsers = usersData.count;
+            console.log('📈 Updated total users count:', stats.totalUsers);
 
             // Fetch tributes data
-            const tributesResponse = await fetch('/api/tribute-table?recent=true', {
+            console.log('📊 Attempting to fetch tributes data...');
+            const tributesResponse = await fetch('/api/admin/tributes?recent=true', {
                 headers: {
                     'Accept': 'application/json'
                 }
             });
-            if (!tributesResponse.ok) throw new Error('Failed to fetch tributes');
+            if (!tributesResponse.ok) {
+                console.error('❌ Tributes fetch failed:', tributesResponse.status, tributesResponse.statusText);
+                throw new Error('Failed to fetch tributes');
+            }
             const tributesData = await tributesResponse.json();
+            console.log('✅ Tributes data received:', tributesData);
             stats.totalTributes = tributesData.total;
             stats.recentTributes = tributesData.recent || [];
+            console.log('📈 Updated tributes stats:', {
+                totalTributes: stats.totalTributes,
+                recentTributesCount: stats.recentTributes.length
+            });
 
             // Fetch recent users
-            const recentUsersResponse = await fetch('/api/user_data?recent=true', {
+            console.log('📊 Attempting to fetch recent users...');
+            const recentUsersResponse = await fetch('/api/admin/users?recent=true', {
                 headers: {
                     'Accept': 'application/json'
                 }
             });
-            if (!recentUsersResponse.ok) throw new Error('Failed to fetch recent users');
+            if (!recentUsersResponse.ok) {
+                console.error('❌ Recent users fetch failed:', recentUsersResponse.status, recentUsersResponse.statusText);
+                throw new Error('Failed to fetch recent users');
+            }
             const recentUsersData = await recentUsersResponse.json();
+            console.log('✅ Recent users data received:', recentUsersData);
             stats.recentUsers = recentUsersData.users || [];
+            console.log('📈 Updated recent users:', {
+                recentUsersCount: stats.recentUsers.length,
+                users: stats.recentUsers.map(u => ({ id: u.id, name: u.name }))
+            });
 
         } catch (err: unknown) {
+            console.error('❌ Dashboard data fetch error:', err);
             error = err instanceof Error ? err.message : 'An unknown error occurred';
+            console.error('💥 Error state set to:', error);
         } finally {
             loading = false;
+            console.log('🏁 Dashboard data fetch complete. Final stats:', {
+                totalUsers: stats.totalUsers,
+                totalTributes: stats.totalTributes,
+                recentTributesCount: stats.recentTributes.length,
+                recentUsersCount: stats.recentUsers.length
+            });
         }
     }
 
     onMount(() => {
+        console.log('🚀 Admin dashboard mounted, initiating data fetch...');
         fetchDashboardData();
     });
 
