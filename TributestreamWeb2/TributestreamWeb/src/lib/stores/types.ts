@@ -31,6 +31,7 @@ export interface OrderDetails {
     total: number;
     duration: number;
     livestreamDate: string;
+    livestreamStartTime: string;
     locations: Location[];
 }
 

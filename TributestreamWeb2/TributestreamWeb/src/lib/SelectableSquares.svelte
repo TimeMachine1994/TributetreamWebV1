@@ -5,10 +5,17 @@
 
     let selectedSquare: number | null = $state(null);
 
+    // Initialize with no selection before subscription
+    masterStore.updateOrderData({
+        selectedPackage: undefined
+    });
+
     // Subscribe to store to sync package selection
     masterStore.subscribe(state => {
         if (state.orderData.selectedPackage) {
             selectedSquare = state.orderData.selectedPackage.index;
+        } else {
+            selectedSquare = null;
         }
     });
 
@@ -26,10 +33,6 @@
         });
     }
 
-    // Initialize with no selection
-    masterStore.updateOrderData({
-        selectedPackage: undefined
-    });
 </script>
 
 <style>

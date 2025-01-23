@@ -4,9 +4,12 @@
     import type { PackageDetails } from './stores/types';
     import type { MasterStore, Location } from './stores/types';
 
+    let { initialStartTime = '' } = $props<{initialStartTime?: string}>();
+
     let formData = $state<{
         package: string;
         livestreamDate: string;
+        livestreamStartTime: string;
         allowOverrun: boolean;
         locations: Location[];
         funeralHomeName: string;
@@ -16,6 +19,7 @@
     }>({
         package: 'Solo',
         livestreamDate: '',
+        livestreamStartTime: initialStartTime,
         allowOverrun: false,
         locations: [{ name: '', address: '', travelExceedsHour: false }],
         funeralHomeName: '',
@@ -32,10 +36,10 @@
             formData.funeralHomeName = state.orderData.funeralHome.name || '';
             formData.funeralDirectorName = state.orderData.funeralHome.directorName || '';
             
-            // Set first location from memorial location if available
-            if (state.orderData.memorialLocation && formData.locations[0]) {
-                formData.locations[0].name = state.orderData.memorialLocation.name || '';
-                formData.locations[0].address = state.orderData.memorialLocation.address || '';
+            // Set first location from funeral home data
+            if (state.orderData.funeralHome && formData.locations[0]) {
+                formData.locations[0].name = state.orderData.funeralHome.name || '';
+                formData.locations[0].address = state.orderData.funeralHome.address || '';
             }
         }
     });
@@ -143,19 +147,19 @@
 </style>
 
 <div class={`calc-container ${storeData?.orderData.selectedPackage ? 'open' : ''}`}>
-    <div class="calc-content grid grid-cols-6 gap-6 p-6">
+    <div class="calc-content grid grid-cols-4 gap-6 p-6 max-w-6xl mx-auto">
         <!-- Title Area -->
-        <div class="col-span-6 p-4 bg-gray-100 shadow-lg rounded-lg text-center">
+        <div class="col-span-4 p-4 bg-gray-100 shadow-lg rounded-lg text-center">
             <h1 class="text-2xl font-bold">Schedule and Calculate Your Livestream</h1>
         </div>
     
         <!-- Form Section -->
-        <div class="col-span-4 p-4 bg-white shadow-lg rounded-lg">
+        <div class="col-span-3 p-4 bg-white shadow-lg rounded-lg">
             <form>
                 <h2 class="text-lg font-bold mb-4">Schedule a Livestream</h2>
         
-                <!-- Package and Livestream Date -->
-                <div class="grid grid-cols-2 gap-4">
+                <!-- Package, Date and Time -->
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block mb-2">Package</label>
                         <select bind:value={formData.package} class="block w-full p-2 border rounded">
@@ -166,7 +170,19 @@
                     </div>
                     <div>
                         <label class="block mb-2">Livestream Date</label>
-                        <input type="date" bind:value={formData.livestreamDate} class="block w-full p-2 border rounded" />
+                        <input 
+                            type="date" 
+                            bind:value={formData.livestreamDate} 
+                            class="block w-full p-2 border rounded" 
+                        />
+                    </div>
+                    <div>
+                        <label class="block mb-2">Start Time</label>
+                        <input 
+                            type="time" 
+                            bind:value={formData.livestreamStartTime} 
+                            class="block w-full p-2 border rounded" 
+                        />
                     </div>
                 </div>
         
@@ -235,7 +251,7 @@
         </div>
     
         <!-- Cart Section -->
-        <div class="col-span-2 p-4 bg-gray-100 shadow-lg rounded-lg">
+        <div class="col-span-1 p-4 bg-gray-100 shadow-lg rounded-lg">
             <h2 class="text-lg font-bold mb-4">Cart</h2>
             <ul>
                 {#each cartItems.items as item}
@@ -255,17 +271,34 @@
                 <button
                     type="button"
                     class="w-full bg-gray-700 text-white py-2 px-4 rounded-lg hover:bg-gray-800"
-                    onclick={() => {
+                    onclick={async () => {
                         masterStore.updateOrderData({
                             details: {
                                 cartItems: cartItems.items,
                                 total: cartItems.total,
                                 duration: formData.duration,
                                 livestreamDate: formData.livestreamDate,
+                                livestreamStartTime: formData.livestreamStartTime,
                                 locations: formData.locations
                             }
                         });
-                        console.log('Cart saved to store');
+
+                        // Call logout endpoint
+                        const response = await fetch('/api/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            // Clear store
+                            masterStore.clear();
+                            // Redirect to fd-form
+                            window.location.href = '/fd-form';
+                        } else {
+                            console.error('Failed to logout');
+                        }
                     }}
                 >
                     Save and Pay Later
@@ -280,6 +313,7 @@
                                 total: cartItems.total,
                                 duration: formData.duration,
                                 livestreamDate: formData.livestreamDate,
+                                livestreamStartTime: formData.livestreamStartTime,
                                 locations: formData.locations
                             }
                         });

@@ -1,7 +1,16 @@
 <script lang="ts">
-  let { appId, locationId, initialData } = $props();
+  interface PaymentMethod {
+    tokenize: () => Promise<{
+      status: string;
+      token?: string;
+      errors?: any[];
+    }>;
+    attach: (selector: string) => Promise<void>;
+  }
+
+  let { appId, locationId, initialData, isVisible = false } = $props();
   let paymentStatus = $state('');
-  let card = $state('');
+  let card = $state<PaymentMethod | null>(null);
   let billingData = $state({
     firstName: initialData.firstName || '',
     lastName: initialData.lastName || '',
@@ -11,21 +20,27 @@
   });
 
   async function initializePaymentForm() {
-    if (!Square) {
-      throw new Error('Square.js failed to load properly');
-    }
-    const payments = Square.payments(appId, locationId);
     try {
-      card = await payments.card();
-      await card.attach('#card-container');
-    } catch (e) {
-      console.error('Initializing Card failed', e);
+      // @ts-ignore - Square is loaded globally
+      if (!window.Square) {
+        throw new Error('Square.js failed to load properly');
+      }
+      // @ts-ignore - Square is loaded globally
+      const payments = window.Square.payments(appId, locationId);
+      const newCard = await payments.card();
+      await newCard.attach('#card-container');
+      card = newCard;
+    } catch (e: unknown) {
+      console.error('Initializing Card failed', e instanceof Error ? e.message : String(e));
       return;
     }
   }
 
   async function handlePaymentMethodSubmission() {
     try {
+      if (!card) {
+        throw new Error('Card not initialized');
+      }
       paymentStatus = 'Processing payment...';
       const token = await tokenize(card);
       const paymentResponse = await fetch('/api/payment', {
@@ -45,15 +60,15 @@
         const errorBody = await paymentResponse.text();
         throw new Error(errorBody);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       paymentStatus = 'Payment failed';
-      console.error(e.message);
+      console.error(e instanceof Error ? e.message : String(e));
     }
   }
 
-  async function tokenize(paymentMethod) {
+  async function tokenize(paymentMethod: PaymentMethod): Promise<string> {
     const tokenResult = await paymentMethod.tokenize();
-    if (tokenResult.status === 'OK') {
+    if (tokenResult.status === 'OK' && tokenResult.token) {
       return tokenResult.token;
     } else {
       let errorMessage = `Tokenization failed with status: ${tokenResult.status}`;
@@ -70,8 +85,8 @@
   };
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
-  <div class="bg-white shadow-md rounded-lg p-8 space-y-6 max-w-lg w-full">
+<div class="min-h-screen flex items-center justify-center bg-gray-100" class:hidden={!isVisible}>
+  <div class="bg-white shadow-md rounded-lg p-8 space-y-6 max-w-lg w-full transition-all duration-300">
     <h2 class="text-2xl font-bold text-center text-gray-700">Billing Information</h2>
 
     <form class="space-y-6" onsubmit={handleSubmit}>
@@ -144,9 +159,6 @@
           placeholder="Enter your address"
         ></textarea>
       </div>
-
-      <!-- Submit Button -->
-   
     </form>
 
     <div class="mt-8">
