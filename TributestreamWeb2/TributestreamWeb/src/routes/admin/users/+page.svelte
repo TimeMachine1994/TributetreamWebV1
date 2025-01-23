@@ -31,7 +31,7 @@
     async function fetchUsers() {
         loading = true;
         try {
-            const response = await fetch(`/api/user_data?page=${currentPage}&per_page=${itemsPerPage}&search=${searchQuery}`, {
+            const response = await fetch(`/api/admin/users?page=${currentPage}&per_page=${itemsPerPage}&search=${searchQuery}`, {
                 headers: {
                     'Accept': 'application/json'
                 }
@@ -50,7 +50,7 @@
     // Update user
     async function updateUser(user: User) {
         try {
-            const response = await fetch(`/api/user_data/${user.id}`, {
+            const response = await fetch(`/api/admin/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -74,7 +74,7 @@
     // Delete user
     async function deleteUser(id: string) {
         try {
-            const response = await fetch(`/api/user_data/${id}`, {
+            const response = await fetch(`/api/admin/users/${id}`, {
                 method: 'DELETE'
             });
             if (!response.ok) throw new Error('Failed to delete user');

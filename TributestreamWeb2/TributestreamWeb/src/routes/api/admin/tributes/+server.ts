@@ -1,11 +1,71 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WORDPRESS_API_BASE = 'https://wp.tributestream.com/wp-json/tributestream/v1';
+const WORDPRESS_API_BASE = 'https://wp.tributestream.com/wp-json/wp/v2';
 
 export const GET: RequestHandler = async ({ url, cookies, locals }) => {
-    console.log('📥 Received GET request for tributes endpoint');
-    console.log('🔍 Query params:', Object.fromEntries(url.searchParams));
+    console.log('📥 Received GET request for tributes');
+    // Check if user is logged in and is admin
+    if (!locals.user?.isAdmin) {
+        return new Response('Unauthorized', { status: 401 });
+    }
+
+    const jwtToken = cookies.get('jwt');
+    if (!jwtToken) {
+        return json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const recent = url.searchParams.get('recent') === 'true';
+    const count = url.searchParams.get('count') === 'true';
+
+    try {
+        // If count is true, return total count
+        if (count) {
+            const response = await fetch(`${WORDPRESS_API_BASE}/posts?post_type=tribute&per_page=1`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch tributes count');
+            const total = parseInt(response.headers.get('X-WP-Total') || '0');
+            return json({ count: total });
+        }
+
+        // If recent is true, return most recent tributes
+        if (recent) {
+            const response = await fetch(`${WORDPRESS_API_BASE}/posts?post_type=tribute&per_page=5&orderby=date&order=desc`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch recent tributes');
+            const tributes = await response.json();
+            const total = parseInt(response.headers.get('X-WP-Total') || '0');
+
+            // Transform WordPress post format to our tribute format
+            const transformedTributes = tributes.map((tribute: any) => ({
+                id: tribute.id.toString(),
+                loved_one_name: tribute.title?.rendered || 'Untitled',
+                created_at: tribute.date,
+                slug: tribute.slug,
+                user_id: tribute.author.toString()
+            }));
+
+            return json({ recent: transformedTributes, total });
+        }
+
+        // Default case: return error
+        return json({ error: 'Invalid request parameters' }, { status: 400 });
+    } catch (error) {
+        console.error('Error in tributes endpoint:', error);
+        return json({ error: 'Failed to fetch tributes data' }, { status: 500 });
+    }
+};
+
+export const PUT: RequestHandler = async ({ request, url, cookies, locals }) => {
+    console.log('📥 Received PUT request for tribute custom HTML');
 
     // Check if user is logged in and is admin
     if (!locals.user?.isAdmin) {
@@ -19,249 +79,47 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
         return json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const tributeId = url.searchParams.get('id');
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const perPage = parseInt(url.searchParams.get('per_page') || '10');
-    const search = url.searchParams.get('search') || '';
-    const recent = url.searchParams.get('recent') === 'true';
-
-    // If recent is true, return most recent tributes
-    if (recent) {
-        console.log('🔄 Fetching recent tributes...');
-        try {
-            const apiUrl = `${WORDPRESS_API_BASE}/tributes?per_page=5&orderby=date&order=desc`;
-            console.log('🌐 Making request to:', apiUrl);
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${jwtToken}`
-                }
-            });
-            if (!response.ok) {
-                console.error('❌ Failed to fetch recent tributes:', response.status, response.statusText);
-                throw new Error('Failed to fetch recent tributes');
-            }
-            const tributes = await response.json();
-            const total = parseInt(response.headers.get('X-WP-Total') || '0');
-            console.log('✅ Successfully fetched recent tributes:', {
-                totalCount: total,
-                tributesReceived: tributes.length
-            });
-            return json({ recent: tributes, total });
-        } catch (error) {
-            console.error('💥 Error fetching recent tributes:', error);
-            return json({ error: 'Failed to fetch recent tributes' }, { status: 500 });
-        }
-    }
-
-    // If ID is provided, fetch single tribute
-    if (tributeId) {
-        console.log('🔄 Fetching single tribute with ID:', tributeId);
-        try {
-            const apiUrl = `${WORDPRESS_API_BASE}/tributes/${tributeId}`;
-            console.log('🌐 Making request to:', apiUrl);
-            const response = await fetch(apiUrl, { 
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${jwtToken}`
-                }
-            });
-            
-            if (!response.ok) {
-                const message = await response.text();
-                console.error('❌ Failed to fetch tribute:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    details: message
-                });
-                return json({ 
-                    error: 'Failed to fetch tribute data', 
-                    details: message
-                }, { status: response.status });
-            }
-
-            const tribute = await response.json();
-            console.log('✅ Successfully fetched tribute:', { id: tribute.id });
-            return json(tribute, { 
-                status: 200,
-                headers: {
-                    'Cache-Control': 'private, no-cache, no-store, must-revalidate'
-                }
-            });
-        } catch (error: unknown) {
-            console.error('Error fetching tribute:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            return json({ 
-                error: 'An error occurred', 
-                details: errorMessage
-            }, { status: 500 });
-        }
-    }
-
-    // Otherwise, fetch paginated list of tributes
-    console.log('🔄 Fetching paginated tributes list...');
-    try {
-        const queryParams = new URLSearchParams({
-            per_page: perPage.toString(),
-            page: page.toString(),
-            search: search
-        });
-
-        const apiUrl = `${WORDPRESS_API_BASE}/tributes?${queryParams}`;
-        console.log('🌐 Making request to:', apiUrl);
-        const response = await fetch(apiUrl, {
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${jwtToken}`
-            }
-        });
-
-        if (!response.ok) {
-            const message = await response.text();
-            console.error('❌ Failed to fetch tributes:', {
-                status: response.status,
-                statusText: response.statusText,
-                details: message
-            });
-            return json({ error: 'Failed to fetch tributes', details: message }, { status: response.status });
-        }
-
-        const tributes = await response.json();
-        const total = parseInt(response.headers.get('X-WP-Total') || '0');
-        const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '0');
-
-        console.log('✅ Successfully fetched tributes:', {
-            total,
-            totalPages,
-            currentPage: page,
-            tributesReceived: tributes.length
-        });
-
-        return json({
-            tributes,
-            total,
-            totalPages,
-            page,
-            perPage
-        });
-    } catch (error: unknown) {
-        console.error('Error fetching tributes:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        return json({ error: 'Failed to fetch tributes', details: errorMessage }, { status: 500 });
-    }
-};
-
-export const POST: RequestHandler = async ({ request, cookies, locals }) => {
-    // Check if user is logged in and is admin
-    if (!locals.user?.isAdmin) {
-        return new Response('Unauthorized', { status: 401 });
-    }
-
-    const jwtToken = cookies.get('jwt');
-    if (!jwtToken) {
-        return json({ error: 'Authentication required' }, { status: 401 });
+    // Get tribute ID from URL path
+    const pathParts = url.pathname.split('/');
+    const tributeId = pathParts[pathParts.length - 2]; // Get second to last part (before /custom-html)
+    
+    if (!tributeId || pathParts[pathParts.length - 1] !== 'custom-html') {
+        console.error('❌ Invalid URL format for custom HTML update');
+        return json({ error: 'Invalid request URL' }, { status: 400 });
     }
 
     try {
-        const tributeData = await request.json();
-        const response = await fetch(`${WORDPRESS_API_BASE}/tributes`, {
+        const data = await request.json();
+        if (!data.custom_html) {
+            console.error('❌ No custom HTML provided in request body');
+            return json({ error: 'Custom HTML is required' }, { status: 400 });
+        }
+
+        console.log(`🔄 Updating custom HTML for tribute ${tributeId}`);
+        
+        // Update the post meta using WordPress REST API
+        const response = await fetch(`${WORDPRESS_API_BASE}/posts/${tributeId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${jwtToken}`
             },
-            body: JSON.stringify(tributeData)
+            body: JSON.stringify({
+                meta: {
+                    custom_html: data.custom_html
+                }
+            })
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            return json({ error: error.message }, { status: response.status });
+            console.error('❌ Failed to update custom HTML:', response.status, response.statusText);
+            throw new Error('Failed to update custom HTML');
         }
 
-        const newTribute = await response.json();
-        return json(newTribute, { status: 201 });
-    } catch (error: unknown) {
-        console.error('Error creating tribute:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        return json({ error: 'Failed to create tribute', details: errorMessage }, { status: 500 });
-    }
-};
-
-export const PUT: RequestHandler = async ({ request, cookies, locals }) => {
-    // Check if user is logged in and is admin
-    if (!locals.user?.isAdmin) {
-        return new Response('Unauthorized', { status: 401 });
-    }
-
-    const jwtToken = cookies.get('jwt');
-    if (!jwtToken) {
-        return json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    try {
-        const tributeData = await request.json();
-        const { id, ...updateData } = tributeData;
-
-        if (!id) {
-            return json({ error: 'Tribute ID is required' }, { status: 400 });
-        }
-
-        const response = await fetch(`${WORDPRESS_API_BASE}/tributes/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken}`
-            },
-            body: JSON.stringify(updateData)
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            return json({ error: error.message }, { status: response.status });
-        }
-
-        const updatedTribute = await response.json();
-        return json(updatedTribute);
-    } catch (error: unknown) {
-        console.error('Error updating tribute:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        return json({ error: 'Failed to update tribute', details: errorMessage }, { status: 500 });
-    }
-};
-
-export const DELETE: RequestHandler = async ({ request, cookies, locals }) => {
-    // Check if user is logged in and is admin
-    if (!locals.user?.isAdmin) {
-        return new Response('Unauthorized', { status: 401 });
-    }
-
-    const jwtToken = cookies.get('jwt');
-    if (!jwtToken) {
-        return json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    try {
-        const { id } = await request.json();
-        if (!id) {
-            return json({ error: 'Tribute ID is required' }, { status: 400 });
-        }
-
-        const response = await fetch(`${WORDPRESS_API_BASE}/tributes/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${jwtToken}`
-            }
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            return json({ error: error.message }, { status: response.status });
-        }
-
+        console.log('✅ Successfully updated custom HTML');
         return json({ success: true });
-    } catch (error: unknown) {
-        console.error('Error deleting tribute:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        return json({ error: 'Failed to delete tribute', details: errorMessage }, { status: 500 });
+    } catch (error) {
+        console.error('💥 Error updating custom HTML:', error);
+        return json({ error: 'Failed to update custom HTML' }, { status: 500 });
     }
 };

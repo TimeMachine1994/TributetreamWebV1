@@ -55,7 +55,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
     if (recent) {
         console.log('🔄 Fetching recent users...');
         try {
-            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=5&orderby=registered&order=desc`;
+            const apiUrl = `${WORDPRESS_API_BASE}/users?per_page=5&orderby=id&order=desc`;
             console.log('🌐 Making request to:', apiUrl);
             const response = await fetch(apiUrl, {
                 headers: {
@@ -144,7 +144,7 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
             per_page: perPage.toString(),
             page: page.toString(),
             search: search,
-            orderby: 'registered',
+            orderby: 'id',
             order: 'desc'
         });
 
