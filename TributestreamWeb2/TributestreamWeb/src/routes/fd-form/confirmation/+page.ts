@@ -1,6 +1,8 @@
 import type { PageLoad } from './$types';
 export const load: PageLoad = async ({ data }) => {
-return {
-   userMeta: data.meta,
-}
-}
+    return {
+        appId: data.appId,
+        locationId: data.locationId,
+        userMeta: data.userMeta
+    };
+};

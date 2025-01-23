@@ -1,40 +1,39 @@
 <script lang="ts">
 import { onMount } from 'svelte';
 import NotificationBannerA from '$lib/NotificationBannerA.svelte';
-let tribute = $state(false);
+
+interface Tribute {
+    name: string;
+    custom_html: string | null;
+}
+
+interface PageData {
+    tribute: Tribute;
+}
+
+const props = $props<{ data: PageData }>();
 let isPaid = $state(false); // Simulate a payment state; you can fetch this from a store or API
-
-
- 
+const tribute = $derived(props.data.tribute);
 </script>
 
 <NotificationBannerA {isPaid} />
 
-    <!-- Import the NotificationBanner Component -->
-   
- 
 <!-- Hero Section -->
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
     <!-- Hero with gradient overlay -->
     <section
-    class="relative h-[60vh] flex items-center justify-center bg-cover bg-bottom"
-    style="background-image: url('https://wp.tributestream.com/wp-content/uploads/2019/11/candle-PEVB9JR-scaled.jpg')"
->
-    <div class="absolute inset-0 bg-gradient-to-b from-[#D5BA7F]/40 to-transparent z-10"></div>
-    <div class="container mx-auto px-4 z-20 text-center">
-        <h1 class="text-4xl md:text-6xl mb-4 text-white font-['Fanwood_Text'] italic">
-            Celebration of Life for NAME HERE
-        </h1>
-    </div>
-</section>
-
+        class="relative h-[60vh] flex items-center justify-center bg-cover bg-bottom"
+        style="background-image: url('https://wp.tributestream.com/wp-content/uploads/2019/11/candle-PEVB9JR-scaled.jpg')"
+    >
+        <div class="absolute inset-0 bg-gradient-to-b from-[#D5BA7F]/40 to-transparent z-10"></div>
+        <div class="container mx-auto px-4 z-20 text-center">
+            <h1 class="text-4xl md:text-6xl mb-4 text-white font-['Fanwood_Text'] italic">
+                Celebration of Life for {tribute?.name || 'Loading...'}
+            </h1>
+        </div>
+    </section>
 
     <!-- Video Section -->
-    <script>
-        export let data;
-        const { tribute } = data;
-    </script>
-    
     {#if tribute?.custom_html === null}
         <section class="py-16 px-4">
             <div class="container mx-auto max-w-4xl">
@@ -54,7 +53,6 @@ let isPaid = $state(false); // Simulate a payment state; you can fetch this from
             {@html tribute.custom_html}
         </div>
     {/if}
-    
 
     <!-- FAQ Cards -->
     <section class="py-16 px-4 bg-black-900">

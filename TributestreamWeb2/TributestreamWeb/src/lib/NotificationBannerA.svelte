@@ -101,18 +101,12 @@
       </button>
     {/if}
   </div>
-  {#if !calcLoaded}
 
-  <div class="section-barrier">
-    Below is what your loved ones Tributestream page will look like:
-  </div>
-  {/if}
 
   <!-- Render Calc if it has been loaded -->
   {#if calcLoaded}
     <Calc />
     <div class="section-barrier">
-        Below is what your loved ones Tributestream page will look like.
-      </div>
+    </div>
    {/if}
   

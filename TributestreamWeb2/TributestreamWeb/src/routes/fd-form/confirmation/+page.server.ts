@@ -1,7 +1,14 @@
-import { error } from '@sveltejs/kit';
-import { SQUARE_SANDBOX_APP_ID, SQUARE_SANDBOX_ACCESS_TOKEN, SQUARE_LOCATION_ID } from '$env/static/private';
-import { redirect } from '@sveltejs/kit';
-export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
+import { error, redirect } from '@sveltejs/kit';
+import { VITE_SQUARE_APP_ID, VITE_SQUARE_LOCATION_ID } from '$env/static/private';
+import type { PageServerLoad } from './$types';
+import type { Cookies } from '@sveltejs/kit';
+
+interface MetaItem {
+    meta_key: string;
+    meta_value: string;
+}
+
+export const load: PageServerLoad = async ({ fetch, cookies }: { fetch: typeof globalThis.fetch, cookies: Cookies }) => {
 
     console.log('🚀 Loading user meta data.');
      const user_id = cookies.get('user_id');
@@ -42,21 +49,22 @@ export const load: { PageServerLoad } = async ({ fetch, cookies, }) => {
         console.log('✅ User meta data retrieved:', meta);
 
         // Create an object with keys as meta_key and values as meta_value
-        const metaObject = meta.reduce((acc, { meta_key, meta_value }) => {
+        const metaObject = (meta as MetaItem[]).reduce((acc: Record<string, string>, { meta_key, meta_value }) => {
             acc[meta_key] = meta_value;
             return acc;
         }, {});
 
-        const appId = SQUARE_SANDBOX_APP_ID;
-        const locationId = SQUARE_LOCATION_ID;
+        const appId = VITE_SQUARE_APP_ID;
+        const locationId = VITE_SQUARE_LOCATION_ID;
 
         
         return {
             appId, locationId,
             userMeta: metaObject,
         };
-    } catch (err) {
+    } catch (err: unknown) {
         console.error('💥 Error in server load function:', err);
-        throw error(500, err.message || 'Internal Server Error');
+        const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
+        throw error(500, errorMessage);
     }
 };

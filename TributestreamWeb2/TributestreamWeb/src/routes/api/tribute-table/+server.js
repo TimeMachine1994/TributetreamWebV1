@@ -33,7 +33,7 @@ export const POST = async ({ request, cookies }) => {
 
       console.log('📄 Prepared WordPress payload:', wpPayload);
 
-      const wpResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
+      const wpResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tribute', {
           method: 'POST',
           headers: {
               'Authorization': `Bearer ${token}`,
