@@ -9,7 +9,7 @@ declare global {
           username: string;
           nicename: string;
           email: string;
-          // Add other user properties here
+          isAdmin: boolean;
         }
       }
  
@@ -31,4 +31,3 @@ declare global {
   }
   
   export {};
-  
