@@ -8,10 +8,49 @@ export interface UserData {
     lastUpdated: number;
 }
 
+export interface PackageDetails {
+    name: string;
+    price: number;
+    type: string;
+    features: string[];
+}
+
+export interface CartItem {
+    name: string;
+    price: number;
+}
+
+export interface Location {
+    name: string;
+    address: string;
+    travelExceedsHour: boolean;
+}
+
+export interface OrderDetails {
+    cartItems: CartItem[];
+    total: number;
+    duration: number;
+    livestreamDate: string;
+    locations: Location[];
+}
+
 export interface OrderData {
     orderId?: string;
     status?: string;
-    details?: any; // Replace with specific order type when available
+    selectedPackage?: {
+        index: number;
+        details: PackageDetails;
+    };
+    funeralHome?: {
+        name: string;
+        address: string;
+        directorName?: string;
+    };
+    memorialLocation?: {
+        name: string;
+        address: string;
+    };
+    details?: OrderDetails;
     lastUpdated: number;
 }
 

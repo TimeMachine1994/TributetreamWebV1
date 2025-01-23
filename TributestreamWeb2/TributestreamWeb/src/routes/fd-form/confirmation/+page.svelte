@@ -1,37 +1,59 @@
 <script lang="ts">
-        let selectedSquare: number | null = $state(null);
-     // Function to handle square selection
-    function handleSquareClick(index: number) {
-        selectedSquare = index;
-    }
     import SelectableSquares from '$lib/SelectableSquares.svelte';
     import Calc from '$lib/Calc.svelte';
     import CcForm from '$lib/CcForm.svelte';
+    import { masterStore } from '$lib/stores/userStore';
     import type { PageData } from './types';
+    
     let { data }: { data: PageData } = $props();
 
     // Ensure required data is present
     if (!data.appId || !data.locationId) {
         console.error('Missing required Square configuration');
     }
+
     const appId = data.appId;
     const locationId = data.locationId;
     let fdFormData = data.userMeta?.memorial_form_data;
-    console.log('Form Data (Raw):', fdFormData);
     let card = $state('');
 
-    if (!data.userMeta?.memorial_form_data) {
-        console.warn('No memorial form data found in userMeta');
-    }
- 
-    // Parse and flatten the JSON string
-    let flattenedFormData: any = {};
+    // Initialize form data
+    let originalData = $state({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+    });
+
+    // Initialize store with form data
     if (fdFormData) {
         try {
             const parsedData = JSON.parse(fdFormData);
 
-            // Flattening logic
-            flattenedFormData = {
+            // Update user data in store
+            masterStore.updateUserData({
+                appId,
+                locationId,
+                userMeta: {
+                    memorial_form_data: fdFormData
+                }
+            });
+
+            // Update order data with location information
+            masterStore.updateOrderData({
+                funeralHome: {
+                    name: parsedData.director.funeralHomeName || '',
+                    address: parsedData.director.funeralHomeAddress || ''
+                },
+                memorialLocation: {
+                    name: parsedData.memorial.locationName || '',
+                    address: parsedData.memorial.locationAddress || ''
+                }
+            });
+
+            // Flatten form data for the credit card form
+            const flattenedFormData = {
                 directorFirstName: parsedData.director.firstName,
                 directorLastName: parsedData.director.lastName,
                 familyMemberFirstName: parsedData.familyMember.firstName,
@@ -49,26 +71,25 @@
                 memorialDate: parsedData.memorial.date
             };
 
-            console.log('Flattened Form Data:', flattenedFormData);
-        } catch (error) {
-            console.error('Failed to parse and flatten JSON data:', error);
-        }
-    }
- 
- 
-    const originalData = $state({
-        firstName: flattenedFormData.familyMemberFirstName || '',
-        lastName: flattenedFormData.familyMemberLastName || '',
-        email: flattenedFormData.contactEmail || '',
-        phone: flattenedFormData.contactPhone || '',
-        address: flattenedFormData.memorialLocationAddress || '',
-    });
-  
+            // Update form data
+            originalData = {
+                firstName: flattenedFormData.familyMemberFirstName || '',
+                lastName: flattenedFormData.familyMemberLastName || '',
+                email: flattenedFormData.contactEmail || '',
+                phone: flattenedFormData.contactPhone || '',
+                address: flattenedFormData.memorialLocationAddress || '',
+            };
 
- </script>
-<div class="max-w-3xl mx-auto px-4">
+        } catch (error) {
+            console.error('Failed to parse and process form data:', error);
+        }
+    } else {
+        console.warn('No memorial form data found in userMeta');
+    }
+</script>
+<div class="max-w-3xl mx-auto px-4 space-y-8">
     <SelectableSquares />
-    <div class="max-w-xl mx-auto">
+    <div class="max-w-xl mx-auto space-y-8">
         <Calc/>
         <CcForm appId={appId} locationId={locationId} initialData={originalData}/>
     </div>
@@ -79,5 +100,10 @@
     :global(.max-w-xl) {
         width: 100%;
         max-width: 48rem; /* Matches width of three boxes */
+    }
+
+    /* Add spacing between sections */
+    :global(.space-y-8 > :not([hidden]) ~ :not([hidden])) {
+        margin-top: 2rem;
     }
 </style>
