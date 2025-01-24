@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TributeStream API Test</title>
+    <style>
+        .token-section {
+            background: #e9ecef;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .token-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>TributeStream API Test Page</h1>
+    
+    <div class="token-section">
+        <h2>JWT Authentication</h2>
+        <input type="text" id="jwt-token" class="token-input" placeholder="Enter your JWT token">
+        <p style="font-size: 0.9em; color: #666;">Note: JWT token is required for authenticated endpoints like Create Tribute</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. Register User</h2>
+        <button onclick="testRegisterUser()">Test Register Random User</button>
+        <div id="register-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Create Tribute Page</h2>
+        <button onclick="testCreateTribute()">Test Create Random Tribute</button>
+        <div id="create-tribute-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Get All Tributes</h2>
+        <button onclick="testGetAllTributes()">Test Get All Tributes</button>
+        <div id="get-tributes-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Get Tribute by Slug</h2>
+        <input type="text" id="tribute-slug" placeholder="Enter tribute slug">
+        <button onclick="testGetTributeBySlug()">Test Get Tribute</button>
+        <div id="get-tribute-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Update Tribute HTML</h2>
+        <input type="number" id="tribute-id" placeholder="Enter tribute ID">
+        <button onclick="testUpdateTributeHtml()">Test Update HTML</button>
+        <div id="update-html-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Submit Form Data</h2>
+        <button onclick="testSubmitFormData()">Test Submit Random Form Data</button>
+        <div id="form-data-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/wp-json/tributestream/v1';
+        
+        function getAuthToken() {
+            return document.getElementById('jwt-token').value.trim();
+        }
+
+        function handleAuthError(error, elementId) {
+            if (error.message.includes('jwt') || error.message.includes('token')) {
+                displayResult(elementId, {
+                    error: true,
+                    message: 'Authentication Error: Please check your JWT token',
+                    details: error.message
+                }, true);
+                return true;
+            }
+            return false;
+        }
+
+        // Utility function to generate random data
+        function generateRandomData() {
+            const randomString = () => Math.random().toString(36).substring(7);
+            const randomName = () => {
+                const firstNames = ['John', 'Jane', 'Bob', 'Alice', 'Charlie', 'Diana'];
+                const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia'];
+                return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+            };
+            
+            return {
+                username: `user_${randomString()}`,
+                email: `test_${randomString()}@example.com`,
+                password: `Pass_${randomString()}!`,
+                loved_one_name: randomName(),
+                slug: `tribute-${randomString()}`,
+                custom_html: `<div>Custom tribute content for ${randomString()}</div>`
+            };
+        }
+
+        // Utility function to display results
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        }
+
+        // Test Register User
+        async function testRegisterUser() {
+            const data = generateRandomData();
+            try {
+                // Display the data being sent
+                displayResult('register-result', {
+                    status: 'Sending registration request...',
+                    data: {
+                        username: data.username,
+                        email: data.email,
+                        password: data.password
+                    }
+                });
+
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: data.username,
+                        email: data.email,
+                        password: data.password
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Registration failed');
+                }
+
+                displayResult('register-result', {
+                    status: 'Success',
+                    response: result,
+                    sentData: {
+                        username: data.username,
+                        email: data.email,
+                        password: '********' // Hide password in display
+                    }
+                });
+            } catch (error) {
+                displayResult('register-result', {
+                    status: 'Error',
+                    message: error.message,
+                    sentData: {
+                        username: data.username,
+                        email: data.email,
+                        password: '********' // Hide password in display
+                    }
+                }, true);
+            }
+        }
+
+        // Test Create Tribute
+        async function testCreateTribute() {
+            const token = getAuthToken();
+            if (!token) {
+                displayResult('create-tribute-result', {
+                    error: true,
+                    message: 'JWT token is required for creating tributes'
+                }, true);
+                return;
+            }
+
+            const data = generateRandomData();
+            try {
+                const response = await fetch(`${API_BASE}/create-tributepage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        user_id: 1, // Using default user ID for testing
+                        loved_one_name: data.loved_one_name,
+                        slug: data.slug,
+                        custom_html: data.custom_html
+                    })
+                });
+                const result = await response.json();
+                displayResult('create-tribute-result', result);
+            } catch (error) {
+                displayResult('create-tribute-result', error.message, true);
+            }
+        }
+
+        // Test Get All Tributes
+        async function testGetAllTributes() {
+            try {
+                const response = await fetch(`${API_BASE}/tributes`);
+                const result = await response.json();
+                displayResult('get-tributes-result', result);
+            } catch (error) {
+                displayResult('get-tributes-result', error.message, true);
+            }
+        }
+
+        // Test Get Tribute by Slug
+        async function testGetTributeBySlug() {
+            const slug = document.getElementById('tribute-slug').value;
+            if (!slug) {
+                displayResult('get-tribute-result', 'Please enter a slug', true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/tribute/${slug}`);
+                const result = await response.json();
+                displayResult('get-tribute-result', result);
+            } catch (error) {
+                displayResult('get-tribute-result', error.message, true);
+            }
+        }
+
+        // Test Update Tribute HTML
+        async function testUpdateTributeHtml() {
+            const tributeId = document.getElementById('tribute-id').value;
+            if (!tributeId) {
+                displayResult('update-html-result', 'Please enter a tribute ID', true);
+                return;
+            }
+            const data = generateRandomData();
+            try {
+                const response = await fetch(`${API_BASE}/tributes/${tributeId}/custom-html`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        custom_html: data.custom_html
+                    })
+                });
+                const result = await response.json();
+                displayResult('update-html-result', result);
+            } catch (error) {
+                displayResult('update-html-result', error.message, true);
+            }
+        }
+
+        // Test Submit Form Data
+        async function testSubmitFormData() {
+            const formData = {
+                name: generateRandomData().username,
+                email: generateRandomData().email,
+                message: `Test message ${Math.random()}`
+            };
+            try {
+                const response = await fetch(`${API_BASE}/form-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: JSON.stringify(formData)
+                    })
+                });
+                const result = await response.json();
+                displayResult('form-data-result', result);
+            } catch (error) {
+                displayResult('form-data-result', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

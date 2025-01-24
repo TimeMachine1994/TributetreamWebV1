@@ -2,7 +2,8 @@
   "dependencies": {
     "@playwright/test": "^1.49.0",
     "backbone": "^1.6.0",
-    "i": "^0.3.7"
+    "i": "^0.3.7",
+    "jspdf": "^2.5.2"
   },
   "devDependencies": {
     "start-server-and-test": "^2.0.8"

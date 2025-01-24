@@ -237,24 +237,27 @@
             <!-- Additional input fields -->
             <input
               type="text"
-              name="userInfo.name"
+              name="name"
               placeholder="Your Name"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.name}
+              required
             />
             <input
               type="email"
-              name="userInfo.email"
+              name="email"
               placeholder="Email Address"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.email}
+              required
             />
             <input
               type="tel"
-              name="userInfo.phone"
+              name="phone"
               placeholder="Phone Number"
               class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
               bind:value={userInfo.phone}
+              required
             />
   
             <!-- Navigation buttons -->
@@ -268,8 +271,9 @@
               </button>
               <input type="hidden" name="lovedOneName" value={lovedOneName} />
 <input type="hidden" name="slugifiedName" value={slugifiedName} />
-              <button type="submit" formaction="?/homeRegister"
-                 class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
+              <button 
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
               >
                 Create Tribute
               </button>
@@ -286,4 +290,3 @@
       </div>
     </section>
   </main>
-  

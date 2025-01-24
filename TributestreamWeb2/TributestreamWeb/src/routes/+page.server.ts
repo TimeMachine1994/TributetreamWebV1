@@ -2,7 +2,7 @@ import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
 export const actions = {
-    homeRegister: async ({ request, fetch, locals, cookies }) => {
+    default: async ({ request, fetch, cookies }) => {
         let password = '';
         let slug = '';
 
@@ -29,17 +29,24 @@ export const actions = {
             const data = {
                 lovedOneName: formData.get('lovedOneName'),
                 slugifiedName: formData.get('slugifiedName'),
-                name: formData.get('userInfo.name'),
-                email: formData.get('userInfo.email'),
-                phone: formData.get('userInfo.phone'),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
             };
             console.log('✅ Form data parsed:', data);
 
-            if (!data.email || !data.lovedOneName || !data.name || !data.phone) {
+            // Validate required fields
+
+            if (!data.email || !data.lovedOneName || !data.name || !data.phone || !data.slugifiedName) {
                 console.error('❌ Missing required fields:', data);
-                return fail(400, { error: true, message: 'Required fields are missing.' });
+                return fail(400, { 
+                    error: true, 
+                    message: 'All fields are required.',
+                    data 
+                });
             }
 
+            // Step 1: Register User
             console.log('🔄 Registering user...');
             const registerResponse = await fetch('/api/register', {
                 method: 'POST',
@@ -60,6 +67,7 @@ export const actions = {
             const userId = registerResult.user_id;
             console.log('✅ User registered successfully. User ID:', userId);
 
+            // Step 2: Authenticate User
             console.log('🔄 Authenticating user...');
             const authResponse = await fetch('/api/auth', {
                 method: 'POST',
@@ -87,28 +95,25 @@ export const actions = {
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
 
+            // Step 3: Store User Metadata
             console.log('📝 Writing user metadata...');
-            const metaPayload = {
-                user_id: userId,
-                meta_key: 'home_form_data',
-                meta_value: JSON.stringify({
-                    userInfo: {
-                        name: data.name,
-                        email: data.email,
-                        phone: data.phone
-                    },
-                    lovedOneName: data.lovedOneName,
-                    slugifiedName: data.slugifiedName,
-                })
-            };
-
             const metaResponse = await fetch('/api/user-meta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authResult.token}`
                 },
-                body: JSON.stringify(metaPayload)
+                body: JSON.stringify({
+                    user_id: userId,
+                    meta_key: 'home_form_data',
+                    meta_value: JSON.stringify({
+                        name: data.name,
+                        email: data.email,
+                        phone: data.phone,
+                        lovedOneName: data.lovedOneName,
+                        slugifiedName: data.slugifiedName,
+                    })
+                })
             });
 
             if (!metaResponse.ok) {
@@ -119,23 +124,20 @@ export const actions = {
 
             console.log('✅ Metadata written successfully.');
 
-            console.log('🚀 Starting tribute-table API call...');
+            // Step 4: Create Tribute Record
+            console.log('🚀 Creating tribute record...');
             try {
-                const tributePayload = {
-                    loved_one_name: data.lovedOneName,
-                    slug: data.slugifiedName,
-                    user_id: userId
-                };
-                console.log('📦 Tribute payload:', tributePayload);
-
-                slug = data.slugifiedName;
                 const tributeResponse = await fetch('/api/tribute-table', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${authResult.token}`
                     },
-                    body: JSON.stringify(tributePayload)
+                    body: JSON.stringify({
+                        loved_one_name: data.lovedOneName,
+                        slug: data.slugifiedName,
+                        user_id: userId
+                    })
                 });
 
                 if (!tributeResponse.ok) {
@@ -150,12 +152,17 @@ export const actions = {
                 throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
             }
 
-            console.log('🔀 Redirecting to success page...');
+            // Step 5: Redirect to Tribute Page
+            console.log('🔀 Redirecting to tribute page...');
+            throw redirect(303, `/celebration-of-life-for-${data.slugifiedName}`);
         } catch (error) {
-            console.error('💥 Unexpected error occurred:', error);
-            throw fail(500, { error: true, message: 'An unexpected error occurred.' });
+            console.error('💥 Error occurred:', error);
+            return fail(500, { 
+                error: true, 
+                message: 'An unexpected error occurred while processing your request.',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
         }
-        throw redirect(303, `/celebration-of-life-for-${slug}`);
 
     }
 } satisfies Actions;
