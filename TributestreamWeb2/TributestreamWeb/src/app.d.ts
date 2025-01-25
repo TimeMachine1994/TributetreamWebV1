@@ -1,9 +1,21 @@
 // app.d.ts
 declare global {
     namespace App {
-      interface Locals {}
+      interface User {
+        id: string;
+        email: string;
+        name?: string;
+        role: 'admin' | 'user';
+      }
 
-      interface PageData {}
+      interface Locals {
+        user?: User;
+        token?: string;
+      }
+
+      interface PageData {
+        user?: User;
+      }
 
       interface Tribute {
         id: string;

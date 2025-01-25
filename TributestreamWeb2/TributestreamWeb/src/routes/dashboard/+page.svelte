@@ -7,22 +7,30 @@
 
     export let data: PageData;
 
-    let searchQuery = '';
     let selectedTribute: Tribute | null = null;
     let loading = false;
+    let error: string | null = null;
 
-    $: ({ tributes, totalPages } = data);
-    $: currentPage = Number($page.url.searchParams.get('page')) || 1;
+    $: ({ tributes, totalPages, currentPage, searchQuery } = data);
 
     async function handleSearch() {
-        const url = new URL($page.url);
-        url.searchParams.set('search', searchQuery);
-        url.searchParams.set('page', '1');
-        history.pushState({}, '', url.toString());
-        await invalidate('app:tributes');
+        error = null;
+        loading = true;
+        try {
+            const url = new URL($page.url);
+            url.searchParams.set('search', searchQuery);
+            url.searchParams.set('page', '1');
+            history.pushState({}, '', url.toString());
+            await invalidate('app:tributes');
+        } catch (err) {
+            error = err instanceof Error ? err.message : 'Failed to search tributes';
+        } finally {
+            loading = false;
+        }
     }
 
     async function handleUpdateTribute(id: string, htmlContent: string) {
+        error = null;
         loading = true;
         try {
             const response = await fetch('/api/tributes', {
@@ -34,23 +42,34 @@
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update tribute');
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to update tribute');
             }
 
             await invalidate('app:tributes');
+            selectedTribute = null; // Close modal after successful update
         } catch (e) {
-            throw new Error(e instanceof Error ? e.message : 'Failed to update tribute');
+            error = e instanceof Error ? e.message : 'Failed to update tribute';
+            throw error;
         } finally {
             loading = false;
         }
     }
 
-    function handlePageChange(newPage: number) {
+    async function handlePageChange(newPage: number) {
         if (newPage >= 1 && newPage <= totalPages) {
-            const url = new URL($page.url);
-            url.searchParams.set('page', newPage.toString());
-            history.pushState({}, '', url.toString());
-            invalidate('app:tributes');
+            error = null;
+            loading = true;
+            try {
+                const url = new URL($page.url);
+                url.searchParams.set('page', newPage.toString());
+                history.pushState({}, '', url.toString());
+                await invalidate('app:tributes');
+            } catch (err) {
+                error = err instanceof Error ? err.message : 'Failed to change page';
+            } finally {
+                loading = false;
+            }
         }
     }
 
@@ -63,7 +82,20 @@
 </script>
 
 <div class="p-6 max-w-7xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Tributestream Dashboard</h1>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Tributestream Dashboard</h1>
+        <div class="text-sm text-gray-500">
+            Total Pages: {totalPages}
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    {#if error}
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded relative" role="alert">
+            <strong class="font-bold">Error: </strong>
+            <span class="block sm:inline">{error}</span>
+        </div>
+    {/if}
 
     <!-- Search -->
     <div class="mb-6">
@@ -92,8 +124,28 @@
         </div>
     {/if}
         <!-- Tributes Table -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+        {#if tributes.length === 0 && !loading}
+            <div class="bg-white shadow rounded-lg p-8 text-center text-gray-500">
+                {searchQuery ? 'No tributes found matching your search.' : 'No tributes available.'}
+            </div>
+        {:else}
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                <!-- Loading Skeleton -->
+                {#if loading}
+                    <div class="absolute inset-0 bg-white bg-opacity-75">
+                        <div class="p-4">
+                            {#each Array(3) as _}
+                                <div class="animate-pulse flex space-x-4 mb-4">
+                                    <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-1/6"></div>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -135,36 +187,37 @@
                         </tr>
                     {/each}
                 </tbody>
-            </table>
-        </div>
+                </table>
+            </div>
 
-        <!-- Pagination -->
-        <div class="mt-4 flex justify-center gap-2">
-            <button
-                on:click={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-                Previous
-            </button>
-            
-            {#each paginationRange as page}
+            <!-- Pagination -->
+            <div class="mt-4 flex justify-center gap-2">
                 <button
-                    on:click={() => handlePageChange(page)}
-                    class="px-3 py-1 border rounded {currentPage === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100'}"
+                    on:click={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
                 >
-                    {page}
+                    Previous
                 </button>
-            {/each}
-            
-            <button
-                on:click={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-                Next
-            </button>
-        </div>
+                
+                {#each paginationRange as page}
+                    <button
+                        on:click={() => handlePageChange(page)}
+                        class="px-3 py-1 border rounded {currentPage === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100'}"
+                    >
+                        {page}
+                    </button>
+                {/each}
+                
+                <button
+                    on:click={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        {/if}
 </div>
 
 <!-- Edit Modal -->
