@@ -75,10 +75,7 @@ export const actions: Actions = {
                     displayName: result.user_display_name,
                     email: result.user_email,
                     nicename: result.user_nicename,
-                    roles: result.roles || [],
-                    capabilities: result.capabilities || {},
-                    isAdmin: (result.roles || []).includes('administrator') || 
-                            (result.capabilities || {}).manage_options === true
+                 
                 }),
                 {
                     path: '/',
@@ -100,8 +97,8 @@ export const actions: Actions = {
         }
 
         // Define redirect path based on admin role/capability
-        const isAdmin = (result.roles || []).includes('administrator') || 
-                       (result.capabilities || {}).manage_options === true;
+        const isAdmin = true;
+        
         const redirectPath = isAdmin ? '/admin-dashboard' : '/dashboard';
         
         throw redirect(303, redirectPath);

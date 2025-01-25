@@ -3,25 +3,10 @@ import type { RequestHandler } from './$types';
 
 const WP_API_BASE = 'https://wp.tributestream.com/wp-json/tributestream/v1';
 
-const validateJWT = (jwt: string | undefined) => {
-    if (!jwt) {
-        throw new Error('No JWT provided');
-    }
-    // In production, you would validate the JWT here
-    return true;
-};
-
-export const GET: RequestHandler = async ({ params, fetch, locals }) => {
+export const GET: RequestHandler = async ({ params, fetch }) => {
     try {
-        // Validate JWT
-        validateJWT(locals.jwt);
-
         const { id } = params;
-        const response = await fetch(`${WP_API_BASE}/tributes/${id}`, {
-            headers: {
-                'Authorization': `Bearer ${locals.jwt}`
-            }
-        });
+        const response = await fetch(`${WP_API_BASE}/tributes/${id}`);
 
         if (!response.ok) {
             const error = await response.json();
@@ -34,22 +19,18 @@ export const GET: RequestHandler = async ({ params, fetch, locals }) => {
         console.error('Error fetching tribute:', error);
         return json({ 
             error: error instanceof Error ? error.message : 'Failed to fetch tribute'
-        }, { status: error instanceof Error && error.message === 'No JWT provided' ? 401 : 500 });
+        }, { status: 500 });
     }
 };
 
-export const PUT: RequestHandler = async ({ params, request, fetch, locals }) => {
+export const PUT: RequestHandler = async ({ params, request, fetch }) => {
     try {
-        // Validate JWT
-        validateJWT(locals.jwt);
-
         const { id } = params;
         const data = await request.json();
 
         const response = await fetch(`${WP_API_BASE}/tributes/${id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${locals.jwt}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
@@ -70,21 +51,15 @@ export const PUT: RequestHandler = async ({ params, request, fetch, locals }) =>
         return json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to update tribute'
-        }, { status: error instanceof Error && error.message === 'No JWT provided' ? 401 : 500 });
+        }, { status: 500 });
     }
 };
 
-export const DELETE: RequestHandler = async ({ params, fetch, locals }) => {
+export const DELETE: RequestHandler = async ({ params, fetch }) => {
     try {
-        // Validate JWT
-        validateJWT(locals.jwt);
-
         const { id } = params;
         const response = await fetch(`${WP_API_BASE}/tributes/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${locals.jwt}`
-            }
+            method: 'DELETE'
         });
 
         if (!response.ok) {
@@ -98,6 +73,6 @@ export const DELETE: RequestHandler = async ({ params, fetch, locals }) => {
         return json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to delete tribute'
-        }, { status: error instanceof Error && error.message === 'No JWT provided' ? 401 : 500 });
+        }, { status: 500 });
     }
 };
