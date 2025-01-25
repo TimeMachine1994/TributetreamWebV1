@@ -1,0 +1,291 @@
+The $bindable rune marks a prop as bindable, allowing two-way data binding between a parent component and a child component, meaning changes in one are reflected in the other. It is used with the bind: directive in the template to achieve this.
+Unlike regular variable assignments, $derived creates a reactive value that automatically updates whenever its dependencies change, recalculating the derived value. Without it, a variable would retain its initial value, ignoring subsequent updates to the referenced values.
+Code within a $effect block executes after a component is mounted to the DOM and whenever its dependencies, usually state or derived values, change after the DOM has been updated. If a function is returned from $effect, it will be called right before the effect is run again or when the component is unmounted.
+While $effect executes after the DOM updates, $effect.pre executes before the DOM updates, which allows for modifications before the view is refreshed. This is useful in rare cases where the order of execution is critical for UI updates.
+When destructuring props using $props, fallback values can be declared using the equals sign ( = ) within the curly braces, such as let { prop = 'default value' } = $props(), meaning that prop will receive "default value" if the parent does not provide it.
+Form actions in SvelteKit enable posting data to the server using the HTML <form> element, typically defined within a +page.server.js file. They facilitate server-side logic execution based on user form input.
+A default action is a single, unnamed action for a route, while named actions allow multiple distinct actions within the same route, allowing specific server-side functionality to be invoked by a single form.
+Page data can be loaded using +page.js, and server-side data can be loaded with +page.server.js. Page data is available in the browser and can't access server-only information. Server-side data is only available on the server and has full access to the server environment including database connections.
+The entries function allows prerendering of dynamic routes by defining an array of possible values for parameters, allowing SvelteKit to statically generate all routes in the array during the build process. This is specified in a +page.js, +page.server.js, or +server.js file within a dynamic route.
+Side effects can cause data corruption and incorrect display of user-specific data because load functions are executed on the server, where a single server can serve multiple users. Shared variables are mutable across users. Data should be fetched, returned by the load function and used from the data prop.
+
+$bindable: A Svelte rune used to mark a component prop as bindable, enabling two-way data binding with the bind: directive.
+
+$derived: A Svelte rune used to declare reactive values that automatically update whenever their dependencies change, ideal for calculations based on other reactive values.
+
+$effect: A Svelte rune that executes code after the component is mounted to the DOM, and then whenever its dependencies (such as state or derived values) change, after the DOM has been updated.
+
+$effect.pre: A Svelte rune similar to $effect, but it executes code before the DOM updates, useful for operations that need to occur before rendering.
+
+$props: A Svelte rune used to declare and destructure props within a component, allowing default values and rest properties.
+
+Action: In the context of SvelteKit forms, an action is a server-side function that handles form submissions. It is defined in a +page.server.js file.
+
+Default Action: In SvelteKit, a single, unnamed action for a route.
+
+Named Action: In SvelteKit, distinct actions within the same route identified by a unique name.
+
++page.js: A file in SvelteKit where data-loading logic can be defined, available on the client-side.
+
++page.server.js: A file in SvelteKit where data-loading and action handling logic can be defined, available on the server-side only.
+
++layout.js: A file in SvelteKit where data-loading logic can be defined for a layout, available on the client-side.
+
++layout.server.js: A file in SvelteKit where data-loading logic can be defined for a layout, available on the server-side only.
+
+load function: A function in SvelteKit used to fetch data before a page or layout is rendered.
+
+Prerendering: A build-time process in SvelteKit that generates static HTML files for routes.
+
+entries function: A function within a route in SvelteKit that specifies the possible values for parameters in a dynamic route. Used with prerendering.
+
+Side Effects: Any operation that alters program state or has observable effects beyond returning a value (e.g., modifying global variables, writing to files, or making network requests) but should be avoided in Svelte's load functions.
+
+Snippet: Reusable chunks of markup inside your Svelte components, similar to named functions with a render tag to use it.
+
+NotebookLM can be inaccurate, please double check its responses.
+It is crucial to avoid side effects and storing data in shared variables within load functions in SvelteKit primarily due to the way servers handle state and the potential for data leaks and unexpected behavior.
+Here's a breakdown of why this is important:
+•
+Servers are stateless: Servers are designed to respond to requests based solely on the information contained within that request. They should not rely on data from previous requests or store information that persists across multiple user sessions.
+•
+Shared variables can cause data leaks: If a load function stores data in a shared variable, that data can be accessed by other users. For example, if user Alice submits a form with sensitive information, and this information is stored in a shared server variable, a subsequent user Bob could potentially access that information. This creates significant security vulnerabilities.
+•
+Server restarts can cause data loss: Shared variables on a server are often stored in memory and are not persisted. If the server restarts, any data stored in those variables is lost. This can lead to unpredictable application behavior and a poor user experience.
+•
+load functions should be pure: The load functions should be pure, with no side effects. This means they should only perform data fetching or computations and return data without modifying external state such as stores or global variables.
+•
+Side effects can lead to unexpected behavior: Writing to a store or global state inside a load function, so that it can be used in components, can lead to data being shared between users. This is similar to the issue with shared variables where one user's information could be exposed to others.
+•
+Data should be returned rather than stored: Instead of modifying global state, load functions should return data which can be accessed via the data prop in components. This ensures that data is isolated to the specific user session and component lifecycle.
+•
+State and stores on the server use context: SvelteKit uses the context API to share state and stores on the server. The state (or store) is attached to the component tree with setContext, and when you subscribe, you retrieve it with getContext. This allows for sharing state reactively within a component hierarchy without creating shared state issues on the server.
+•
+Avoid waterfalls: load functions should be structured to avoid "waterfalls," where a load function waits for a previous load function to complete before running. This can slow down page loading times. Instead, the load functions should execute concurrently where possible.
+In summary, avoiding side effects and storing data in shared variables within load functions is critical for creating secure, reliable, and maintainable SvelteKit applications. It ensures that each user session is isolated and prevents unexpected behavior caused by shared server state. Instead of using shared server variables, you should authenticate users using cookies and persist data in a database.
+What is the main purpose of form actions in SvelteKit and how are they declared in +page.server.js?
+
+Form actions in SvelteKit primarily serve as a mechanism to handle data submission from <form> elements to the server. These actions allow you to process form data, perform server-side operations, and return data to the client without requiring full page reloads. Form actions are declared within a +page.server.js file, which is a sibling file to the corresponding +page.svelte file that contains the form.
+Here's a detailed explanation of their purpose and how they are declared:
+•
+Purpose of Form Actions:
+◦
+Data Submission: Form actions provide a way to send data from a <form> to the server via a POST request. This is in contrast to GET requests, which should not have side effects.
+◦
+Server-Side Logic: Actions allow you to execute server-side code, such as user authentication, database updates, or any other processing necessary for handling the form data.
+◦
+Progressive Enhancement: Form actions can be used with or without JavaScript on the client-side. This allows for a better user experience by progressively enhancing form interactions with JavaScript, while still functioning if JavaScript is disabled.
+◦
+Returning Data: After processing a form submission, actions can return data that becomes available to the client via the form prop of the page component. This data can include success messages, validation errors, or any other relevant information.
+◦
+Redirection: Actions can also redirect the user to another page if necessary.
+◦
+Error Handling: Actions can also return errors to the user if the form data is invalid.
+•
+Declaration in +page.server.js:
+◦
+Actions are declared as an exported actions object in +page.server.js.
+◦
+This actions object can contain a default action and/or named actions.
+◦
+Each action is defined as an asynchronous function that receives a RequestEvent object as its parameter. This event object contains the request, cookies, and other relevant information that is needed to process the form data.
+◦
+The RequestEvent object can be used to access form data via request.formData().
+◦
+Default Action: A default action is the simplest form action and is invoked when a form is submitted without specifying an action attribute.
+◦
+Named Actions: A page can have multiple named actions, allowing for different processing logic based on the user interaction. Named actions are invoked by including a query parameter in the form's action attribute, prefixed by a / character, for example action = "?/register". A formaction attribute on a button can also be used to POST the same form data to a different action than the parent form.
+◦
+Return values: Actions return data to the client, which is available as the form prop. This data must be serializable as JSON.
+◦
+Redirects: Actions can use the redirect helper function from @sveltejs/kit to redirect users.
+◦
+Errors: Actions can use the fail helper function from @sveltejs/kit to return validation errors to the user.
+Here's an example of how actions might be declared:
+// src/routes/login/+page.server.js
+import { fail, redirect } from '@sveltejs/kit';
+/** @satisfies {import('./$types').Actions} */
+export const actions = {
+  login: async ({ cookies, request, url }) => {
+    const data = await request.formData();
+    const email = data.get('email');
+    const password = data.get('password');
+    if (!email || !password) {
+      return fail(400, { missing: true });
+    }
+    // TODO: authenticate user
+    if (url.searchParams.has('redirectTo')) {
+        redirect(303, url.searchParams.get('redirectTo'))
+    }
+    return { success: true };
+  },
+  register: async ({ request }) => {
+    // TODO register user
+  },
+};
+This example demonstrates a login page with named login and register actions. The login action shows how to read form data, return errors with the fail helper function, and redirect the user on successful login.
+In summary, form actions in SvelteKit are a fundamental part of building interactive web applications that require server-side processing. They provide a structured and secure way to handle form submissions, manage data, and provide feedback to the user. By using actions, you can avoid sharing state on the server and build applications that are secure, reliable, and easy to maintain.
+What are the two ways to retrieve data before rendering a component and how do they differ?
+
+In SvelteKit, there are two primary ways to retrieve data before rendering a component: using load functions and using form actions. These mechanisms serve different purposes and have distinct characteristics, which are detailed below:
+1. load Functions:
+•
+Purpose: load functions are used to fetch data that is required to render a page or layout component. They are invoked before the component is rendered, ensuring that the necessary data is available.
+•
+Location: load functions are defined within +page.js (or +page.server.js) files for page components, and +layout.js (or +layout.server.js) files for layout components. These files are siblings to the corresponding +page.svelte or +layout.svelte files.
+•
+Types: There are two types of load functions:
+◦
+Universal load functions: These are defined in +page.js or +layout.js files and run both on the server and in the browser. They are used for fetching data that does not require private credentials, or for returning data that cannot be serialized.
+◦
+Universal load functions have access to properties describing the request such as params, route, and url, as well as functions like fetch, setHeaders, parent, depends, and untrack.
+◦
+Universal load functions are called with a LoadEvent, which has a data property. If there are both universal and server load functions, the return value of the server load function is passed as the data property of the universal load function's argument.
+◦
+Server load functions: These are defined in +page.server.js or +layout.server.js files and run exclusively on the server. They are used for accessing databases, file systems, and private environment variables.
+▪
+Server load functions can access properties such as clientAddress, cookies, locals, platform, and request, which are inherited from RequestEvent.
+•
+Data Availability: The data returned by a load function is made available to the corresponding component through the data prop.
+•
+Execution: load functions are invoked at runtime, unless the page is prerendered, in which case they are invoked at build time.
+•
+Concurrency: load functions for layouts and pages run concurrently unless await parent() is called. This means that a page's load function doesn't need to wait for its parent layout to complete loading data, resulting in faster loading times.
+•
+Streaming: Server load functions can use promises to stream data to the browser as it resolves.
+•
+Dependencies: load functions can be set to depend on specific URLs or custom identifiers. This is done through calling the fetch function, or the depends function.
+•
+Use cases: load functions are typically used for fetching data from APIs, databases, or other data sources that are needed to render the UI.
+•
+No Side Effects: load functions should not have side effects such as writing to a store or global state. They should return data, which can then be used in components.
+•
+parent() function: load functions can also access data from parent load functions using the await parent() method.
+2. Form Actions:
+•
+Purpose: Form actions are primarily used to handle data submission from <form> elements to the server. They allow you to process user input, perform server-side operations, and return data or redirect the user.
+•
+Location: Actions are declared in a +page.server.js file as an exported actions object.
+•
+Declaration: The actions object contains asynchronous functions representing different form actions (or a default action), each processing data submitted from a form and returning data to the client or redirecting the user.
+•
+Data Handling: Actions receive a RequestEvent object, allowing them to access form data via request.formData().
+•
+Progressive Enhancement: Form actions work with or without client-side JavaScript, allowing for progressive enhancement.
+•
+Data Return: After processing the form data, actions can return data to the client via the form prop. This may include error messages or success messages or be used to refresh the page.
+•
+Redirection: Actions can also redirect users to a different page.
+•
+fail Function: The fail function is used within actions to return validation errors to the user.
+•
+Use cases: Actions are typically used for handling user input from forms, such as submitting login information, updating user profiles, or creating new data.
+•
+use:enhance: Form actions can be enhanced using the use:enhance action on the <form> element, providing control over how the form is submitted and updated with the result. The applyAction function can be used to handle the result of the form submission.
+•
+deserialize: The deserialize function from $app/forms is needed to process the response from a form action. It can handle data types such as Date and BigInt.
+Key Differences Summarized:
+Feature
+load Functions
+Form Actions
+Primary Use
+Fetching data for rendering components
+Handling form data submissions
+Trigger
+Page navigation/load
+Form submission
+Location
++page.js, +page.server.js, +layout.js, +layout.server.js
++page.server.js
+Data Access
+Via the data prop
+Via the form prop
+Request Method
+Usually GET requests (via fetch)
+POST request
+Side Effects
+Should be avoided
+Used for server-side operations
+Progressive Enhancement
+Not directly applicable
+Supports progressive enhancement
+Data Return
+Returns data for page/layout components
+Returns data, redirects, or errors to the client
+Concurrency
+Layout and page load functions can run concurrently
+N/A
+Streaming
+Server load functions support streaming
+N/A
+In essence, load functions are for fetching data needed to display a page or layout, while form actions are for handling user input and server-side operations related to forms. Both are crucial in building robust and interactive SvelteKit applications but serve different purposes within the application's lifecycle.
+Describe the difference between a default form action and a named action.
+
+In SvelteKit, form actions are defined within a +page.server.js file and are used to handle form submissions. There are two types of actions: default actions and named actions, which differ in how they are invoked and how they interact with the form.
+Default Actions
+•
+A default action is the most basic type of form action.
+•
+It is declared within the actions object in +page.server.js with the key default.
+•
+A default action is invoked when a <form> on the corresponding page is submitted, without any specific action attribute or with an action attribute that does not specify a named action.
+•
+A page can have only one default action. Default actions cannot exist on a page that also has named actions.
+•
+The default action is invoked via a POST request when the form is submitted.
+Named Actions
+•
+Named actions are defined as additional properties in the actions object in +page.server.js, using names other than default as keys.
+•
+A page can have multiple named actions, each performing a different function related to the page.
+•
+Named actions are invoked when a <form> is submitted with an action attribute that includes a query parameter which corresponds to the action name, prefixed with a / character, for example, action="?/register".
+•
+Named actions are also invoked when a <button> within a form uses the formaction attribute specifying the name of the action via a query parameter. This enables a single form to submit to different actions. For example, a form could include a "Log in" button that submits to the ?/login action and a "Register" button that submits to the ?/register action.
+•
+As with default actions, named actions are invoked using POST requests.
+Key Differences Summarized:
+Feature
+Default Action
+Named Action
+Declaration
+default property in the actions object
+Any other property in the actions object
+Invocation
+Form submission with no specific action attribute or with an action that does not specify a named action
+Form submission with action="?/actionName" attribute or formaction="?/actionName" on a button
+Number per page
+One only
+Multiple allowed
+URL Query Parameter
+Does not use one
+Invoked by query parameters ?/actionName
+Example
+// src/routes/login/+page.server.js
+/** @satisfies {import('./$types').Actions} */
+export const actions = {
+  default: async ({ request }) => {
+    //handles the default form submission, e.g., if someone tries to submit to /login without a specific query parameter
+  },
+  login: async ({ cookies, request }) => {
+      // handles the login action
+  },
+  register: async ({ request }) => {
+   // handles the register action
+  }
+};
+// src/routes/login/+page.svelte
+<form method="POST">
+    <label>
+        Email
+        <input name="email" type="email">
+    </label>
+    <label>
+        Password
+        <input name="password" type="password">
+    </label>
+    <button>Log in</button>
+    <button formaction="?/register">Register</button>
+</form>
+In this example, the default action would be called if the form was submitted without pressing either of the buttons. The login action would be invoked if the "Log in" button is pressed, and the register action would be called if the "Register" button is pressed, because the formaction attribute specifies the named action register.
+In summary, default actions are the fallback for simple form submissions, while named actions allow you to define and target specific form submission scenarios. Using named actions is appropriate when a single page needs to handle multiple submission types or when you have multiple forms on a single page.
