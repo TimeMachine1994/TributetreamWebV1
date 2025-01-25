@@ -48,6 +48,36 @@ global $wpdb;
  * -------------------------------------------------------------------------
  */
 add_action('rest_api_init', function () {
+    
+    register_rest_route(
+        'tributestream/v1',
+        '/tributes',
+        [
+            'methods' => 'GET',
+            'callback' => 'get_paginated_tributes',
+            'permission_callback' => '__return_true', // Public route, no auth required
+            'args' => [
+                'page' => [
+                    'required' => false,
+                    'default' => 1,
+                    'validate_callback' => function ($param) {
+                        return is_numeric($param);
+                    },
+                ],
+                'per_page' => [
+                    'required' => false,
+                    'default' => 10,
+                    'validate_callback' => function ($param) {
+                        return is_numeric($param);
+                    },
+                ],
+                'search' => [
+                    'required' => false,
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
+        ]
+    );
     /**
      * POST /tributestream/v1/tribute
      * Creates a new tribute in the custom '{prefix}_tributes' table.
@@ -146,6 +176,37 @@ add_action('rest_api_init', function () {
     );
 });
 
+function get_paginated_tributes($request)
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'tributes';
+
+    $page = $request->get_param('page');
+    $per_page = $request->get_param('per_page');
+    $search = $request->get_param('search');
+
+    $offset = ($page - 1) * $per_page;
+
+    $query = "SELECT * FROM $table_name WHERE 1=1";
+
+    if (!empty($search)) {
+        $query .= $wpdb->prepare(" AND loved_one_name LIKE %s", '%' . $wpdb->esc_like($search) . '%');
+    }
+
+    $query .= $wpdb->prepare(" LIMIT %d OFFSET %d", $per_page, $offset);
+
+    $results = $wpdb->get_results($query, ARRAY_A);
+
+    if ($results === false) {
+        return new WP_Error(
+            'db_query_failed',
+            'An error occurred while querying the database.',
+            ['status' => 500]
+        );
+    }
+
+    return new WP_REST_Response($results, 200);
+}
 /*
  * -------------------------------------------------------------------------
  * :: JWT Authentication Callbacks
