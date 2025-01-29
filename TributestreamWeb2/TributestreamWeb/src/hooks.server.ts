@@ -22,8 +22,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             event.locals.user = userData;
             console.log('👤 [Hook] User data parsed:', {
                 displayName: userData.displayName,
-                roles: userData.roles,
-                isAdmin: userData.isAdmin
+                //roles: userData.roles,
+               // isAdmin: userData.isAdmin
             });
         } catch (error) {
             console.error('❌ [Hook] Error parsing user cookie:', error);

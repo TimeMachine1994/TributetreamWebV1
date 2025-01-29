@@ -9,9 +9,7 @@ export const actions: Actions = {
         const data = await request.formData();
         const username = data.get('username');
         const password = data.get('password');
-        console.log('📝 [Login Action] Form data extracted:');
-        console.log('   Username:', username);
-        console.log('   Password:', password);
+        console.log('📝 [Login Action] Form data extracted:', { username, password });
 
         // Check for missing credentials
         if (!username || !password) {
@@ -20,6 +18,8 @@ export const actions: Actions = {
         }
 
         let result;
+        let roles: string[] = []; // Fix: Ensure `roles` is defined before using it
+
         try {
             console.log('🔄 [Login Action] Sending login request to /api/auth...');
 
@@ -27,58 +27,67 @@ export const actions: Actions = {
             const response = await fetch('/api/auth', {
                 method: 'POST',
                 body: JSON.stringify({ username, password }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            console.log('🛬 [Login Action] Received response from /api/auth.');
-            console.log('   Status Code:', response.status);
+            console.log('🛬 [Login Action] Received response from /api/auth. Status Code:', response.status);
 
             // Step 3: Parse the response
             result = await response.json();
-            console.log('📝 [Login Action] Parsed response JSON:');
-            console.log('   Result:', result);
+            console.log('📝 [Login Action] Parsed response JSON:', result);
 
-            // Step 4: Check if the login was successful
-            if (!response.ok) {
-                console.error('❌ [Login Action] Login failed.');
-                console.error('   Error Message:', result.message || 'No error message provided.');
-                return fail(400, { error: result.message || 'Login failed' });
+            // Ensure the login was successful and user_id is available
+            if (!response.ok || !result.user_id) {
+                console.error('❌ [Login Action] Login failed or missing user_id.');
+                return fail(400, { error: result.message || 'Login failed.' });
             }
 
-            // Step 5: Set cookies from API response
-            if (result.token) {
-                cookies.set('jwt', result.token, {
-                    path: '/',
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'strict',
-                    maxAge: 60 * 60 * 24 // 24 hours
-                });
-            }
+            console.log('✅ [Login Action] Extracted user_id:', result.user_id);
 
-            if (result.name === 'session') {
-                cookies.set('session', result.value, {
-                    path: '/',
-                    httpOnly: true,
-                    sameSite: 'strict',
-                    secure: process.env.NODE_ENV === 'production',
-                    maxAge: 60 * 60 * 24 // 24 hours
-                });
-            }
+            // Step 4: Set JWT token cookie
+            cookies.set('jwt', result.token, {
+                path: '/',
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 // 24 hours
+            });
 
-            // Set user data with roles and capabilities
+            // Step 5: Store user_id in cookies
+            cookies.set('user_id', result.user_id, {
+                path: '/',
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 // 24 hours
+            });
+
+            console.log('✅ [Login Action] user_id cookie set:', result.user_id);
+
+            // Step 6: Fetch Roles using the user_id
+            console.log(`🔄 [Login Action] Fetching roles from /api/getRole?id=${result.user_id}...`);
+            const rolesResponse = await fetch(`/api/getRole?id=${result.user_id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            console.log('🛬 [Login Action] Received response from /api/getRole. Status Code:', rolesResponse.status);
+            const rolesData = await rolesResponse.json();
+            console.log('📝 [Login Action] Parsed roles response:', rolesData);
+
+            // Ensure roles is always an array
+            roles = Array.isArray(rolesData.roles) ? rolesData.roles : [];
+            console.log('✅ [Login Action] Final roles:', roles);
+
+            // Step 7: Set user data with roles
             cookies.set(
                 'user',
                 JSON.stringify({
                     displayName: result.user_display_name,
                     email: result.user_email,
                     nicename: result.user_nicename,
-                    roles: result.roles || [],
-                    capabilities: result.capabilities || {},
-                    isAdmin: (result.roles || []).includes('administrator') || 
-                            (result.capabilities || {}).manage_options === true
+                    roles,
+                    isAdmin: roles.includes('administrator')
                 }),
                 {
                     path: '/',
@@ -89,21 +98,19 @@ export const actions: Actions = {
             );
 
         } catch (error) {
-            console.error('🚨 [Login Action] Error occurred during login:');
-            console.error(error);
+            console.error('🚨 [Login Action] Error during login:', error);
             return fail(500, { error: 'Internal server error' });
         }
 
-        // Ensure we have a result before redirecting
-        if (!result) {
-            return fail(500, { error: 'No response data from login' });
+        // Define redirect path based on user role
+        let redirectPath = '/dashboard'; // Default user redirect
+        if (roles.includes('administrator')) {
+            redirectPath = '/admin-dashboard';
+        } else if (roles.includes('editor')) {
+            redirectPath = '/editor-dashboard'; // Redirect editors
         }
 
-        // Define redirect path based on admin role/capability
-        const isAdmin = (result.roles || []).includes('administrator') || 
-                       (result.capabilities || {}).manage_options === true;
-        const redirectPath = isAdmin ? '/admin-dashboard' : '/dashboard';
-        
+        console.log(`🚀 [Login Action] Redirecting user to: ${redirectPath}`);
         throw redirect(303, redirectPath);
     }
 };
