@@ -9,6 +9,5 @@ export default defineConfig({
 	plugins: [sveltekit(), purgeCss()],
 	define: {
 		'process.env': process.env,
-
-	},
+	}
 });

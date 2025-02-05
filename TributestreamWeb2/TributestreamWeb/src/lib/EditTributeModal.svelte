@@ -9,9 +9,11 @@
 
     export let tribute: Tribute;
     export let onClose: () => void;
-    export let onSave: (id: string, htmlContent: string) => Promise<void>;
+    export let onSave: (id: string, updates: { loved_one_name: string; html_content: string; slug: string }) => Promise<void>;
 
     let htmlContent = tribute.html_content || '';
+    let lovedOneName = tribute.loved_one_name;
+    let slug = tribute.slug;
     let loading = false;
     let error = '';
 
@@ -19,7 +21,11 @@
         loading = true;
         error = '';
         try {
-            await onSave(tribute.id, htmlContent);
+            await onSave(tribute.id, {
+                loved_one_name: lovedOneName,
+                html_content: htmlContent,
+                slug: slug
+            });
             onClose();
         } catch (e) {
             error = e instanceof Error ? e.message : 'Failed to update tribute';
@@ -32,20 +38,46 @@
 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
         <div class="p-6">
-            <h2 class="text-xl font-semibold mb-4">
-                Edit HTML for {tribute.loved_one_name}
-            </h2>
+            <h2 class="text-xl font-semibold mb-4">Edit Tribute</h2>
             {#if error}
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                     {error}
                 </div>
             {/if}
-            <textarea
-                bind:value={htmlContent}
-                class="w-full h-96 p-4 border rounded font-mono text-sm"
-                placeholder="Enter HTML content..."
-                disabled={loading}
-            ></textarea>
+            <div class="space-y-4">
+                <div>
+                    <label for="loved_one_name" class="block text-sm font-medium text-gray-700">Loved One's Name</label>
+                    <input
+                        type="text"
+                        id="loved_one_name"
+                        bind:value={lovedOneName}
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="Enter name..."
+                        disabled={loading}
+                    />
+                </div>
+                <div>
+                    <label for="slug" class="block text-sm font-medium text-gray-700">Slug</label>
+                    <input
+                        type="text"
+                        id="slug"
+                        bind:value={slug}
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="Enter slug..."
+                        disabled={loading}
+                    />
+                </div>
+                <div>
+                    <label for="html_content" class="block text-sm font-medium text-gray-700">HTML Content</label>
+                    <textarea
+                        id="html_content"
+                        bind:value={htmlContent}
+                        class="w-full h-96 p-4 border rounded font-mono text-sm"
+                        placeholder="Enter HTML content..."
+                        disabled={loading}
+                    ></textarea>
+                </div>
+            </div>
             <div class="mt-4 flex justify-end space-x-3">
                 <button
                     on:click={onClose}
