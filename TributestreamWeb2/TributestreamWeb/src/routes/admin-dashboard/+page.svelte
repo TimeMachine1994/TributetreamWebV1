@@ -45,10 +45,10 @@
         }
     }
 
-    async function handleUpdateTribute(id: string, updates: { loved_one_name: string; html_content: string; slug: string }) {
+    async function handleUpdateTribute(id: string, updates: { loved_one_name: string; custom_html: string; slug: string }) {
         loading = true;
         try {
-            const response = await fetch(`/api/tributestream/v1/tributes/${id}`, {
+            const response = await fetch(`/wp-json/wpa2/v1/tributes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
@@ -70,7 +70,7 @@
 
     function handlePageChange(newPage: number) {
         if (newPage < 1 || newPage > totalPages) return;
-        
+
         const url = new URL(window.location.href);
         url.searchParams.set('page', newPage.toString());
         history.pushState({}, '', url.toString());

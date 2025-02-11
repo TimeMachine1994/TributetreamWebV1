@@ -24,14 +24,26 @@ function isValidTributeArray(data: any): data is Tribute[] {
     return isValid;
 }
 
-export const load: PageServerLoad = async ({ fetch, locals }) => {
+export const load: PageServerLoad = async ({ fetch, locals, request }) => {
     console.log('[load] Starting tribute data fetch...');
     console.log('[load] JWT Token:', locals.jwt ? 'Provided' : 'Not provided');
 
     try {
         // Fetching tributes with JWT authentication
-        console.log('[load] Sending request to /tributestream/v1/tribute');
-        const response = await fetch('/tributestream/v1/tribute', {
+        // Get URL parameters from the request
+        const url = new URL(request.url);
+        const page = url.searchParams.get('page') || '1';
+        const search = url.searchParams.get('search') || '';
+
+        // Construct API URL with query parameters
+        const apiUrl = new URL('/api/tributestream/v1/tributes', url.origin);
+        apiUrl.searchParams.set('page', page);
+        if (search) {
+            apiUrl.searchParams.set('search', search);
+        }
+
+        console.log('[load] Sending request to', apiUrl.toString());
+        const response = await fetch(apiUrl, {
             headers: {
                 'Authorization': `Bearer ${locals.jwt}`,
                 'Accept': 'application/json'
