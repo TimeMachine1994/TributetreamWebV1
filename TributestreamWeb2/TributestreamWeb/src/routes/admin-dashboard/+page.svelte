@@ -48,7 +48,7 @@
     async function handleUpdateTribute(id: string, updates: { loved_one_name: string; html_content: string; slug: string }) {
         loading = true;
         try {
-            const response = await fetch(`/api/tributestream/v1/tribute/${id}`, {
+            const response = await fetch(`/api/tributestream/v1/tributes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
