@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: A6 Tributestream (Unified + Refactored)
+ * Plugin Name: A 7 Tributestream (Unified + Refactored)
  * Description: A refactoring of "Plugin 5" plus unified endpoints, using a custom 'wp_tributes' table and usermeta. Integrates JWT Auth for authentication.
  * Version: 1.3
  * Author: Your Name
