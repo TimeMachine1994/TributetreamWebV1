@@ -276,7 +276,9 @@ function get_all_tributes_desc($request)
               ORDER BY id DESC";
 
     $results = $wpdb->get_results($query, ARRAY_A);
-    return new WP_REST_Response($results, 200);
+    return new WP_REST_Response([
+        'tributes' => $results ?: [],
+    ], 200);
 }
 
 // -------------------------------------------------------------------------

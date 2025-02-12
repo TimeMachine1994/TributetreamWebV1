@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { enhance } from '$app/forms';
+
     interface Tribute {
         id: string;
         loved_one_name: string;
@@ -13,40 +15,57 @@
     export let onSuccess: () => Promise<void>;
     export let onError: () => void;
 
-    let htmlContent = tribute.html_content || '';
-    let lovedOneName = tribute.loved_one_name;
-    let slug = tribute.slug;
+    $: {
+        // Update local state when tribute prop changes
+        htmlContent = tribute.html_content || '';
+        lovedOneName = tribute.loved_one_name;
+        slug = tribute.slug;
+    }
+
+    let htmlContent = '';
+    let lovedOneName = '';
+    let slug = '';
     let loading = false;
     let error = '';
 
-    async function handleSubmit(event: SubmitEvent) {
+    import type { ActionResult } from '@sveltejs/kit';
+
+    import type { SubmitFunction } from '@sveltejs/kit';
+
+    const handleEnhance: SubmitFunction = () => {
         loading = true;
         error = '';
-        
-        const form = event.target as HTMLFormElement;
-        const formData = new FormData(form);
-        
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                await onSuccess();
-                onClose();
-            } else {
-                error = result.error || 'Failed to update tribute';
+
+        return async ({ result }) => {
+            try {
+                switch (result.type) {
+                    case 'success':
+                        console.log('Update successful, refreshing data...');
+                        await onSuccess();
+                        onClose();
+                        break;
+                    case 'failure':
+                        console.error('Update failed:', result);
+                        error = result.data?.error || 'Failed to update tribute';
+                        onError();
+                        break;
+                    case 'error':
+                        console.error('Update error:', result);
+                        error = result.error?.message || 'Failed to update tribute';
+                        onError();
+                        break;
+                    case 'redirect':
+                        // Handle redirect if needed
+                        break;
+                }
+            } catch (e) {
+                console.error('Error handling form submission:', e);
+                error = e instanceof Error ? e.message : 'Failed to update tribute';
                 onError();
+            } finally {
+                loading = false;
             }
-        } catch (e) {
-            error = e instanceof Error ? e.message : 'Failed to update tribute';
-            onError();
-        } finally {
-            loading = false;
-        }
+        };
     }
 </script>
 
@@ -93,7 +112,7 @@
                     ></textarea>
                 </div>
             </div>
-            <form method="POST" action={form} on:submit|preventDefault={handleSubmit}>
+            <form method="POST" action={form} use:enhance={handleEnhance}>
                 <input type="hidden" name="id" value={tribute.id} />
                 <input type="hidden" name="loved_one_name" value={lovedOneName} />
                 <input type="hidden" name="html_content" value={htmlContent} />

@@ -8,6 +8,35 @@ type ErrorWithCode = {
 };
 
 export const actions = {
+	getTribute: async ({ url, fetch, locals }) => {
+		try {
+			const id = url.searchParams.get('id');
+			if (!id) {
+				return { success: false, error: 'No tribute ID provided' };
+			}
+
+			const response = await fetch(`/api/tributestream/v1/tributes/${id}`, {
+				headers: {
+					'Authorization': `Bearer ${locals.jwt}`,
+					'Accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				return { success: false, error: 'Failed to fetch tribute' };
+			}
+
+			const tribute = await response.json();
+			return { success: true, tribute };
+		} catch (err) {
+			console.error('[getTribute] Error:', err);
+			return { 
+				success: false, 
+				error: err instanceof Error ? err.message : 'An unknown error occurred' 
+			};
+		}
+	},
+
 	updateTribute: async ({ request, fetch, locals }) => {
 		try {
 			console.log('[updateTribute] Received request to update tribute.');
@@ -24,11 +53,12 @@ export const actions = {
 			}
 			console.log('[updateTribute] Tribute ID:', id);
 
-			// Construct the updates object and log it
+			// Construct the updates object with proper field mapping
 			const updates = {
 				loved_one_name: formData.get('loved_one_name'),
-				custom_html: formData.get('html_content'),
-				slug: formData.get('slug')
+				custom_html: formData.get('html_content'), // Map html_content to custom_html for WordPress
+				slug: formData.get('slug'),
+				updated_at: new Date().toISOString() // Add updated timestamp
 			};
 			console.log('[updateTribute] Updates to be sent:', updates);
 
@@ -51,7 +81,14 @@ export const actions = {
 
 			if (!response.ok) {
 				console.error('[updateTribute] Failed to update tribute, status:', response.status);
-				return { success: false, error: 'Failed to update tribute' };
+				let errorMessage = 'Failed to update tribute';
+				try {
+					const errorData = JSON.parse(responseText);
+					errorMessage = errorData.message || errorData.error || errorMessage;
+				} catch (parseError) {
+					console.error('[updateTribute] Error parsing response:', parseError);
+				}
+				return { success: false, error: errorMessage };
 			}
 
 			console.log('[updateTribute] Tribute updated successfully.');
@@ -66,30 +103,13 @@ export const actions = {
 	}
 } satisfies Actions;
 
-// Helper function to validate tribute array with extra logging
-function isValidTributeArray(data: any): data is Tribute[] {
-	console.log('[isValidTributeArray] Checking data validity:', data);
-	const isValid = Array.isArray(data) && data.every(item =>
-		typeof item === 'object' &&
-		item !== null &&
-		typeof item.id === 'string' &&
-		typeof item.loved_one_name === 'string' &&
-		typeof item.created_at === 'string' &&
-		typeof item.slug === 'string' &&
-		(item.html_content === undefined || typeof item.html_content === 'string')
-	);
-
-	console.log('[isValidTributeArray] Validation result:', isValid);
-	return isValid;
-}
-
 export const load: PageServerLoad = async ({ fetch, locals }) => {
 	console.log('[load] Starting tribute data fetch...');
 	console.log('[load] JWT Token:', locals.jwt ? 'Provided' : 'Not provided');
 
 	try {
 		// Fetching tributes with JWT authentication
-		const apiEndpoint = '/api/tributestream/v1/tribute';
+		const apiEndpoint = '/api/tributestream/v1/tributes';
 		console.log('[load] Sending request to:', apiEndpoint);
 		const response = await fetch(apiEndpoint, {
 			headers: {
@@ -120,19 +140,14 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 				throw new Error('Invalid response data structure');
 			}
 
-			// Handle both array and object with tributes property
-			const tributes = Array.isArray(data) ? data : (data.tributes || []);
+			// Extract tributes from standardized response
+			const tributes = data.tributes ?? [];
 			console.log('[load] Extracted tributes:', tributes);
 
-			if (!isValidTributeArray(tributes)) {
-				console.error('[load] Invalid tributes structure:', tributes);
-				throw new Error('Invalid tributes data structure');
-			}
-
-			const transformedTributes = tributes.map(tribute => ({
+			const transformedTributes = tributes.map((tribute: Record<string, any>) => ({
 				id: tribute.id,
 				loved_one_name: tribute.loved_one_name,
-				html_content: tribute.html_content || '',
+				html_content: tribute.custom_html || '', // Map custom_html from WordPress to html_content for frontend
 				created_at: tribute.created_at,
 				slug: tribute.slug
 			}));

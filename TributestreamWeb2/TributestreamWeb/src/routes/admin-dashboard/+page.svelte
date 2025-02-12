@@ -96,7 +96,31 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <button
-                                on:click={() => selectedTribute = tribute}
+                                on:click={async () => {
+                                    // First show the modal with initial data
+                                    selectedTribute = tribute;
+                                    
+                                    // Then fetch latest data
+                                    loading = true;
+                                    try {
+                                        const response = await fetch(`?/getTribute&id=${tribute.id}`, { method: 'POST' });
+                                        const result = await response.json();
+                                        if (result.success) {
+                                            // Update the modal with fresh data
+                                            selectedTribute = {
+                                                id: result.tribute.id,
+                                                loved_one_name: result.tribute.loved_one_name,
+                                                html_content: result.tribute.custom_html || '',
+                                                created_at: result.tribute.created_at,
+                                                slug: result.tribute.slug
+                                            };
+                                        }
+                                    } catch (error) {
+                                        console.error('Error fetching tribute:', error);
+                                    } finally {
+                                        loading = false;
+                                    }
+                                }}
                                 class="text-indigo-600 hover:text-indigo-900"
                             >
                                 Edit
@@ -140,7 +164,11 @@
         onClose={() => selectedTribute = null}
         form="?/updateTribute"
         onSuccess={async () => {
-            await invalidate('app:tributes');
+            console.log('Invalidating and refreshing data...');
+            await Promise.all([
+                invalidate('app:tributes'),
+                invalidate((url) => url.pathname.includes('/api/tributestream/v1/tributes'))
+            ]);
             selectedTribute = null;
             loading = false;
         }}

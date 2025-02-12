@@ -26,16 +26,29 @@ export async function PUT({ params, request }) {
     try {
         const payload = await request.json();
 
+        /** @type {Record<string, string>} */
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader) {
+            headers['Authorization'] = authHeader;
+        }
+
         const res = await fetch(getWpApiUrl(`tributes/${id}`), {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers,
             body: JSON.stringify(payload)
         });
 
         if (!res.ok) {
-            return new Response(await res.text(), { status: res.status });
+            const errorText = await res.text();
+            console.error('[PUT /tributes] WordPress API error:', errorText);
+            return new Response(errorText, { 
+                status: res.status,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
         const data = await res.json();
