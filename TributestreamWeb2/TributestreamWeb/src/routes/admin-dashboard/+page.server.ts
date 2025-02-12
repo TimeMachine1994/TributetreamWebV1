@@ -30,8 +30,8 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 
     try {
         // Fetching tributes with JWT authentication
-        console.log('[load] Sending request to /tributestream/v1/tribute');
-        const response = await fetch('/tributestream/v1/tribute', {
+        console.log('[load] Sending request to /api/tributestream/v1/tribute');
+        const response = await fetch('/api/tributestream/v1/tribute', {
             headers: {
                 'Authorization': `Bearer ${locals.jwt}`,
                 'Accept': 'application/json'

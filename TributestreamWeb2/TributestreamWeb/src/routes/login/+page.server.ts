@@ -35,7 +35,7 @@ export const actions: Actions = {
             // Step 3: Parse the response
             result = await response.json();
             console.log('📝 [Login Action] Parsed response JSON:', result);
-
+//get the user id ?
             // Ensure the login was successful and user_id is available
             if (!response.ok || !result.user_id) {
                 console.error('❌ [Login Action] Login failed or missing user_id.');
