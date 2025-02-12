@@ -103,14 +103,25 @@ export const actions = {
 	}
 } satisfies Actions;
 
-export const load: PageServerLoad = async ({ fetch, locals }) => {
+export const load: PageServerLoad = async ({ url, fetch, locals }) => {
 	console.log('[load] Starting tribute data fetch...');
 	console.log('[load] JWT Token:', locals.jwt ? 'Provided' : 'Not provided');
 
 	try {
-		// Fetching tributes with JWT authentication
-		const apiEndpoint = '/api/tributestream/v1/tributes';
-		console.log('[load] Sending request to:', apiEndpoint);
+		// Read pagination parameters from URL
+		const page = Number(url.searchParams.get('page')) || 1;
+		const perPage = Number(url.searchParams.get('per_page')) || 10;
+		const search = url.searchParams.get('search') || '';
+
+		// Construct API URL with pagination parameters
+		const apiEndpoint = new URL('/api/tributestream/v1/tributes', url.origin);
+		apiEndpoint.searchParams.set('page', String(page));
+		apiEndpoint.searchParams.set('per_page', String(perPage));
+		if (search) {
+			apiEndpoint.searchParams.set('search', search);
+		}
+
+		console.log('[load] Sending request to:', apiEndpoint.toString());
 		const response = await fetch(apiEndpoint, {
 			headers: {
 				'Authorization': `Bearer ${locals.jwt}`,
@@ -118,10 +129,7 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 			}
 		});
 
-		console.log('[load] Response received:', response);
 		console.log('[load] Response status:', response.status);
-		// Log headers (note: headers is a Headers object; you can iterate if needed)
-		console.log('[load] Response headers:', JSON.stringify([...response.headers]));
 
 		if (!response.ok) {
 			console.error('[load] Fetch error:', response.statusText);
@@ -140,24 +148,67 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 				throw new Error('Invalid response data structure');
 			}
 
-			// Extract tributes from standardized response
-			const tributes = data.tributes ?? [];
-			console.log('[load] Extracted tributes:', tributes);
+			// Log the raw response
+			console.log('[load] Raw response:', {
+				status: response.status,
+				headers: Object.fromEntries(response.headers.entries()),
+				data: JSON.stringify(data, null, 2)
+			});
 
-			const transformedTributes = tributes.map((tribute: Record<string, any>) => ({
-				id: tribute.id,
-				loved_one_name: tribute.loved_one_name,
-				html_content: tribute.custom_html || '', // Map custom_html from WordPress to html_content for frontend
-				created_at: tribute.created_at,
-				slug: tribute.slug
-			}));
+			// Validate response structure
+			if (!data || typeof data !== 'object' || !Array.isArray(data.tributes)) {
+				console.error('[load] Invalid response structure:', data);
+				throw new Error('Invalid API response structure');
+			}
 
-			console.log('[load] Transformed tribute data:', transformedTributes);
+			// Transform tributes with proper type checking
+			const transformedTributes = data.tributes.map((tribute: Record<string, any>) => {
+				if (!tribute || typeof tribute !== 'object') {
+					console.warn('[load] Invalid tribute object:', tribute);
+					return null;
+				}
 
-			return {
+				return {
+					id: tribute.id,
+					loved_one_name: tribute.loved_one_name || '',
+					html_content: tribute.custom_html || '',
+					created_at: tribute.created_at || new Date().toISOString(),
+					slug: tribute.slug || ''
+				};
+			}).filter((tribute: unknown): tribute is Tribute => {
+				if (!tribute || typeof tribute !== 'object') return false;
+				const t = tribute as Record<string, unknown>;
+				return (
+					typeof t.id === 'string' &&
+					typeof t.loved_one_name === 'string' &&
+					typeof t.created_at === 'string' &&
+					typeof t.slug === 'string' &&
+					(t.html_content === undefined || typeof t.html_content === 'string')
+				);
+			});
+
+			console.log('[load] Transformed tributes:', transformedTributes);
+
+			// Construct the response with proper fallbacks and URL state
+			const result = {
 				tributes: transformedTributes,
-				totalPages: data.total_pages || 1
+				totalPages: Math.max(1, data.totalPages || data.total_pages || 1),
+				totalItems: Math.max(0, data.totalItems || data.total_items || 0),
+				currentPage: page, // Always use the URL's page parameter
+				searchQuery: search, // Always use the URL's search parameter
+				perPage // Include per_page for completeness
 			};
+
+			// Log URL parameters for debugging
+			console.log('[load] URL parameters:', {
+				page,
+				perPage,
+				search,
+				currentUrl: url.toString()
+			});
+
+			console.log('[load] Final response:', result);
+			return result;
 		} catch (parseError) {
 			console.error('[load] JSON Parsing Error:', parseError);
 			throw error(500, {

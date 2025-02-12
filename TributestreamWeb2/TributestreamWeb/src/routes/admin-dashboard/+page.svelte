@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invalidate } from '$app/navigation';
+    import { goto } from '$app/navigation';
     import EditTributeModal from '$lib/EditTributeModal.svelte';
 
     import type { PageData } from './$types';
@@ -8,14 +8,37 @@
     const { data } = $props<{ data: PageData }>();
 
     // Local state
-    let searchQuery = $state('');
+    let searchQuery = $state(data.searchQuery || '');
     let selectedTribute = $state<Tribute | null>(null);
     let loading = $state(false);
-    let currentPage = $state(1);
 
-    // Derived values
-    let tributes: Tribute[] = $derived(data.tributes);
-    let totalPages: number = $derived(data.totalPages);
+    // Derived values from server data
+    let tributes = $derived(data.tributes);
+    let totalPages = $derived(data.totalPages);
+    let totalItems = $derived(data.totalItems);
+    let currentPage = $derived(data.currentPage);
+    let perPage = $derived(data.perPage);
+
+    // Keep search query in sync with URL
+    $effect(() => {
+        if (data.searchQuery !== searchQuery) {
+            searchQuery = data.searchQuery;
+        }
+    });
+
+    // Reset loading state when data changes
+    $effect(() => {
+        loading = false;
+    });
+
+    // Show loading feedback in the UI
+    let loadingText = $derived(() => {
+        if (!loading) return 'Search';
+        return searchQuery ? 'Searching...' : 'Loading...';
+    });
+
+    // Show loading state in the table
+    let tableLoadingClass = $derived(() => loading ? 'opacity-50' : '');
 
     function calculatePaginationRange() {
         const length = Math.min(5, totalPages);
@@ -31,13 +54,15 @@
     let paginationRange = $derived(calculatePaginationRange());
 
     async function handleSearch() {
+        if (loading) return;
+        
         loading = true;
         try {
             const url = new URL(window.location.href);
             url.searchParams.set('search', searchQuery);
-            url.searchParams.set('page', '1');
-            history.pushState({}, '', url.toString());
-            await invalidate('app:tributes');
+            url.searchParams.set('page', '1'); // Reset to first page on new search
+            url.searchParams.set('per_page', String(perPage));
+            await goto(url.toString(), { keepFocus: true, invalidateAll: true });
         } catch (error) {
             console.error('Search error:', error);
         } finally {
@@ -45,14 +70,23 @@
         }
     }
 
-    function handlePageChange(newPage: number) {
-        if (newPage < 1 || newPage > totalPages) return;
+    async function handlePageChange(newPage: number) {
+        if (newPage < 1 || newPage > totalPages || loading) return;
         
-        const url = new URL(window.location.href);
-        url.searchParams.set('page', newPage.toString());
-        history.pushState({}, '', url.toString());
-        currentPage = newPage;
-        invalidate('app:tributes');
+        loading = true;
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', newPage.toString());
+            url.searchParams.set('per_page', String(perPage));
+            if (searchQuery) {
+                url.searchParams.set('search', searchQuery);
+            }
+            await goto(url.toString(), { keepFocus: true, invalidateAll: true });
+        } catch (error) {
+            console.error('Page change error:', error);
+        } finally {
+            loading = false;
+        }
     }
 </script>
 
@@ -71,12 +105,12 @@
                 class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
                 disabled={loading}
             >
-                {loading ? 'Searching...' : 'Search'}
+                {loadingText || 'Search'}
             </button>
         </div>
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto {tableLoadingClass}">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -165,10 +199,7 @@
         form="?/updateTribute"
         onSuccess={async () => {
             console.log('Invalidating and refreshing data...');
-            await Promise.all([
-                invalidate('app:tributes'),
-                invalidate((url) => url.pathname.includes('/api/tributestream/v1/tributes'))
-            ]);
+            await goto(window.location.href, { keepFocus: true, invalidateAll: true });
             selectedTribute = null;
             loading = false;
         }}
