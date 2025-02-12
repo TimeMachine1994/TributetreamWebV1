@@ -19,9 +19,25 @@
     let currentPage = $derived(data.currentPage);
     let perPage = $derived(data.perPage);
 
-    // Keep search query in sync with URL
+    // Track if the search query was changed by user input
+    let userChangedQuery = $state(false);
+
+    // Debug logging for state changes
     $effect(() => {
-        if (data.searchQuery !== searchQuery) {
+        console.log('[State Debug] searchQuery changed:', searchQuery);
+    });
+
+    $effect(() => {
+        console.log('[State Debug] data.searchQuery changed:', data.searchQuery);
+    });
+
+    // Sync URL query with local state, but only if user hasn't modified it
+    $effect(() => {
+        if (!userChangedQuery && data.searchQuery !== searchQuery) {
+            console.log('[Sync Debug] Updating searchQuery from URL:', {
+                from: searchQuery,
+                to: data.searchQuery
+            });
             searchQuery = data.searchQuery;
         }
     });
@@ -54,19 +70,32 @@
     let paginationRange = $derived(calculatePaginationRange());
 
     async function handleSearch() {
-        if (loading) return;
+        if (loading) {
+            console.log('[Search Debug] Search cancelled - already loading');
+            return;
+        }
         
+        console.log('[Search Debug] Starting search with query:', searchQuery);
         loading = true;
+        userChangedQuery = false; // Reset the user input flag
+        
         try {
             const url = new URL(window.location.href);
             url.searchParams.set('search', searchQuery);
             url.searchParams.set('page', '1'); // Reset to first page on new search
             url.searchParams.set('per_page', String(perPage));
-            await goto(url.toString(), { keepFocus: true, invalidateAll: true });
+            
+            console.log('[Search Debug] Navigating to:', url.toString());
+            await goto(url.toString(), { 
+                keepFocus: true, 
+                invalidateAll: true 
+            });
         } catch (error) {
-            console.error('Search error:', error);
+            console.error('[Search Debug] Search error:', error);
+            userChangedQuery = true; // Restore the flag if search fails
         } finally {
             loading = false;
+            console.log('[Search Debug] Search completed');
         }
     }
 
@@ -98,7 +127,18 @@
                 bind:value={searchQuery}
                 placeholder="Search tributes..."
                 class="flex-1 p-2 border rounded-md"
-                on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+                on:input={(e) => {
+                    console.log('[Input Debug] Input event:', e.currentTarget.value);
+                    userChangedQuery = true;
+                }}
+                on:keydown={(e) => {
+                    console.log('[Input Debug] Keydown event:', e.key);
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        userChangedQuery = false;
+                        handleSearch();
+                    }
+                }}
             />
             <button
                 on:click={handleSearch}
