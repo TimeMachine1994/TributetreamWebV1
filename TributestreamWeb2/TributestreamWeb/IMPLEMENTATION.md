@@ -1,165 +1,59 @@
+ Form actions in SvelteKit 5 allow you to handle **POST** requests to the server using the `<form>` element. They can be progressively enhanced with JavaScript for a better user experience.
 
-## 3. Phase 2: Establish/Review Server Endpoints ✓
+Here's a breakdown of how they work:
 
-### Objective
-Create SvelteKit endpoints for users and tributes that act as intermediaries between the SvelteKit front end and the WordPress plugin.
+*   **Defining Actions:** Actions are defined within a `+page.server.js` file. A page can have a `default` action or multiple named actions.
 
-### Implementation Status
+    *   **Default Action:** A `default` action is executed when the `<form>` element doesn't specify a particular action.
+        ```javascript
+        export const actions = {
+          default: async (event) => {
+            // TODO: Handle form submission
+          }
+        };
+        ```
+    *   **Named Actions:**  A page can have multiple named actions.
+        ```javascript
+        export const actions = {
+          login: async (event) => {
+            // TODO: Handle login
+          },
+          register: async (event) => {
+            // TODO: Handle registration
+          }
+        };
+        ```
+*   **Invoking Actions:** To invoke an action, you use the `<form>` element in your Svelte component.
+    *   **Default Action:** To invoke the default action, just include a `<form>` element with `method="POST"`.
+        ```html
+        <form method="POST">
+          <!-- Form inputs -->
+          <button>Submit</button>
+        </form>
+        ```
+    *   **Named Action:** To invoke a named action, add a query parameter to the `action` attribute of the `<form>` with the name prefixed by a `/` character.  Alternatively, the `formaction` attribute on a `<button>` can  POST form data to a different action than the parent `<form>`.
+        ```html
+        <form method="POST" action="?/register">
+          <!-- Form inputs -->
+        </form>
 
-1. **File Structure** ✓
-   - Created `/src/routes/api/admin/users/+server.ts`
-   - Created `/src/routes/api/admin/tributes/+server.ts`
-   - Implemented in TypeScript for better type safety
+        <form method="POST" action="?/login">
+          <!-- Form inputs -->
+          <button>Log in</button>
+          <button formaction="?/register">Register</button>
+        </form>
+        ```
+*   **RequestEvent:** Each action receives a `RequestEvent` object, which you can use to read form data with `request.formData()`.
+*   **Responses:** After processing the request, the action can respond with data that will be available through the `form` property on the corresponding page and through `page.form` app-wide until the next update.
+*   **Validation Errors:** If the request couldn’t be processed due to invalid data, you can return validation errors using the `fail` function from `@sveltejs/kit`. This function lets you return an HTTP status code (typically 400 or 422) along with the data.
+*   **Redirects:** The `redirect` function from `@sveltejs/kit` can be used to redirect users after a successful form submission.  Ensure the redirect isn't caught within a `try...catch` block.
+*   **Progressive Enhancement:** The easiest way to progressively enhance a form is to add the `use:enhance` action to the `<form>` element.
 
-2. **Methods Implemented** ✓
-   - **GET**: 
-     - List view with pagination using `?page=` and `?per_page=`
-     - Single item lookup with `?id=`
-     - Search functionality with `?search=`
-   - **POST**: Create new resources
-   - **PUT**: Update existing resources
-   - **DELETE**: Remove resources
+    *   Without arguments, `use:enhance` emulates the browser-native behavior without full-page reloads.
+    *   It updates the `form` property, `page.form`, and `page.status` on a successful or invalid response, but only if the action is on the same page you’re submitting from.  It also resets the `<form>` element, invalidates all data using `invalidateAll` on a successful response, calls `goto` on a redirect response, renders the nearest `+error` boundary if an error occurs, and resets focus to the appropriate element.
+    *   You can customize the behavior by providing a `SubmitFunction` that runs immediately before the form is submitted and optionally returns a callback that runs with the `ActionResult`.  If you return a callback, the default behavior is not triggered, but you can call `update` to trigger it.
+    *   `applyAction` can be used to reproduce part of the default `use:enhance` behavior without invalidating all data on a successful response.
+*   **Custom Event Listener:** You can implement progressive enhancement yourself with a normal event listener on the `<form>`. The response from the server needs to be deserialized using `deserialize` from `$app/forms` before processing it. `applyAction` can be used to process the result.
 
-3. **JWT Authentication** ✓
-   - Added JWT token retrieval from cookies
-   - Implemented admin access checks via `locals.user?.isAdmin`
-   - Attached tokens to WordPress API requests
-   - Added proper error handling for unauthorized access
-
-4. **Route Consolidation** ✓
-   - Removed duplicate `/api/user_data` endpoint
-   - Unified all user operations under `/api/admin/users`
-   - Unified all tribute operations under `/api/admin/tributes`
-   - Standardized error responses and status codes
-
-### Implementation Details
-
-Each endpoint follows these patterns:
-- Validates admin access and JWT authentication
-- Handles query parameters for pagination and search
-- Forwards requests to WordPress plugin endpoints:
-  - Users: `wp.tributestream.com/wp-json/wp/v2/users`
-  - Tributes: `wp.tributestream.com/wp-json/tributestream/v1/tributes`
-- Returns formatted responses with proper error handling
-- Includes TypeScript types for request/response data
-
-The endpoints are now ready for integration with the frontend admin dashboard.
-
----
-@
-
-## 4. Phase 3: Refine WordPress Plugin
-
-### Objective
-Ensure your custom WordPress plugin has REST routes for Users and Tributes, properly handles database operations, and enforces JWT authentication.
-
-### Steps
-
-1. **Define REST Routes**  
-   - For example, `myplugin/v1/users` and `myplugin/v1/tributes`.  
-   - Register them in your plugin (within `add_action('rest_api_init', ...)`).  
-
-2. **Permission Callback**  
-   - Each route should have a `permission_callback` to verify the JWT.  
-   - If invalid or missing, return an appropriate HTTP error (403 or 401).
-
-3. **CRUD Logic**  
-   - **GET**: Query relevant WordPress tables (e.g., `$wpdb->users` or a custom table for tributes).  
-   - **POST**: Insert or create new records.  
-   - If needed, add **PUT** or **DELETE** for updates/removals.
-
-4. **Pagination**  
-   - Support `limit` and `offset` parameters.  
-   - Return data in pages, enabling your SvelteKit app to navigate forward/backward.
-
-5. **JWT Validation**  
-   - Implement or integrate a function to check the JWT’s validity (`myplugin_validate_jwt`).  
-   - Reject requests lacking a valid token.
-
-No code samples here, but the plugin needs to coordinate with SvelteKit’s endpoints by matching the routes and parameters you expect.
-
----
-
-## 5. Displaying Data (Users & Tributes)
-
-### Objective
-Render fetched data (lists of users, tributes) in your Admin UI, and add basic pagination controls.
-
-### Implementation Notes (No Code)
-
-1. **Users Page**
-   - In `src/routes/admin/users/+page.svelte`, fetch data from `/api/admin/users` on mount.  
-   - Store the results in a `users` array.  
-   - Provide next/previous pagination by adjusting the `offset` parameter in your requests.
-
-2. **Tributes Page**
-   - In `src/routes/admin/tributes/+page.svelte`, fetch data from `/api/admin/tributes`.  
-   - Use a similar pattern to handle pagination, error messages, etc.
-
-3. **Error Handling**
-   - Catch network or server errors.  
-   - Display a user-friendly message in the Admin UI.
-
-4. **Future Enhancements**
-   - Add create/edit forms.  
-   - Show success/error notifications.
-
----
-
-## 6. Security & Auth Considerations
-
-1. **Token Storage**  
-   - Decide whether to store JWT in HTTP-only cookies or in local storage.  
-   - If using cookies, your SvelteKit server endpoints can read them automatically server-side.
-
-2. **Route Protection**  
-   - Restrict access to `/admin` or `/api/admin` routes in SvelteKit’s `hooks.server.js/ts`.  
-   - Check for a valid session or JWT token.  
-   - Redirect or throw an error if unauthorized.
-
-3. **WP Plugin Security**  
-   - Double-check that the plugin’s permission callbacks properly validate JWT.  
-   - Return specific HTTP status codes (401, 403) for clarity.
-
-4. **Role Checks**  
-   - You might have different admin roles.  
-   - Verify user roles or capabilities (if needed) in addition to simple JWT checks.
-
----
-
-## 7. Next Steps
-
-**Phase 1**  
-- Confirm the `admin/` route structure is in place.  
-- Ensure `+layout.svelte` and `+page.svelte` exist for the admin dashboard.
-
-**Phase 2**  
-- Verify or create the SvelteKit server endpoints in `src/routes/api/admin/` for `users` and `tributes`.  
-- Confirm requests are forwarded correctly to the WordPress plugin (with JWT).
-
-**Phase 3**  
-- Refine the WordPress plugin:  
-  - Match routes for GET/POST (and possibly PUT/DELETE).  
-  - Implement CRUD operations.  
-  - Ensure JWT checks work properly.  
-
-**Integration & Testing**  
-- Fetch Users and Tributes in your SvelteKit Admin pages.  
-- Implement pagination, handle errors, confirm data is displayed.  
-- Add forms or buttons to create/update records if desired.
-
-**Enhancements**  
-- Introduce sorting or search filters.  
-- Fine-tune permissions by user role.  
-- Improve styling with Tailwind, Skeleton UI, or other frameworks.
-
----
-
-### Conclusion
-
-By following these phases, you’ll progressively build and refine a secure, functional admin panel in SvelteKit that leverages WordPress for backend data. Start with establishing the route structure and plugin endpoints, then layer in the details (CRUD, pagination, authentication, UI/UX) to create a robust solution with minimal duplication or confusion.
-
-
-
-
+Form actions are the preferred way to send data to the server because they can be progressively enhanced.
 

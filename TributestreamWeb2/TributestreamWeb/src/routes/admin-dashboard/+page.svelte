@@ -45,29 +45,6 @@
         }
     }
 
-    async function handleUpdateTribute(id: string, updates: { loved_one_name: string; html_content: string; slug: string }) {
-        loading = true;
-        try {
-            const response = await fetch(`/api/tributestream/v1/tributes/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update tribute');
-            }
-
-            await invalidate('app:tributes');
-            selectedTribute = null;
-        } catch (error) {
-            console.error('Update error:', error);
-            throw error;
-        } finally {
-            loading = false;
-        }
-    }
-
     function handlePageChange(newPage: number) {
         if (newPage < 1 || newPage > totalPages) return;
         
@@ -161,6 +138,14 @@
     <EditTributeModal
         tribute={selectedTribute}
         onClose={() => selectedTribute = null}
-        onSave={handleUpdateTribute}
+        form="?/updateTribute"
+        onSuccess={async () => {
+            await invalidate('app:tributes');
+            selectedTribute = null;
+            loading = false;
+        }}
+        onError={() => {
+            loading = false;
+        }}
     />
 {/if}

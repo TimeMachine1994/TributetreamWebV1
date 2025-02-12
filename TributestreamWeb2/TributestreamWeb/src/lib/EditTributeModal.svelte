@@ -9,7 +9,9 @@
 
     export let tribute: Tribute;
     export let onClose: () => void;
-    export let onSave: (id: string, updates: { loved_one_name: string; html_content: string; slug: string }) => Promise<void>;
+    export let form: string;
+    export let onSuccess: () => Promise<void>;
+    export let onError: () => void;
 
     let htmlContent = tribute.html_content || '';
     let lovedOneName = tribute.loved_one_name;
@@ -17,18 +19,31 @@
     let loading = false;
     let error = '';
 
-    async function handleSave() {
+    async function handleSubmit(event: SubmitEvent) {
         loading = true;
         error = '';
+        
+        const form = event.target as HTMLFormElement;
+        const formData = new FormData(form);
+        
         try {
-            await onSave(tribute.id, {
-                loved_one_name: lovedOneName,
-                html_content: htmlContent,
-                slug: slug
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
             });
-            onClose();
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                await onSuccess();
+                onClose();
+            } else {
+                error = result.error || 'Failed to update tribute';
+                onError();
+            }
         } catch (e) {
             error = e instanceof Error ? e.message : 'Failed to update tribute';
+            onError();
         } finally {
             loading = false;
         }
@@ -78,22 +93,30 @@
                     ></textarea>
                 </div>
             </div>
-            <div class="mt-4 flex justify-end space-x-3">
-                <button
-                    on:click={onClose}
-                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    disabled={loading}
-                >
-                    Cancel
-                </button>
-                <button
-                    on:click={handleSave}
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                    disabled={loading}
-                >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-            </div>
+            <form method="POST" action={form} on:submit|preventDefault={handleSubmit}>
+                <input type="hidden" name="id" value={tribute.id} />
+                <input type="hidden" name="loved_one_name" value={lovedOneName} />
+                <input type="hidden" name="html_content" value={htmlContent} />
+                <input type="hidden" name="slug" value={slug} />
+                
+                <div class="mt-4 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        on:click={onClose}
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        {loading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
