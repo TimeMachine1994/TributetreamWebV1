@@ -57,8 +57,8 @@ export async function POST({ request }) {
       const authResult = await authResponse.json() as WPAuthResponse;
       console.log('Login: Authentication successful for user:', authResult.user_nicename);
 
-      // Step 2: Fetch complete user profile with roles and meta
-      const userProfile = await fetchUserProfile(authResult.user_id, authResult.token);
+      // Step 2: Fetch complete user profile
+      const userProfile = await fetchUserProfile(authResult.token);
 
       // Step 3: Construct the complete login response
       const loginResponse: LoginResponse = {
