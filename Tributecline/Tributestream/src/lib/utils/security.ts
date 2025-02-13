@@ -3,38 +3,50 @@
  */
 import type { RequestEvent } from '@sveltejs/kit';
 
+type FetchFunction = typeof fetch;
+
 /**
  * Validates a JWT token by making a request to our API endpoint
  * @param token The JWT token to validate
- * @param event The RequestEvent object containing fetch function
+ * @param fetchArg The fetch function or RequestEvent object
  * @returns Promise<boolean> True if token is valid, false otherwise
  */
-export async function validateToken(token: string, event?: RequestEvent): Promise<boolean> {
-  if (!token) return false;
-  
-  try {
-    // Use event.fetch if available (server-side), otherwise use global fetch (client-side)
-    const fetchFn = event?.fetch || fetch;
+export async function validateToken(
+    token: string,
+    fetchArg?: RequestEvent | FetchFunction
+): Promise<boolean> {
+    if (!token) return false;
     
-    const response = await fetchFn('/api/validate-token', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    try {
+        // Determine which fetch function to use
+        let fetchFn: FetchFunction;
+        if (typeof fetchArg === 'function') {
+            fetchFn = fetchArg;
+        } else if (fetchArg && 'fetch' in fetchArg) {
+            fetchFn = fetchArg.fetch;
+        } else {
+            fetchFn = fetch;
+        }
+        
+        const response = await fetchFn('/api/validate-token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-    if (!response.ok) {
-      console.error('Token validation failed with status:', response.status);
-      return false;
+        if (!response.ok) {
+            console.error('Token validation failed with status:', response.status);
+            return false;
+        }
+
+        const data = await response.json();
+        return data.code === 'jwt_auth_valid_token' && data.data.status === 200;
+    } catch (error) {
+        console.error('Token validation error:', error);
+        return false;
     }
-
-    const data = await response.json();
-    return data.code === 'jwt_auth_valid_token' && data.data.status === 200;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return false;
-  }
 }
 
 /**
@@ -43,13 +55,13 @@ export async function validateToken(token: string, event?: RequestEvent): Promis
  * @param cookies The cookies object from SvelteKit
  */
 export function setAuthCookie(token: string, cookies: any) {
-  cookies.set('auth_token', token, {
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 60 * 60 * 24 * 7 // 7 days
-  });
+    cookies.set('auth_token', token, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
 }
 
 /**
@@ -58,12 +70,12 @@ export function setAuthCookie(token: string, cookies: any) {
  * @returns The sanitized string
  */
 export function sanitizeInput(input: string): string {
-  return input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    return input
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 /**
@@ -72,7 +84,7 @@ export function sanitizeInput(input: string): string {
  * @returns boolean indicating if error is an Error instance
  */
 export function isError(error: unknown): error is Error {
-  return error instanceof Error;
+    return error instanceof Error;
 }
 
 /**
@@ -81,11 +93,11 @@ export function isError(error: unknown): error is Error {
  * @returns A user-friendly error message
  */
 export function formatErrorMessage(error: unknown): string {
-  if (isError(error)) {
-    return error.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return 'An unexpected error occurred';
+    if (isError(error)) {
+        return error.message;
+    }
+    if (typeof error === 'string') {
+        return error;
+    }
+    return 'An unexpected error occurred';
 }

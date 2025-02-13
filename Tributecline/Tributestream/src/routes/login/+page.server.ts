@@ -1,6 +1,23 @@
-import { fail } from '@sveltejs/kit';
-import type { Actions } from './$types';
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 import type { User } from '$lib/stores/userStore';
+import { validateToken } from '$lib/utils/security';
+
+export const load: PageServerLoad = async ({ cookies, fetch, url }) => {
+    const token = cookies.get('auth_token');
+    
+    if (token) {
+        const isValid = await validateToken(token, fetch);
+        if (isValid) {
+            // Get the return URL from the query parameter or default to family-dashboard
+            const returnUrl = url.searchParams.get('returnUrl') || '/family-dashboard';
+            throw redirect(302, returnUrl);
+        }
+    }
+    
+    // If no token or invalid token, continue to login page
+    return {};
+};
 
 export const actions = {
     default: async ({ request, fetch, cookies }) => {
