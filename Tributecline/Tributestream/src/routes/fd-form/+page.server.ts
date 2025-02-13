@@ -375,11 +375,45 @@ export const actions = {
             });
         }
 
-//now inside here i want to declare and get the user id of who is logged in. we get the user id by pinging the /me wordpress endpoint
-// then send that id to the api/getrole endpoint to get the user role and user via params 
-// and load that info here.  
+        // Get user role using the userId
+        console.log('Fetching user role...');
+        try {
+            const roleResponse = await fetch(`/api/getRole/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
+            const roleResult = await roleResponse.json();
 
+            if (!roleResponse.ok || roleResult.error) {
+                console.error('Failed to fetch user role:', roleResult);
+                return fail(roleResponse.status, {
+                    error: true,
+                    message: roleResult.message || 'Failed to fetch user role'
+                });
+            }
+
+            console.log('User role fetched successfully:', roleResult.role);
+
+            // Store the role in a cookie for future use
+            cookies.set('user_role', roleResult.role, {
+                path: '/',
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 * 7 // 7 days
+            });
+
+        } catch (error) {
+            console.error('Error fetching user role:', error);
+            return fail(500, {
+                error: true,
+                message: error instanceof Error ? error.message : 'Failed to fetch user role'
+            });
+        }
 
         console.log('Form submission completed successfully. Redirecting to confirmation page...');
         // Throw redirect after successful form submission and cookie verification
