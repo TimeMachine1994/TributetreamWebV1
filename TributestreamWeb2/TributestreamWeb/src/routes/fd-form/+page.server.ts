@@ -31,21 +31,21 @@ export const actions = {
             console.log('📝 Parsing form data...');
             const formData = await request.formData();
             const data = {
-                directorFirstName: formData.get('director-first-name'),
-                directorLastName: formData.get('director-last-name'),
-                familyMemberFirstName: formData.get('family-member-first-name'),
-                familyMemberLastName: formData.get('family-member-last-name'),
-                familyMemberDOB: formData.get('family-member-dob'),
-                deceasedFirstName: formData.get('deceased-first-name'),
-                deceasedLastName: formData.get('deceased-last-name'),
-                deceasedDOB: formData.get('deceased-dob'),
-                deceasedDOP: formData.get('deceased-dop'),
-                email: formData.get('email-address'),
-                phone: formData.get('phone-number'),
-                locationName: formData.get('location-name'),
-                locationAddress: formData.get('location-address'),
-                memorialTime: formData.get('memorial-time'),
-                memorialDate: formData.get('memorial-date'),
+                directorFirstName: formData.get('director-first-name')?.toString() || '',
+                directorLastName: formData.get('director-last-name')?.toString() || '',
+                familyMemberFirstName: formData.get('family-member-first-name')?.toString() || '',
+                familyMemberLastName: formData.get('family-member-last-name')?.toString() || '',
+                familyMemberDOB: formData.get('family-member-dob')?.toString() || '',
+                deceasedFirstName: formData.get('deceased-first-name')?.toString() || '',
+                deceasedLastName: formData.get('deceased-last-name')?.toString() || '',
+                deceasedDOB: formData.get('deceased-dob')?.toString() || '',
+                deceasedDOP: formData.get('deceased-dop')?.toString() || '',
+                email: formData.get('email-address')?.toString() || '',
+                phone: formData.get('phone-number')?.toString() || '',
+                locationName: formData.get('location-name')?.toString() || '',
+                locationAddress: formData.get('location-address')?.toString() || '',
+                memorialTime: formData.get('memorial-time')?.toString() || '',
+                memorialDate: formData.get('memorial-date')?.toString() || '',
             };
             console.log('✅ Form data parsed:', data);
 
@@ -55,7 +55,7 @@ export const actions = {
             }
 
             console.log('🔄 Registering user...');
-            const registerResponse = await fetch('/api/register', {
+            const registerResponse = await fetch('/api/tributestream/v1/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -75,7 +75,7 @@ export const actions = {
             console.log('✅ User registered with ID:', userId);
 
             console.log('🔄 Authenticating user...');
-            const authResponse = await fetch('/api/auth', {
+            const authResponse = await fetch('/api/tributestream/v1/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -92,7 +92,12 @@ export const actions = {
             const authResult = await authResponse.json();
             console.log('✅ User authenticated. JWT token received:', authResult.token);
 
-            cookies.set('jwt', authResult.token, { httpOnly: true, secure: true, path: '/' });
+            cookies.set('jwt_token', authResult.token, { 
+                httpOnly: true, 
+                secure: true, 
+                path: '/',
+                sameSite: 'strict'
+            });
             cookies.set('user_id', userId, {
                 httpOnly: true,
                 secure: true,
@@ -133,7 +138,7 @@ export const actions = {
                 })
             };
 
-            const metaResponse = await fetch('/api/user-meta', {
+            const metaResponse = await fetch('/api/tributestream/v1/user-meta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -145,28 +150,31 @@ export const actions = {
             if (!metaResponse.ok) {
                 const metaError = await metaResponse.json();
                 console.error('❌ Metadata write failed:', metaError);
-                return fail(metaResponse.status, { error: true, message: metaError.message });
+                return fail(metaResponse.status, { 
+                    error: true, 
+                    message: metaError.message || 'Failed to save user metadata' 
+                });
             }
 
             console.log('✅ Metadata written successfully.');
 
             // Add the tribute-table API call here
             try {
-                console.log('🚀 Starting tribute-table API call...');
+                console.log('🚀 Starting tribute creation...');
                 
                 // Generate the slug
                 const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
 
                 // Prepare the payload
                 const tributePayload = {
-                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`, // Match expected field name
-                    slug, // Ensure it's slugified
-                    user_id: userId // Ensure it's the correct user ID
+                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                    slug,
+                    user_id: userId
                 };
                 
                 console.log('📦 Sending tribute payload:', tributePayload);
                 
-                const tributeResponse = await fetch('/api/tribute-table', {
+                const tributeResponse = await fetch('/api/tributestream/v1/tributes', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -174,34 +182,28 @@ export const actions = {
                     },
                     body: JSON.stringify(tributePayload)
                 });
-                
-                if (!tributeResponse.ok) {
-                    const tributeError = await tributeResponse.json();
-                    console.error('❌ Tribute API call failed:', tributeError);
-                    throw fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
-                }
-                
-                console.log('✅ Tribute data saved successfully.');
-                
 
                 if (!tributeResponse.ok) {
                     const tributeError = await tributeResponse.json();
-                    console.error('❌ Tribute API call failed:', tributeError);
-                    return fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
+                    console.error('❌ Tribute creation failed:', tributeError);
+                    return fail(tributeResponse.status, { 
+                        error: true, 
+                        message: tributeError.message || 'Failed to create tribute' 
+                    });
                 }
-
+                
                 console.log('✅ Tribute data saved successfully.');
 
             } catch (error) {
-                console.error('💥 Error during tribute-table API call:', error);
+                console.error('💥 Error during tribute creation:', error);
                 throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
             }
 
             console.log('🔀 Redirecting to success page...');
-         } catch (error) {
+            throw redirect(303, '/fd-form/confirmation');
+        } catch (error) {
             console.error('💥 Unexpected error:', error);
             throw fail(500, { error: true, message: 'An unexpected error occurred.' });
         }
-        throw redirect(303, '/fd-form/confirmation');
     }
 } satisfies Actions;

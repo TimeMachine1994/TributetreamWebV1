@@ -1,6 +1,50 @@
-<script>
+<script lang="ts">
   let { fdForm } = $props();
   let formData = $state(fdForm);
+
+  function fillTestData() {
+    // Get today's date for reference
+    const today = new Date();
+    const oneWeekFromNow = new Date(today);
+    oneWeekFromNow.setDate(today.getDate() + 7);
+
+    // Format dates
+    const formatDate = (date: Date): string => date.toISOString().split('T')[0];
+    const formatTime = (date: Date): string => date.toTimeString().slice(0, 5);
+
+    // Helper function to safely set input value
+    const setInputValue = (id: string, value: string) => {
+      const element = document.getElementById(id) as HTMLInputElement | null;
+      if (element) {
+        element.value = value;
+      }
+    };
+
+    // Director Info
+    setInputValue('director-first-name', 'John');
+    setInputValue('director-last-name', 'Smith');
+    
+    // Family Member Info
+    setInputValue('family-member-first-name', 'Mary');
+    setInputValue('family-member-last-name', 'Johnson');
+    setInputValue('family-member-dob', '1985-06-15');
+    
+    // Deceased Info
+    setInputValue('deceased-first-name', 'Robert');
+    setInputValue('deceased-last-name', 'Johnson');
+    setInputValue('deceased-dob', '1945-03-22');
+    setInputValue('deceased-dop', formatDate(today));
+    
+    // Contact Info
+    setInputValue('email-address', 'test@example.com');
+    setInputValue('phone-number', '555-123-4567');
+    
+    // Memorial Info
+    setInputValue('location-name', 'Peaceful Gardens Memorial');
+    setInputValue('location-address', '123 Memorial Drive, Springfield, ST 12345');
+    setInputValue('memorial-time', formatTime(today));
+    setInputValue('memorial-date', formatDate(oneWeekFromNow));
+  }
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -159,8 +203,15 @@
       />
     </div>
 
-    <!-- Submit Button -->
-    <div class="flex justify-end">
+    <!-- Buttons -->
+    <div class="flex justify-end space-x-4">
+      <button
+        type="button"
+        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        on:click={fillTestData}
+      >
+        Fill Test Data
+      </button>
       <button
         type="submit"
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
