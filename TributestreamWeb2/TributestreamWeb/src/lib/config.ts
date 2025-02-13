@@ -1,5 +1,5 @@
 // WordPress API configuration
-export const WP_API_URL = 'http://wp.tributestream.com/wp-json'; // Local WordPress development server
+export const WP_API_URL = 'http://localhost:8080/wp-json'; // Local WordPress development server
 export const WP_API_NAMESPACE = 'tributestream/v1';
 
 // Construct the full base URL for WordPress API endpoints

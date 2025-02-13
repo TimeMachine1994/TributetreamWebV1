@@ -21,9 +21,9 @@ export async function GET({ url }) {
 
     try {
         // Fetch roles from the WordPress API
-        console.log(`🌍 [Get Role API] Fetching from WordPress API: https://wp.tributestream.com/wp-json/tributestream/v1/getRole?id=${userId}`);
-        
-        const wpResponse = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/getRole?id=${userId}`, {
+        console.log(`🌍 [Get Role API] Fetching from WordPress API: http://localhost:8080/wp-json/tributestream/v1/getRole?id=${userId}`);
+
+        const wpResponse = await fetch(`http://localhost:8080/wp-json/tributestream/v1/getRole?id=${userId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -60,7 +60,7 @@ export async function GET({ url }) {
     } catch (err) {
         console.error('🚨 [Get Role API] Unexpected error:', err);
         return json(
-            { error: 'An unexpected error occurred.', details: err.message },
+            { error: 'An unexpected error occurred.', details: err instanceof Error ? err.message : 'Unknown error' },
             { status: 500 } // Internal Server Error
         );
     }

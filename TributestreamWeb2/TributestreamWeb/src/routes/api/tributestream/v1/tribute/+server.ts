@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WP_API_URL = 'https://wp.tributestream.com/wp-json/tributestream/v1/tributes';
+const WP_API_URL = 'http://localhost:8080/wp-json/tributestream/v1/tributes';
 
 export const PUT: RequestHandler = async ({ fetch, request, locals, params }) => {
     try {

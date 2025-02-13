@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WP_AUTH_URL = 'https://wp.tributestream.com/wp-json/jwt-auth/v1/token';
+const WP_AUTH_URL = 'http://localhost:8080/wp-json/jwt-auth/v1/token';
 
 export const POST: RequestHandler = async ({ fetch, request }) => {
     try {

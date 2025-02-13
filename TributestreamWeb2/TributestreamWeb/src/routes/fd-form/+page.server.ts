@@ -55,7 +55,7 @@ export const actions = {
             }
 
             console.log('🔄 Registering user...');
-            const registerResponse = await fetch('/api/tributestream/v1/register', {
+            const registerResponse = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -75,7 +75,7 @@ export const actions = {
             console.log('✅ User registered with ID:', userId);
 
             console.log('🔄 Authenticating user...');
-            const authResponse = await fetch('/api/tributestream/v1/auth', {
+            const authResponse = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -138,7 +138,7 @@ export const actions = {
                 })
             };
 
-            const metaResponse = await fetch('/api/tributestream/v1/user-meta', {
+            const metaResponse = await fetch('/api/user-meta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ export const actions = {
                 
                 console.log('📦 Sending tribute payload:', tributePayload);
                 
-                const tributeResponse = await fetch('/api/tributestream/v1/tributes', {
+                const tributeResponse = await fetch('/api/tributes', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
