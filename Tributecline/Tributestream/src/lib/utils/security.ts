@@ -1,23 +1,38 @@
 /**
  * Security utilities for handling authentication and token validation
  */
-import { randomBytes, createHash } from 'crypto';
+import type { RequestEvent } from '@sveltejs/kit';
 
 /**
  * Validates a JWT token by making a request to WordPress
  * @param token The JWT token to validate
+ * @param event The RequestEvent object containing fetch function
  * @returns Promise<boolean> True if token is valid, false otherwise
  */
-export async function validateToken(token: string): Promise<boolean> {
+export async function validateToken(token: string, event?: RequestEvent): Promise<boolean> {
+  if (!token) return false;
+  
   try {
-    const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+    // Ensure we have the WordPress URL
+    const wordpressUrl = process.env.WORDPRESS_URL;
+    if (!wordpressUrl) {
+      console.error('WORDPRESS_URL environment variable is not set');
+      return false;
+    }
+
+    // Use event.fetch if available (server-side), otherwise use global fetch (client-side)
+    const fetchFn = event?.fetch || fetch;
+    
+    const response = await fetchFn(`${wordpressUrl}/wp-json/jwt-auth/v1/token/validate`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
 
     if (!response.ok) {
+      console.error('Token validation failed with status:', response.status);
       return false;
     }
 
@@ -30,60 +45,18 @@ export async function validateToken(token: string): Promise<boolean> {
 }
 
 /**
- * Generates a secure magic link token
- * @param userId The user's ID
- * @param email The user's email
- * @returns The generated magic link token
+ * Sets secure authentication cookie
+ * @param token The JWT token to store
+ * @param cookies The cookies object from SvelteKit
  */
-export function generateMagicLinkToken(userId: string, email: string): string {
-  const timestamp = Date.now();
-  const randomString = randomBytes(32).toString('hex');
-  const data = `${userId}-${email}-${timestamp}-${randomString}`;
-  
-  return createHash('sha256')
-    .update(data)
-    .update(process.env.MAGIC_LINK_SECRET || 'default-secret')
-    .digest('hex');
-}
-
-/**
- * Generates a complete magic link URL
- * @param userId The user's ID
- * @param email The user's email
- * @returns The complete magic link URL
- */
-export function generateMagicLink(userId: string, email: string): string {
-  const token = generateMagicLinkToken(userId, email);
-  const baseUrl = process.env.APP_URL || 'http://localhost:5173';
-  
-  return `${baseUrl}/auth/verify?token=${token}&userId=${userId}&email=${encodeURIComponent(email)}`;
-}
-
-/**
- * Validates a magic link token
- * @param token The token to validate
- * @param userId The user's ID
- * @param email The user's email
- * @returns boolean indicating if the token is valid
- */
-export function validateMagicLinkToken(token: string, userId: string, email: string): boolean {
-  // Token expiration time (24 hours)
-  const TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
-  
-  try {
-    // Recreate the token with the same data
-    const newToken = generateMagicLinkToken(userId, email);
-    
-    // Compare the tokens
-    if (token === newToken) {
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Magic link validation error:', error);
-    return false;
-  }
+export function setAuthCookie(token: string, cookies: any) {
+  cookies.set('auth_token', token, {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 7 // 7 days
+  });
 }
 
 /**

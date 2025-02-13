@@ -2,12 +2,12 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validateToken } from '$lib/utils/security';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, fetch, url }) => {
   // If user is already logged in, redirect to appropriate dashboard
   const token = locals.token;
   if (token) {
     try {
-      const isValid = await validateToken(token);
+      const isValid = await validateToken(token, { fetch } as any);
       if (isValid) {
         // Get user role
         const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
@@ -39,13 +39,14 @@ export const load: PageServerLoad = async ({ locals }) => {
       }
     } catch (error) {
       // If token validation fails, clear it and continue to login page
-      locals.token = null;
+      locals.token = undefined;
     }
   }
 };
 
 export const actions: Actions = {
-  default: async ({ request, fetch, cookies }) => {
+  login: async (event) => {
+    const { request, fetch, cookies } = event;
     const data = await request.formData();
     const username = data.get('username');
     const password = data.get('password');
@@ -57,7 +58,7 @@ export const actions: Actions = {
     }
 
     try {
-      // Authenticate with WordPress
+      // Authenticate with WordPress using event.fetch
       const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
         method: 'POST',
         headers: {
@@ -74,6 +75,15 @@ export const actions: Actions = {
       if (!response.ok) {
         return fail(response.status, {
           error: { message: result.message || 'Authentication failed' }
+        });
+      }
+
+      // Validate token using event.fetch
+      const isValid = await validateToken(result.token, event);
+      
+      if (!isValid) {
+        return fail(401, {
+          error: { message: 'Invalid token received' }
         });
       }
 

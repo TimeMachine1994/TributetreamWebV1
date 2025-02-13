@@ -1,4 +1,3 @@
-import { generateMagicLink } from '$lib/utils/security';
 import type { MemorialFormData } from '$lib/types/api';
 
 interface EmailTemplate {
@@ -12,8 +11,6 @@ interface WelcomeEmailData {
   lastName: string;
   email: string;
   password: string;
-  userId: string;
-  token: string;
 }
 
 /**
@@ -125,11 +122,11 @@ Hello ${data.firstName} ${data.lastName},
 
 Welcome to Tributestream! Your account has been created successfully.
 
-Here are your login credentials:
-Email: ${data.email}
+Your login credentials:
+Username: ${data.email}
 Password: ${data.password}
 
-Please keep this information secure. We recommend changing your password after your first login.
+For security, we recommend changing your password after your first login.
 
 Best regards,
 The Tributestream Team
@@ -152,85 +149,15 @@ The Tributestream Team
   <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0;">
     <h2 style="color: #1e40af; margin-top: 0;">Your Login Credentials</h2>
     <p>
-      <strong>Email:</strong> ${data.email}<br>
+      <strong>Username:</strong> ${data.email}<br>
       <strong>Password:</strong> ${data.password}
     </p>
   </div>
-  
-  <p>Please keep this information secure. We recommend changing your password after your first login.</p>
-  
-  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-  
-  <p style="color: #666; font-size: 14px;">
-    Best regards,<br>
-    The Tributestream Team
-  </p>
-</body>
-</html>
-  `.trim();
-  
-  return {
-    subject,
-    text,
-    html
-  };
-}
 
-/**
- * Generates a password reset email with magic link
- * @param userId The user's ID
- * @param email The user's email
- * @param name The user's display name
- * @returns EmailTemplate object containing subject, text, and HTML version
- */
-export function generatePasswordResetEmail(userId: string, email: string, name: string): EmailTemplate {
-  const magicLink = generateMagicLink(userId, email);
-  
-  const subject = 'Reset Your Tributestream Password';
-  
-  const text = `
-Hello ${name},
-
-We received a request to reset your Tributestream password.
-
-To reset your password, click the link below:
-${magicLink}
-
-This link will expire in 24 hours for security purposes.
-
-If you didn't request a password reset, you can safely ignore this email.
-
-Best regards,
-The Tributestream Team
-  `.trim();
-  
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1 style="color: #2563eb;">Reset Your Password</h1>
-  
-  <p>Hello ${name},</p>
-  
-  <p>We received a request to reset your Tributestream password.</p>
-  
-  <p>To reset your password, click the button below:</p>
-  
-  <p style="text-align: center; margin: 30px 0;">
-    <a href="${magicLink}" 
-       style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-      Reset Password
-    </a>
-  </p>
-  
-  <p style="color: #666; font-size: 14px;">
-    This link will expire in 24 hours for security purposes.<br>
-    If you didn't request a password reset, you can safely ignore this email.
-  </p>
+  <div style="background-color: #fff7ed; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h2 style="color: #9a3412; margin-top: 0;">Security Recommendation</h2>
+    <p>For security, we recommend changing your password after your first login.</p>
+  </div>
   
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   
