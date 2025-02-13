@@ -39,3 +39,26 @@ export interface ApiError {
   message: string;
   status: number;
 }
+
+export interface Location {
+  name: string;
+  address: string;
+  travelExceedsHour: boolean;
+}
+
+export interface CalculatorData {
+  package?: string;
+  livestreamDate?: string;
+  livestreamStartTime?: string;
+  allowOverrun?: boolean;
+  locations?: Location[];
+  duration?: number;
+}
+
+export interface FuneralHomeData {
+  name?: string;
+  directorName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+}
