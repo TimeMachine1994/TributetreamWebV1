@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
+
+const PUBLIC_WORDPRESS_URL = ('https://wp.tributestream.com');
 
 // Routes that require calculator completion
 const PROTECTED_ROUTES = [
