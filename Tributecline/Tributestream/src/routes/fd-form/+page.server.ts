@@ -222,7 +222,6 @@ export const actions = {
                 });
             }
 
-            throw redirect(303, '/fd-form/confirmation');
         } catch (error) {
             console.error('Error processing form:', error);
             return fail(500, { 
@@ -230,5 +229,16 @@ export const actions = {
                 message: error instanceof Error ? error.message : 'An unexpected error occurred.' 
             });
         }
+
+        // Verify cookies are set
+        if (!cookies.get('jwt_token') || !cookies.get('user_id')) {
+            return fail(500, {
+                error: true,
+                message: 'Authentication failed after form submission'
+            });
+        }
+
+        // Throw redirect after successful form submission and cookie verification
+        throw redirect(303, '/fd-form/confirmation');
     }
 } satisfies Actions;

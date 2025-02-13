@@ -1,5 +1,37 @@
 <script lang="ts">
-  let data = $props();
+  import type { PageData } from './$types';
+
+  // Define interface for form data structure
+  interface FormData {
+    director: {
+      firstName: string;
+      lastName: string;
+    };
+    familyMember: {
+      firstName: string;
+      lastName: string;
+      dob: string;
+    };
+    deceased: {
+      firstName: string;
+      lastName: string;
+      dob: string;
+      dop: string;
+    };
+    contact: {
+      email: string;
+      phone: string;
+    };
+    memorial: {
+      locationName: string;
+      locationAddress: string;
+      date: string;
+      time: string;
+    };
+  }
+
+  let { data } = $props();
+  let formData = $state(data.formData as FormData);
 
   // Format date for display
   function formatDate(dateStr: string): string {
@@ -19,6 +51,36 @@
   }
 </script>
 
+{#if !data}
+  <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl text-center">
+      <div class="animate-pulse">
+        <div class="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+      </div>
+    </div>
+  </section>
+{:else if !data.formData}
+  <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl text-center">
+      <h2 class="text-xl font-semibold text-gray-800 mb-3">Memorial Information Not Found</h2>
+      <p class="text-gray-600 mb-4">We couldn't find the memorial information. This might be because:</p>
+      <ul class="text-gray-600 list-disc list-inside mb-6">
+        <li>The form hasn't been submitted yet</li>
+        <li>Your session has expired</li>
+        <li>There was an error saving your information</li>
+      </ul>
+      <div class="flex justify-center gap-4">
+        <a href="/fd-form" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Return to Form
+        </a>
+        <a href="/" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+          Go to Home
+        </a>
+      </div>
+    </div>
+  </section>
+{:else}
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl">
     <div class="text-center mb-8">
@@ -30,7 +92,7 @@
     <div class="mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-3">Director Information</h2>
       <p class="text-gray-700">
-        Name: {data.formData.director.firstName} {data.formData.director.lastName}
+        Name: {formData.director.firstName} {formData.director.lastName}
       </p>
     </div>
 
@@ -38,10 +100,10 @@
     <div class="mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-3">Family Member Information</h2>
       <p class="text-gray-700">
-        Name: {data.formData.familyMember.firstName} {data.formData.familyMember.lastName}
+        Name: {formData.familyMember.firstName} {formData.familyMember.lastName}
       </p>
       <p class="text-gray-700">
-        Date of Birth: {formatDate(data.formData.familyMember.dob)}
+        Date of Birth: {formatDate(formData.familyMember.dob)}
       </p>
     </div>
 
@@ -49,33 +111,33 @@
     <div class="mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-3">Deceased Information</h2>
       <p class="text-gray-700">
-        Name: {data.formData.deceased.firstName} {data.formData.deceased.lastName}
+        Name: {formData.deceased.firstName} {formData.deceased.lastName}
       </p>
       <p class="text-gray-700">
-        Date of Birth: {formatDate(data.formData.deceased.dob)}
+        Date of Birth: {formatDate(formData.deceased.dob)}
       </p>
       <p class="text-gray-700">
-        Date of Passing: {formatDate(data.formData.deceased.dop)}
+        Date of Passing: {formatDate(formData.deceased.dop)}
       </p>
     </div>
 
     <!-- Contact Information -->
     <div class="mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-3">Contact Information</h2>
-      <p class="text-gray-700">Email: {data.formData.contact.email}</p>
-      <p class="text-gray-700">Phone: {data.formData.contact.phone}</p>
+      <p class="text-gray-700">Email: {formData.contact.email}</p>
+      <p class="text-gray-700">Phone: {formData.contact.phone}</p>
     </div>
 
     <!-- Memorial Information -->
     <div class="mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-3">Memorial Information</h2>
-      <p class="text-gray-700">Location: {data.formData.memorial.locationName}</p>
-      <p class="text-gray-700">Address: {data.formData.memorial.locationAddress}</p>
+      <p class="text-gray-700">Location: {formData.memorial.locationName}</p>
+      <p class="text-gray-700">Address: {formData.memorial.locationAddress}</p>
       <p class="text-gray-700">
-        Date: {formatDate(data.formData.memorial.date)}
+        Date: {formatDate(formData.memorial.date)}
       </p>
       <p class="text-gray-700">
-        Time: {formatTime(data.formData.memorial.time)}
+        Time: {formatTime(formData.memorial.time)}
       </p>
     </div>
 
@@ -104,3 +166,11 @@
     </div>
   </div>
 </section>
+{/if}
+
+<!-- Error Boundary -->
+<svelte:window 
+  on:error={(event) => {
+    console.error('Error in confirmation page:', event);
+  }}
+/>
