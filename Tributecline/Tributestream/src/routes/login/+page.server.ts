@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
 
           if (roleResponse.ok) {
             const userData = await roleResponse.json();
-            const role = userData.roles[0]; // Get first role
+            const role = userData.roles?.length ? userData.roles[0] : 'subscriber'; // Default to subscriber if no roles
             
             // Redirect based on role
             if (role === 'administrator') {
@@ -110,7 +110,7 @@ export const actions: Actions = {
       }
 
       const userData = await roleResponse.json();
-      const role = userData.roles[0]; // Get first role
+      const role = userData.roles?.length ? userData.roles[0] : 'subscriber'; // Default to subscriber if no roles
 
       // Return user data and redirect path based on role
       return {
