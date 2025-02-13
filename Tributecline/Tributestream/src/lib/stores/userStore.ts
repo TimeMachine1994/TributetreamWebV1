@@ -1,23 +1,22 @@
 import { writable } from 'svelte/store';
-import type { MasterStore } from '$lib/stores/types';
 
-function createMasterStore() {
-    const { subscribe, set, update } = writable<MasterStore>({
-        orderData: {
-            funeralHome: null,
-            selectedPackage: null,
-            details: undefined
-        }
-    });
-
-    return {
-        subscribe,
-        updateOrderData: (newData: Partial<MasterStore['orderData']>) => update(store => {
-            store.orderData = { ...store.orderData, ...newData };
-            return store;
-        }),
-        clear: () => set({ orderData: { funeralHome: null, selectedPackage: null, details: undefined } })
-    };
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  role: string;
 }
 
-export const masterStore = createMasterStore();
+function createUserStore() {
+  const { subscribe, set, update } = writable<User | null>(null);
+
+  return {
+    subscribe,
+    set: (user: User | null) => set(user),
+    update: (updater: (user: User | null) => User | null) => update(updater),
+    clear: () => set(null)
+  };
+}
+
+export const userStore = createUserStore();

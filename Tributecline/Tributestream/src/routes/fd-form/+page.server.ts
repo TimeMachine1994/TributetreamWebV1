@@ -1,6 +1,7 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import type { RegisterData } from '$lib/types/api';
+import type { RegisterData, MemorialFormData } from '$lib/types/api';
+import { generateMemorialRequestEmail, generateWelcomeEmail } from '$lib/utils/emailTemplates';
 
 // Function to generate a slug from the deceased's first and last name
 function generateSlug(firstName: string, lastName: string): string {
@@ -36,6 +37,84 @@ function generatePassword(): string {
     }
     
     return password;
+}
+
+async function sendEmail(
+    emailData: { 
+        to: string; 
+        subject: string; 
+        text: string; 
+        html: string; 
+    },
+    fetch: Function,
+    type: 'staff' | 'user'
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        console.log(`Attempting to send ${type} email to: ${emailData.to}`);
+        
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error(`Failed to send ${type} email:`, result);
+            throw new Error(result.error || `Failed to send ${type} email`);
+        }
+
+        console.log(`Successfully sent ${type} email to: ${emailData.to}`);
+        return { success: true };
+    } catch (error) {
+        console.error(`Error sending ${type} email:`, error);
+        return { 
+            success: false, 
+            error: error instanceof Error ? error.message : `Failed to send ${type} email` 
+        };
+    }
+}
+
+async function sendEmails(
+    staffEmail: { subject: string; html: string; text: string; },
+    userEmail: { subject: string; html: string; text: string; },
+    fetch: Function
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        // Send staff notification email
+        console.log('Starting email sending process...');
+        
+        const staffEmailResult = await sendEmail({
+            to: 'tributestream@gmail.com',
+            ...staffEmail
+        }, fetch, 'staff');
+
+        if (!staffEmailResult.success) {
+            console.error('Staff email failed:', staffEmailResult.error);
+            throw new Error(staffEmailResult.error);
+        }
+
+        // Send user welcome email
+        const userEmailResult = await sendEmail({
+            to: 'tributestream@gmail.com', // Testing email (will be user's email in production)
+            ...userEmail
+        }, fetch, 'user');
+
+        if (!userEmailResult.success) {
+            console.error('User welcome email failed:', userEmailResult.error);
+            throw new Error(userEmailResult.error);
+        }
+
+        console.log('Both emails sent successfully');
+        return { success: true };
+    } catch (error) {
+        console.error('Error in sendEmails:', error);
+        return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to send emails' 
+        };
+    }
 }
 
 export const actions = {
@@ -140,37 +219,40 @@ export const actions = {
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
 
+            // Format data for email template
+            const memorialData: MemorialFormData = {
+                director: {
+                    firstName: data.directorFirstName,
+                    lastName: data.directorLastName
+                },
+                familyMember: {
+                    firstName: data.familyMemberFirstName,
+                    lastName: data.familyMemberLastName,
+                    dob: data.familyMemberDOB
+                },
+                deceased: {
+                    firstName: data.deceasedFirstName,
+                    lastName: data.deceasedLastName,
+                    dob: data.deceasedDOB,
+                    dop: data.deceasedDOP
+                },
+                contact: {
+                    email: data.email,
+                    phone: data.phone
+                },
+                memorial: {
+                    locationName: data.locationName,
+                    locationAddress: data.locationAddress,
+                    time: data.memorialTime,
+                    date: data.memorialDate
+                }
+            };
+
             // Save user metadata
             const metaPayload = {
                 user_id: userId,
                 meta_key: 'memorial_form_data',
-                meta_value: JSON.stringify({
-                    director: {
-                        firstName: data.directorFirstName,
-                        lastName: data.directorLastName
-                    },
-                    familyMember: {
-                        firstName: data.familyMemberFirstName,
-                        lastName: data.familyMemberLastName,
-                        dob: data.familyMemberDOB
-                    },
-                    deceased: {
-                        firstName: data.deceasedFirstName,
-                        lastName: data.deceasedLastName,
-                        dob: data.deceasedDOB,
-                        dop: data.deceasedDOP
-                    },
-                    contact: {
-                        email: data.email,
-                        phone: data.phone
-                    },
-                    memorial: {
-                        locationName: data.locationName,
-                        locationAddress: data.locationAddress,
-                        time: data.memorialTime,
-                        date: data.memorialDate
-                    }
-                })
+                meta_value: JSON.stringify(memorialData)
             };
 
             const metaResponse = await fetch(`/api/user-meta`, {
@@ -198,10 +280,8 @@ export const actions = {
                 loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
                 slug,
                 user_id: userId,
-                phone_number: data.phone // Add required phone_number field
+                phone_number: data.phone
             };
-
-            console.log('Creating tribute with payload:', tributePayload);
 
             const tributeResponse = await fetch(`/api/tributes`, {
                 method: 'POST',
@@ -220,6 +300,34 @@ export const actions = {
                     error: true, 
                     message: tributeResult.message || 'Failed to create tribute' 
                 });
+            }
+
+            console.log('Generating email content...');
+            
+            // Generate email content
+            const staffEmail = generateMemorialRequestEmail(memorialData);
+            const userEmail = generateWelcomeEmail({
+                firstName: data.familyMemberFirstName,
+                lastName: data.familyMemberLastName,
+                email: data.email,
+                password,
+                userId: userId.toString(),
+                token: authResult.token
+            });
+
+            console.log('Sending emails...');
+            
+            // Send both emails
+            const emailResult = await sendEmails(staffEmail, userEmail, fetch);
+            
+            if (!emailResult.success) {
+                console.error('Failed to send emails:', emailResult.error);
+                // Return the error but don't fail the form submission
+                return {
+                    error: true,
+                    message: 'Form submitted successfully, but there was an issue sending confirmation emails. Our team will contact you shortly.',
+                    emailError: emailResult.error
+                };
             }
 
         } catch (error) {
