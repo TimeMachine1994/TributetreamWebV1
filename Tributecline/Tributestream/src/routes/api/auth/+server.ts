@@ -1,131 +1,93 @@
-import { json } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { error, json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
-/**
- * Handles authentication requests including login and token validation
- */
-export async function POST({ request, url }) {
-  try {
-    const endpoint = url.searchParams.get('action');
-    
-    // Handle token validation
-    if (endpoint === 'validate') {
-      const authHeader = request.headers.get('Authorization');
-      if (!authHeader?.startsWith('Bearer ')) {
-        return json(
-          { 
-            error: true,
-            message: 'No token provided'
-          },
-          { status: 401 }
-        );
-      }
+const WP_AUTH_URL = 'https://wp.tributestream.com/wp-json/jwt-auth/v1/token';
 
-      const token = authHeader.split(' ')[1];
-      try {
-        const response = await fetch(`${env.WP_API_BASE}/jwt-auth/v1/token/validate`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+ 
+interface ParsedUserData {
+    success: number;
+    user: number;
+    display_name: string;
+    email: string;
+    nicename: string;
+}
+
+export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
+    try {
+        const body = await request.json();
+        
+        // Validate required fields
+        if (!body.username || !body.password) {
+            throw error(400, {
+                message: 'Username and password are required'
+            });
+        }
+
+        const response = await fetch(WP_AUTH_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: body.username,
+                password: body.password
+            })
         });
 
         if (!response.ok) {
-          console.error('Token validation failed:', {
-            status: response.status,
-            statusText: response.statusText
-          });
-          return json(
-            { 
-              error: true,
-              message: 'Token validation failed'
-            },
-            { status: response.status }
-          );
+            throw error(response.status, {
+                message: 'Authentication failed'
+            });
         }
+ 
+        // Parse the serialized data
+        try {
+            const parsedData = JSON.parse(wpResponse.data);
+            const [userInfo, , userDetails, displayName, email] = parsedData;
 
-        const data = await response.json();
-        return json({
-          code: 'jwt_auth_valid_token',
-          data: { status: 200 }
+            // Extract user data
+            const userData: ParsedUserData = {
+                success: userInfo.success,
+                user: userInfo.user,
+                display_name: displayName,
+                email: email,
+                nicename: displayName.toLowerCase().replace(/\s+/g, '-')
+            };
+
+            // Set user ID in cookies
+            cookies.set('user_id', userData.user.toString(), {
+                path: '/',
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 * 7 // 7 days
+            });
+
+            // Return the response with user data
+            return json({
+                success: true,
+                user_display_name: userData.display_name,
+                user_email: userData.email,
+                user_nicename: userData.nicename
+            });
+
+        } catch (parseError) {
+            console.error('[/api/auth] Parse Error:', parseError);
+            throw error(500, {
+                message: 'Failed to parse WordPress response'
+            });
+        }
+    } catch (err) {
+        console.error('[/api/auth] Error:', err);
+        
+        // If it's already a SvelteKit error, rethrow it
+        if (err instanceof Error && 'status' in err) {
+            throw err;
+        }
+        
+        // Otherwise throw a generic error
+        throw error(500, {
+            message: 'Failed to authenticate with WordPress'
         });
-      } catch (error) {
-        console.error('Token validation error:', error);
-        return json(
-          { 
-            error: true,
-            message: 'Invalid token'
-          },
-          { status: 401 }
-        );
-      }
     }
-
-    // Handle login
-    const data = await request.json();
-    
-    // Basic validation
-    if (!data.username || !data.password) {
-      return json(
-        { 
-          error: true,
-          message: 'Username and password are required'
-        },
-        { status: 400 }
-      );
-    }
-
-    try {
-      // JWT auth endpoint is at WordPress base URL, not under our custom namespace
-      const response = await fetch(`${env.WP_API_BASE}/jwt-auth/v1/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return json(
-          { 
-            error: true,
-            message: errorData.message || 'Authentication failed'
-          },
-          { status: response.status }
-        );
-      }
-
-      const result = await response.json();
-
-      return json({
-        token: result.token,
-        user_email: result.user_email,
-        user_nicename: result.user_nicename,
-        user_display_name: result.user_display_name
-      });
-    } catch (error) {
-      console.error('WordPress authentication error:', error);
-      return json(
-        { 
-          error: true, 
-          message: error instanceof Error ? error.message : 'Authentication failed'
-        }, 
-        { status: 400 }
-      );
-    }
-  } catch (error) {
-    console.error('Authentication endpoint error:', error);
-    return json(
-      { 
-        error: true, 
-        message: 'An unexpected error occurred during authentication'
-      }, 
-      { status: 500 }
-    );
-  }
-}
+};
