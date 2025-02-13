@@ -375,6 +375,12 @@ export const actions = {
             });
         }
 
+//now inside here i want to declare and get the user id of who is logged in. we get the user id by pinging the /me wordpress endpoint
+// then send that id to the api/getrole endpoint to get the user role and user via params 
+// and load that info here.  
+
+
+
         console.log('Form submission completed successfully. Redirecting to confirmation page...');
         // Throw redirect after successful form submission and cookie verification
         throw redirect(303, '/fd-form/confirmation');

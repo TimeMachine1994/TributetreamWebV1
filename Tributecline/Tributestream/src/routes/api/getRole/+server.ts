@@ -1,94 +1,45 @@
 import { json } from '@sveltejs/kit';
-import type { UserRole } from '$lib/types/api';
-import { env } from '$env/dynamic/private';
+
+// Your full endpoint for retrieving a user role:
+const WP_ROLE_URL = 'http://www.wp.tributestream.com/wp-json/tributestream/v1/getRole';
 
 export async function GET({ url }) {
-  const id = url.searchParams.get('id');
-  if (!id) {
-    console.error('getRole: Missing user ID in request');
-    return json(
-      { 
-        error: true,
-        message: 'User ID is required'
-      },
-      { status: 400 }
-    );
-  }
+	// 1) Get the userId from query params
+	const userId = url.searchParams.get('id');
+	if (!userId) {
+		return new Response(
+			JSON.stringify({ error: 'User ID is required' }),
+			{
+				status: 400,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
 
-  console.log('getRole: Fetching role for user ID:', id);
-  
-  try {
-    const response = await fetch(
-      `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/getRole?id=${id}`,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+	// 2) Construct the URL (we append ?id=userId)
+	const wpUrl = `${WP_ROLE_URL}?id=${userId}`;
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Role fetch failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      return json(
-        {
-          error: true,
-          message: errorData.message || `Failed to fetch role: ${response.statusText}`
-        },
-        { status: response.status }
-      );
-    }
+	try {
+		// 3) Fetch from your WP endpoint
+		const res = await fetch(wpUrl);
 
-    const data = await response.json() as UserRole;
-    
-    // Validate response data structure
-    if (!data || typeof data.user_id !== 'number' || !Array.isArray(data.roles)) {
-      console.error('getRole: Invalid response structure:', data);
-      return json(
-        {
-          error: true,
-          message: 'Invalid role data structure received'
-        },
-        { status: 500 }
-      );
-    }
+		if (!res.ok) {
+			// Pass along WP's error body/status if available
+			return new Response(await res.text(), {
+				status: res.status
+			});
+		}
 
-    // Validate user ID matches
-    if (data.user_id !== parseInt(id)) {
-      console.error('getRole: User ID mismatch:', { requested: id, received: data.user_id });
-      return json(
-        {
-          error: true,
-          message: 'User ID mismatch in role data'
-        },
-        { status: 500 }
-      );
-    }
-
-    // Ensure roles is never empty
-    if (data.roles.length === 0) {
-      data.roles = ['subscriber'];
-    }
-
-    console.log('getRole: Successfully fetched role data for user:', id);
-    return json(data);
-  } catch (error) {
-    console.error('getRole: Error fetching role data:', {
-      userId: id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-
-    return json(
-      {
-        error: true,
-        message: 'Failed to fetch user role data'
-      },
-      { status: 500 }
-    );
-  }
+		// 4) Return the JSON result
+		const data = await res.json();
+		return json(data);
+	} catch (error) {
+		return new Response(
+			JSON.stringify({ error: 'Failed to fetch user role' }),
+			{
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
 }
