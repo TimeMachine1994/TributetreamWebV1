@@ -4,6 +4,20 @@ export interface RegisterData {
     password: string;
 }
 
+export interface UserRole {
+    user_id: number;
+    roles: string[];
+}
+
+export interface LoginResponse {
+    token: string;
+    user_email: string;
+    user_nicename: string;
+    user_display_name: string;
+    user_id: number;
+    roles: string[];
+}
+
 export interface MemorialFormData {
     director: {
         firstName: string;

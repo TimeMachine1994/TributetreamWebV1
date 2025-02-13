@@ -2,10 +2,9 @@
  * Security utilities for handling authentication and token validation
  */
 import type { RequestEvent } from '@sveltejs/kit';
-import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
 
 /**
- * Validates a JWT token by making a request to WordPress
+ * Validates a JWT token by making a request to our API endpoint
  * @param token The JWT token to validate
  * @param event The RequestEvent object containing fetch function
  * @returns Promise<boolean> True if token is valid, false otherwise
@@ -14,16 +13,10 @@ export async function validateToken(token: string, event?: RequestEvent): Promis
   if (!token) return false;
   
   try {
-    // Ensure we have the WordPress URL
-    if (!PUBLIC_WORDPRESS_URL) {
-      console.error('PUBLIC_WORDPRESS_URL environment variable is not set');
-      return false;
-    }
-
     // Use event.fetch if available (server-side), otherwise use global fetch (client-side)
     const fetchFn = event?.fetch || fetch;
     
-    const response = await fetchFn(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+    const response = await fetchFn('/api/validate-token', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

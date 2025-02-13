@@ -1,13 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validateToken } from '$lib/utils/security';
-import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
 
+/**
+ * Fetches a user's calculator status by hitting our /api endpoint
+ * rather than making a direct call to WordPress.
+ */
 async function getCalculatorStatus(fetch: any, token: string) {
   try {
     const response = await fetch('/api/user-meta', {
       headers: {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -24,37 +27,41 @@ async function getCalculatorStatus(fetch: any, token: string) {
   }
 }
 
-export const load: PageServerLoad = async ({ locals, fetch, url }) => {
-  // If user is already logged in, redirect to appropriate dashboard
+export const load: PageServerLoad = async ({ locals, fetch }) => {
   const token = locals.token;
+
   if (token) {
     try {
+      // Validate token (make sure `validateToken` itself hits /api/validate-token internally
+      // or you can remove this function and replace it with an /api call here).
       const isValid = await validateToken(token, { fetch } as any);
+
       if (isValid) {
-        // Get user role
-        const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+        // Validate token again by hitting /api/validate-token endpoint
+        // (optional if validateToken already does exactly this)
+        const response = await fetch('/api/validate-token', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`
           }
         });
 
         if (response.ok) {
-          const roleResponse = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+          // Fetch user info from /api/users/me
+          const roleResponse = await fetch('/api/users/me', {
             headers: {
-              'Authorization': `Bearer ${token}`
+              Authorization: `Bearer ${token}`
             }
           });
 
           if (roleResponse.ok) {
             const userData = await roleResponse.json();
-            const role = userData.roles?.length ? userData.roles[0] : 'subscriber'; // Default to subscriber if no roles
-            
+            const role = userData.roles?.length ? userData.roles[0] : 'subscriber';
+
             // For subscribers, check calculator status
             if (role === 'subscriber') {
               const hasCompletedCalculator = await getCalculatorStatus(fetch, token);
-              
-              // If calculator is not completed, redirect to calculator
+
               if (hasCompletedCalculator === false) {
                 throw redirect(302, '/calculator');
               }
@@ -71,7 +78,7 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
       }
     } catch (error) {
       if (error instanceof Response && error.status === 302) {
-        throw error; // Re-throw redirect responses
+        throw error; // Re-throw the redirect
       }
       // If token validation fails, clear it and continue to login page
       locals.token = undefined;
@@ -93,8 +100,11 @@ export const actions: Actions = {
     }
 
     try {
-      // Authenticate with WordPress using event.fetch
-      const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
+      /**
+       * 1. Hit our /api/login endpoint to authenticate. That endpoint
+       *    then communicates with WordPress or your backend as needed.
+       */
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -113,16 +123,16 @@ export const actions: Actions = {
         });
       }
 
-      // Validate token using event.fetch
+      // 2. Validate token (optional if your /api/login already does this):
       const isValid = await validateToken(result.token, event);
-      
+
       if (!isValid) {
         return fail(401, {
           error: { message: 'Invalid token received' }
         });
       }
 
-      // Store the token in a secure HTTP-only cookie
+      // 3. Store the token in an HTTP-only cookie
       cookies.set('auth_token', result.token, {
         path: '/',
         httpOnly: true,
@@ -131,10 +141,14 @@ export const actions: Actions = {
         maxAge: 60 * 60 * 24 * 7 // 7 days
       });
 
-      // Get user role
-      const roleResponse = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+      /**
+       * 4. Get user role (via /api/users/me). 
+       *    Your /api/users/me route would proxy the call to WordPress
+       *    `/wp-json/wp/v2/users/me`.
+       */
+      const roleResponse = await fetch('/api/users/me', {
         headers: {
-          'Authorization': `Bearer ${result.token}`
+          Authorization: `Bearer ${result.token}`
         }
       });
 
@@ -145,13 +159,15 @@ export const actions: Actions = {
       }
 
       const userData = await roleResponse.json();
-      const role = userData.roles?.length ? userData.roles[0] : 'subscriber'; // Default to subscriber if no roles
+      const role = userData.roles?.length ? userData.roles[0] : 'subscriber';
 
-      // For subscribers, check calculator status
+      /**
+       * 5. For subscribers, check calculator status.
+       *    (Again, we're using our local helper that calls /api/user-meta.)
+       */
       if (role === 'subscriber') {
         const hasCompletedCalculator = await getCalculatorStatus(fetch, result.token);
-        
-        // If calculator is not completed, redirect to calculator
+
         if (hasCompletedCalculator === false) {
           return {
             user: {
@@ -166,7 +182,10 @@ export const actions: Actions = {
         }
       }
 
-      // Return user data and redirect path based on role
+      /**
+       * 6. Return user data and the correct redirect path for the front-end 
+       *    to handle (e.g. svelte:page or +page.svelte can use "redirectTo").
+       */
       return {
         user: {
           id: userData.id,

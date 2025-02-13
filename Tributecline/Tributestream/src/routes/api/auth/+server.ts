@@ -1,8 +1,61 @@
 import { json } from '@sveltejs/kit';
 import { wpFetch, ApiError, WP_API_BASE } from '$lib/utils/api';
 
-export async function POST({ request }) {
+/**
+ * Handles authentication requests including login and token validation
+ */
+export async function POST({ request, url }) {
   try {
+    const endpoint = url.searchParams.get('action');
+    
+    // Handle token validation
+    if (endpoint === 'validate') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return json(
+          { 
+            error: true,
+            message: 'No token provided'
+          },
+          { status: 401 }
+        );
+      }
+
+      const token = authHeader.split(' ')[1];
+      try {
+        const response = await fetch(`${WP_API_BASE}/jwt-auth/v1/token/validate`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new ApiError(
+            response.status,
+            'Token validation failed'
+          );
+        }
+
+        const data = await response.json();
+        return json({
+          code: 'jwt_auth_valid_token',
+          data: { status: 200 }
+        });
+      } catch (error) {
+        console.error('Token validation error:', error);
+        return json(
+          { 
+            error: true,
+            message: 'Invalid token'
+          },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Handle login
     const data = await request.json();
     
     // Basic validation
@@ -39,7 +92,12 @@ export async function POST({ request }) {
 
       const result = await response.json();
 
-      return json({ success: true, token: result.token });
+      return json({
+        token: result.token,
+        user_email: result.user_email,
+        user_nicename: result.user_nicename,
+        user_display_name: result.user_display_name
+      });
     } catch (error) {
       console.error('WordPress authentication error:', error);
       return json(
