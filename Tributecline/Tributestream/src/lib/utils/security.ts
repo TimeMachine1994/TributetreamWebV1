@@ -14,7 +14,7 @@ export async function validateToken(token: string, event?: RequestEvent): Promis
   
   try {
     // Ensure we have the WordPress URL
-    const wordpressUrl = process.env.WORDPRESS_URL;
+    const wordpressUrl = process.env.WORDPRESS_URL?.replace(/\/$/, ''); // Remove trailing slash if present
     if (!wordpressUrl) {
       console.error('WORDPRESS_URL environment variable is not set');
       return false;
@@ -87,6 +87,29 @@ export function isError(error: unknown): error is Error {
  * @param error The error to format
  * @returns A user-friendly error message
  */
+/**
+ * Generates a simple password with the format: number + Capital letter + lowercase letters + number
+ * Example: 5Abcdef9
+ * @returns A generated password string
+ */
+export function generateSimplePassword(): string {
+  const firstNumber = Math.floor(Math.random() * 9) + 1; // 1-9
+  const lastNumber = Math.floor(Math.random() * 9) + 1; // 1-9
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  let randomLetters = '';
+  
+  // Generate 5-7 random lowercase letters
+  const letterCount = Math.floor(Math.random() * 3) + 5; // 5-7 letters
+  for (let i = 0; i < letterCount; i++) {
+    randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  
+  // Capitalize first letter
+  randomLetters = randomLetters.charAt(0).toUpperCase() + randomLetters.slice(1);
+  
+  return `${firstNumber}${randomLetters}${lastNumber}`;
+}
+
 export function formatErrorMessage(error: unknown): string {
   if (isError(error)) {
     return error.message;

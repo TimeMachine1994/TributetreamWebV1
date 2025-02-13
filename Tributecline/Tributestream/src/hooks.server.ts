@@ -7,7 +7,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     // Get JWT token from cookies
-    const token = event.cookies.get('jwt_token');
+    const token = event.cookies.get('auth_token');
     const userId = event.cookies.get('user_id');
 
     // Add token and userId to event.locals for use in routes

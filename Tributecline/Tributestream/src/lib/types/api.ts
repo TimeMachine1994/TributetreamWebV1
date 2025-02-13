@@ -1,7 +1,10 @@
 export interface RegisterData {
     username: string;
     email: string;
-    password: string;
+    password?: string; // Optional since we'll generate it
+    firstName: string;
+    lastName: string;
+    meta?: Record<string, any>; // Optional metadata
 }
 
 export interface MemorialFormData {

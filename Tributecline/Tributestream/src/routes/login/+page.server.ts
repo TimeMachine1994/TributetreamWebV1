@@ -2,6 +2,15 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validateToken } from '$lib/utils/security';
 
+// Helper function to ensure consistent URL handling
+function getWordPressUrl(): string {
+  const url = process.env.WORDPRESS_URL;
+  if (!url) {
+    throw new Error('WORDPRESS_URL environment variable is not set');
+  }
+  return url.replace(/\/$/, ''); // Remove trailing slash if present
+}
+
 export const load: PageServerLoad = async ({ locals, fetch, url }) => {
   // If user is already logged in, redirect to appropriate dashboard
   const token = locals.token;
@@ -10,34 +19,32 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
       const isValid = await validateToken(token, { fetch } as any);
       if (isValid) {
         // Get user role
-        const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
-          method: 'POST',
+        const wordpressUrl = getWordPressUrl();
+        const roleResponse = await fetch(`${wordpressUrl}/wp-json/wp/v2/users/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (response.ok) {
-          const roleResponse = await fetch(`${process.env.WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (roleResponse.ok) {
-            const userData = await roleResponse.json();
-            const role = userData.roles[0]; // Get first role
-            
-            // Redirect based on role
-            if (role === 'administrator') {
-              throw redirect(302, '/admin-dashboard');
-            } else {
-              throw redirect(302, '/family-dashboard');
-            }
+        if (roleResponse.ok) {
+          const userData = await roleResponse.json();
+          const role = userData.roles[0]; // Get first role
+          
+          // Redirect based on role
+          if (role === 'administrator') {
+            throw redirect(302, '/admin-dashboard');
+          } else {
+            throw redirect(302, '/family-dashboard');
           }
         }
       }
     } catch (error) {
+      if (error instanceof Error && error.message === 'WORDPRESS_URL environment variable is not set') {
+        console.error(error.message);
+        return {
+          error: { message: 'System configuration error. Please contact support.' }
+        };
+      }
       // If token validation fails, clear it and continue to login page
       locals.token = undefined;
     }
@@ -58,8 +65,10 @@ export const actions: Actions = {
     }
 
     try {
+      const wordpressUrl = getWordPressUrl();
+
       // Authenticate with WordPress using event.fetch
-      const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
+      const response = await fetch(`${wordpressUrl}/wp-json/jwt-auth/v1/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -70,7 +79,15 @@ export const actions: Actions = {
         })
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (e) {
+        console.error('Failed to parse JSON response:', e);
+        return fail(500, {
+          error: { message: 'Invalid response from authentication server' }
+        });
+      }
 
       if (!response.ok) {
         return fail(response.status, {
@@ -97,7 +114,7 @@ export const actions: Actions = {
       });
 
       // Get user role
-      const roleResponse = await fetch(`${process.env.WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+      const roleResponse = await fetch(`${wordpressUrl}/wp-json/wp/v2/users/me`, {
         headers: {
           'Authorization': `Bearer ${result.token}`
         }
@@ -125,6 +142,11 @@ export const actions: Actions = {
       };
     } catch (error) {
       console.error('Login error:', error);
+      if (error instanceof Error && error.message === 'WORDPRESS_URL environment variable is not set') {
+        return fail(500, {
+          error: { message: 'System configuration error. Please contact support.' }
+        });
+      }
       return fail(500, {
         error: { message: 'An unexpected error occurred' }
       });

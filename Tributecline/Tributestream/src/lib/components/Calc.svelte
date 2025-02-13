@@ -1,45 +1,60 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
-import { masterStore } from '$lib/stores/userStore';
-import type { MasterStore, Location } from '$lib/stores/types';
+import type { Location } from '$lib/stores/types';
 
-interface $$Props {}
-
-interface $$Events {
-    calculatorComplete: CustomEvent<{ total: number }>;
+interface $$Props {
+    initialData?: {
+        package?: string;
+        duration?: number;
+        locations?: Location[];
+        livestreamDate?: string;
+        livestreamStartTime?: string;
+    };
 }
 
-const dispatch = createEventDispatcher<$$Events>();
+interface OrderDetails {
+    cartItems: Array<{ name: string; price: number }>;
+    total: number;
+    duration: number;
+    livestreamDate: string;
+    livestreamStartTime: string;
+    locations: Location[];
+}
+
+type Dispatcher = {
+    calculatorComplete: OrderDetails;
+}
+
+const dispatch = createEventDispatcher<Dispatcher>();
+
+// Props with defaults
+const { initialData = {} } = $props();
 
 // Calculator state
-let basePrice = 550; // Base price for Solo package
-let duration = 2; // Default duration in hours
-let allowOverrun = false;
-let selectedPackage = 'Solo';
-let total = 0;
-let livestreamDate = new Date().toISOString().split('T')[0];
-let livestreamStartTime = '12:00';
-let locations: Location[] = [{ name: '', address: '', travelExceedsHour: false }];
+let basePrice = $state(550); // Base price for Solo package
+let duration = $state(initialData.duration ?? 2); // Default duration in hours
+let allowOverrun = $state(false);
+let selectedPackage = $state(initialData.package ?? 'Solo');
+let total = $state(0);
+let livestreamDate = $state(initialData.livestreamDate ?? new Date().toISOString().split('T')[0]);
+let livestreamStartTime = $state(initialData.livestreamStartTime ?? '12:00');
+let locations = $state<Location[]>(initialData.locations ?? [{ name: '', address: '', travelExceedsHour: false }]);
 
 // Form validation
-let errors: { [key: string]: string } = {};
-$: isFormValid = Object.keys(errors).length === 0;
+let errors = $state<{ [key: string]: string }>({});
+let isFormValid = $derived(Object.keys(errors).length === 0);
 
 // Confirmation modal state
-let showConfirmationModal = false;
+let showConfirmationModal = $state(false);
 
 // Loading state
-let isLoading = false;
+let isLoading = $state(false);
 
 // API error state
-let apiError = '';
+let apiError = $state('');
 
-$: {
-    total = calculateTotal();
-    validateForm();
-}
-
-function calculateTotal(): number {
+// Calculate total whenever relevant values change
+$effect(() => {
     let calculatedTotal = basePrice;
     
     // Add cost for additional duration
@@ -51,8 +66,13 @@ function calculateTotal(): number {
         calculatedTotal += 125;
     }
     
-    return calculatedTotal;
-}
+    total = calculatedTotal;
+});
+
+// Validate form when dependencies change
+$effect(() => {
+    validateForm();
+});
 
 function handlePackageChange(newPackage: string) {
     selectedPackage = newPackage;
@@ -127,17 +147,15 @@ function handleSaveAndCheckout() {
 }
 
 function confirmCheckout() {
-    masterStore.updateOrderData({
-        details: {
-            cartItems: [{ name: selectedPackage, price: total }],
-            total,
-            duration,
-            livestreamDate,
-            livestreamStartTime,
-            locations
-        }
+    // Dispatch event with order details
+    dispatch('calculatorComplete', {
+        cartItems: [{ name: selectedPackage, price: total }],
+        total,
+        duration,
+        livestreamDate,
+        livestreamStartTime,
+        locations
     });
-    dispatch('calculatorComplete', new CustomEvent('calculatorComplete', { detail: { total } }));
     showConfirmationModal = false;
 }
 
