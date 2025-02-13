@@ -126,19 +126,63 @@ function handleSaveAndCheckout() {
     }
 }
 
-function confirmCheckout() {
-    masterStore.updateOrderData({
-        details: {
-            cartItems: [{ name: selectedPackage, price: total }],
-            total,
-            duration,
-            livestreamDate,
-            livestreamStartTime,
-            locations
+async function updateCalculatorStatus() {
+    try {
+        const response = await fetch('/api/user-meta', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+            },
+            body: JSON.stringify({
+                meta_key: 'calculator_status',
+                meta_value: JSON.stringify({
+                    completed: true,
+                    package: selectedPackage,
+                    total: total,
+                    completedAt: new Date().toISOString()
+                })
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update calculator status');
         }
-    });
-    dispatch('calculatorComplete', new CustomEvent('calculatorComplete', { detail: { total } }));
-    showConfirmationModal = false;
+    } catch (error) {
+        console.error('Error updating calculator status:', error);
+        // Continue with checkout even if status update fails
+    }
+}
+
+async function confirmCheckout() {
+    isLoading = true;
+    apiError = '';
+
+    try {
+        // Update calculator completion status
+        await updateCalculatorStatus();
+
+        // Update order data in store
+        masterStore.updateOrderData({
+            details: {
+                cartItems: [{ name: selectedPackage, price: total }],
+                total,
+                duration,
+                livestreamDate,
+                livestreamStartTime,
+                locations
+            }
+        });
+
+        // Dispatch completion event
+        dispatch('calculatorComplete', new CustomEvent('calculatorComplete', { detail: { total } }));
+        showConfirmationModal = false;
+    } catch (error) {
+        console.error('Checkout error:', error);
+        apiError = 'Failed to complete checkout. Please try again.';
+    } finally {
+        isLoading = false;
+    }
 }
 
 function cancelCheckout() {
@@ -342,10 +386,14 @@ function cancelCheckout() {
     <button 
         on:click={handleSaveAndCheckout}
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-        disabled={!isFormValid}
+        disabled={!isFormValid || isLoading}
     >
-        Save and Checkout
+        {isLoading ? 'Processing...' : 'Save and Checkout'}
     </button>
+
+    {#if apiError}
+        <p class="text-red-500 text-sm mt-2">{apiError}</p>
+    {/if}
 </div>
 
 {#if showConfirmationModal}
@@ -366,13 +414,15 @@ function cancelCheckout() {
                         id="ok-btn"
                         class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                         on:click={confirmCheckout}
+                        disabled={isLoading}
                     >
-                        Confirm
+                        {isLoading ? 'Processing...' : 'Confirm'}
                     </button>
                     <button
                         id="cancel-btn"
                         class="mt-3 px-4 py-2 bg-gray-300 text-black text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         on:click={cancelCheckout}
+                        disabled={isLoading}
                     >
                         Cancel
                     </button>
