@@ -1,4 +1,5 @@
 import { generateMagicLink } from '$lib/utils/security';
+import type { MemorialFormData } from '$lib/types/api';
 
 interface EmailTemplate {
   subject: string;
@@ -6,29 +7,129 @@ interface EmailTemplate {
   html: string;
 }
 
+interface WelcomeEmailData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  userId: string;
+  token: string;
+}
+
 /**
- * Generates a welcome email with magic link for new users
- * @param userId The user's ID
- * @param email The user's email
- * @param name The user's display name
+ * Generates a memorial request notification email
+ * @param data The memorial form data
  * @returns EmailTemplate object containing subject, text, and HTML version
  */
-export function generateWelcomeEmail(userId: string, email: string, name: string): EmailTemplate {
-  const magicLink = generateMagicLink(userId, email);
-  
-  const subject = 'Welcome to Tributestream - Verify Your Account';
+export function generateMemorialRequestEmail(data: MemorialFormData): EmailTemplate {
+  const subject = 'New Memorial Request';
   
   const text = `
-Hello ${name},
+New Memorial Request Details:
 
-Welcome to Tributestream! We're excited to have you join us.
+Director Information:
+- Name: ${data.director.firstName} ${data.director.lastName}
 
-To get started, please verify your account by clicking the link below:
-${magicLink}
+Family Member Information:
+- Name: ${data.familyMember.firstName} ${data.familyMember.lastName}
+- Date of Birth: ${data.familyMember.dob}
 
-This link will expire in 24 hours for security purposes.
+Deceased Information:
+- Name: ${data.deceased.firstName} ${data.deceased.lastName}
+- Date of Birth: ${data.deceased.dob}
+- Date of Passing: ${data.deceased.dop}
 
-If you didn't create an account with us, you can safely ignore this email.
+Contact Information:
+- Email: ${data.contact.email}
+- Phone: ${data.contact.phone}
+
+Memorial Details:
+- Location: ${data.memorial.locationName}
+- Address: ${data.memorial.locationAddress}
+- Date: ${data.memorial.date}
+- Time: ${data.memorial.time}
+  `.trim();
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #2563eb;">New Memorial Request</h1>
+  
+  <div style="margin: 20px 0;">
+    <h2 style="color: #1e40af;">Director Information</h2>
+    <p>
+      <strong>Name:</strong> ${data.director.firstName} ${data.director.lastName}
+    </p>
+  </div>
+
+  <div style="margin: 20px 0;">
+    <h2 style="color: #1e40af;">Family Member Information</h2>
+    <p>
+      <strong>Name:</strong> ${data.familyMember.firstName} ${data.familyMember.lastName}<br>
+      <strong>Date of Birth:</strong> ${data.familyMember.dob}
+    </p>
+  </div>
+
+  <div style="margin: 20px 0;">
+    <h2 style="color: #1e40af;">Deceased Information</h2>
+    <p>
+      <strong>Name:</strong> ${data.deceased.firstName} ${data.deceased.lastName}<br>
+      <strong>Date of Birth:</strong> ${data.deceased.dob}<br>
+      <strong>Date of Passing:</strong> ${data.deceased.dop}
+    </p>
+  </div>
+
+  <div style="margin: 20px 0;">
+    <h2 style="color: #1e40af;">Contact Information</h2>
+    <p>
+      <strong>Email:</strong> ${data.contact.email}<br>
+      <strong>Phone:</strong> ${data.contact.phone}
+    </p>
+  </div>
+
+  <div style="margin: 20px 0;">
+    <h2 style="color: #1e40af;">Memorial Details</h2>
+    <p>
+      <strong>Location:</strong> ${data.memorial.locationName}<br>
+      <strong>Address:</strong> ${data.memorial.locationAddress}<br>
+      <strong>Date:</strong> ${data.memorial.date}<br>
+      <strong>Time:</strong> ${data.memorial.time}
+    </p>
+  </div>
+</body>
+</html>
+  `.trim();
+  
+  return {
+    subject,
+    text,
+    html
+  };
+}
+
+/**
+ * Generates a welcome email for new users
+ * @param data The welcome email data
+ * @returns EmailTemplate object containing subject, text, and HTML version
+ */
+export function generateWelcomeEmail(data: WelcomeEmailData): EmailTemplate {
+  const subject = 'Welcome to Tributestream - Your Account Details';
+  
+  const text = `
+Hello ${data.firstName} ${data.lastName},
+
+Welcome to Tributestream! Your account has been created successfully.
+
+Here are your login credentials:
+Email: ${data.email}
+Password: ${data.password}
+
+Please keep this information secure. We recommend changing your password after your first login.
 
 Best regards,
 The Tributestream Team
@@ -44,23 +145,19 @@ The Tributestream Team
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h1 style="color: #2563eb;">Welcome to Tributestream!</h1>
   
-  <p>Hello ${name},</p>
+  <p>Hello ${data.firstName} ${data.lastName},</p>
   
-  <p>Welcome to Tributestream! We're excited to have you join us.</p>
+  <p>Your account has been created successfully.</p>
   
-  <p>To get started, please verify your account by clicking the button below:</p>
+  <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h2 style="color: #1e40af; margin-top: 0;">Your Login Credentials</h2>
+    <p>
+      <strong>Email:</strong> ${data.email}<br>
+      <strong>Password:</strong> ${data.password}
+    </p>
+  </div>
   
-  <p style="text-align: center; margin: 30px 0;">
-    <a href="${magicLink}" 
-       style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-      Verify Your Account
-    </a>
-  </p>
-  
-  <p style="color: #666; font-size: 14px;">
-    This link will expire in 24 hours for security purposes.<br>
-    If you didn't create an account with us, you can safely ignore this email.
-  </p>
+  <p>Please keep this information secure. We recommend changing your password after your first login.</p>
   
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
   

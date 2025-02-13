@@ -120,8 +120,12 @@ async function sendEmails(
 export const actions = {
     default: async ({ request, cookies, fetch }) => {
         let password = '';
+        let userId = '';
+        let token = '';
+
         try {
             password = generatePassword();
+            console.log('Starting form submission process...');
 
             const formData = await request.formData();
             const data = {
@@ -146,6 +150,7 @@ export const actions = {
                 return fail(400, { error: true, message: 'Required fields are missing.' });
             }
 
+            console.log('Registering user...');
             // Register user
             const registerResponse = await fetch(`/api/register`, {
                 method: 'POST',
@@ -183,8 +188,10 @@ export const actions = {
                 });
             }
 
-            const userId = registerResult.user_id;
+            userId = registerResult.user_id.toString();
+            console.log('User registered successfully. User ID:', userId);
 
+            console.log('Authenticating user...');
             // Authenticate user
             const authResponse = await fetch(`/api/auth`, {
                 method: 'POST',
@@ -205,19 +212,27 @@ export const actions = {
                 });
             }
 
-            // Store tokens in cookies
-            cookies.set('jwt_token', authResult.token, { 
-                httpOnly: true, 
-                secure: true, 
+            token = authResult.token;
+            console.log('Authentication successful. Token received.');
+
+            // Store tokens in cookies with explicit options
+            cookies.set('jwt_token', token, { 
                 path: '/',
-                sameSite: 'strict'
-            });
-            cookies.set('user_id', userId.toString(), {
                 httpOnly: true,
                 secure: true,
-                path: '/',
+                sameSite: 'strict',
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
+
+            cookies.set('user_id', userId, {
+                path: '/',
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 * 7 // 7 days
+            });
+
+            console.log('Cookies set successfully');
 
             // Format data for email template
             const memorialData: MemorialFormData = {
@@ -248,6 +263,7 @@ export const actions = {
                 }
             };
 
+            console.log('Saving user metadata...');
             // Save user metadata
             const metaPayload = {
                 user_id: userId,
@@ -259,7 +275,7 @@ export const actions = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authResult.token}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(metaPayload)
             });
@@ -274,6 +290,9 @@ export const actions = {
                 });
             }
 
+            console.log('Metadata saved successfully');
+
+            console.log('Creating tribute...');
             // Create tribute
             const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
             const tributePayload = {
@@ -287,7 +306,7 @@ export const actions = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authResult.token}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(tributePayload)
             });
@@ -302,6 +321,7 @@ export const actions = {
                 });
             }
 
+            console.log('Tribute created successfully');
             console.log('Generating email content...');
             
             // Generate email content
@@ -311,8 +331,8 @@ export const actions = {
                 lastName: data.familyMemberLastName,
                 email: data.email,
                 password,
-                userId: userId.toString(),
-                token: authResult.token
+                userId,
+                token
             });
 
             console.log('Sending emails...');
@@ -330,6 +350,8 @@ export const actions = {
                 };
             }
 
+            console.log('Emails sent successfully');
+
         } catch (error) {
             console.error('Error processing form:', error);
             return fail(500, { 
@@ -339,13 +361,21 @@ export const actions = {
         }
 
         // Verify cookies are set
-        if (!cookies.get('jwt_token') || !cookies.get('user_id')) {
+        const jwtCookie = cookies.get('jwt_token');
+        const userIdCookie = cookies.get('user_id');
+
+        if (!jwtCookie || !userIdCookie) {
+            console.error('Cookie verification failed:', {
+                hasJwtCookie: !!jwtCookie,
+                hasUserIdCookie: !!userIdCookie
+            });
             return fail(500, {
                 error: true,
                 message: 'Authentication failed after form submission'
             });
         }
 
+        console.log('Form submission completed successfully. Redirecting to confirmation page...');
         // Throw redirect after successful form submission and cookie verification
         throw redirect(303, '/fd-form/confirmation');
     }
