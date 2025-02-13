@@ -8,6 +8,9 @@ declare global {
 		}
 		// interface PageData {}
 		// interface Platform {}
+		interface PublicEnv {
+			PUBLIC_WORDPRESS_URL: string;
+		}
 	}
 }
 

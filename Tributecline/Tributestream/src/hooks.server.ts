@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
+import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
 
 // Routes that require calculator completion
 const PROTECTED_ROUTES = [
@@ -40,7 +41,7 @@ async function getCalculatorStatus(fetch: any, token: string) {
 
 async function getUserRole(fetch: any, token: string) {
     try {
-        const response = await fetch(`${process.env.WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+        const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

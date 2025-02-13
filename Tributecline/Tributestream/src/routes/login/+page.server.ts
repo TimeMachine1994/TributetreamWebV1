@@ -1,7 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validateToken } from '$lib/utils/security';
-import { WORDPRESS_URL } from '$env/static/public';
+import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
+
 async function getCalculatorStatus(fetch: any, token: string) {
   try {
     const response = await fetch('/api/user-meta', {
@@ -31,7 +32,7 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
       const isValid = await validateToken(token, { fetch } as any);
       if (isValid) {
         // Get user role
-        const response = await fetch(`${WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+        const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -39,7 +40,7 @@ export const load: PageServerLoad = async ({ locals, fetch, url }) => {
         });
 
         if (response.ok) {
-          const roleResponse = await fetch(`${WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+          const roleResponse = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -93,7 +94,7 @@ export const actions: Actions = {
 
     try {
       // Authenticate with WordPress using event.fetch
-      const response = await fetch(`${WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
+      const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -131,7 +132,7 @@ export const actions: Actions = {
       });
 
       // Get user role
-      const roleResponse = await fetch(`${WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
+      const roleResponse = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
         headers: {
           'Authorization': `Bearer ${result.token}`
         }
