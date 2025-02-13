@@ -3,91 +3,74 @@ import type { RequestHandler } from './$types';
 
 const WP_AUTH_URL = 'https://wp.tributestream.com/wp-json/jwt-auth/v1/token';
 
- 
-interface ParsedUserData {
-    success: number;
-    user: number;
-    display_name: string;
-    email: string;
-    nicename: string;
-}
-
 export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
-    try {
-        const body = await request.json();
-        
-        // Validate required fields
-        if (!body.username || !body.password) {
-            throw error(400, {
-                message: 'Username and password are required'
-            });
-        }
+	try {
+		const body = await request.json();
 
-        const response = await fetch(WP_AUTH_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: body.username,
-                password: body.password
-            })
-        });
+		// Validate required fields
+		if (!body.username || !body.password) {
+			throw error(400, 'Username and password are required');
+		}
 
-        if (!response.ok) {
-            throw error(response.status, {
-                message: 'Authentication failed'
-            });
-        }
- 
-        // Parse the serialized data
-        try {
-            const parsedData = JSON.parse(wpResponse.data);
-            const [userInfo, , userDetails, displayName, email] = parsedData;
+		const response = await fetch(WP_AUTH_URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				username: body.username,
+				password: body.password
+			})
+		});
 
-            // Extract user data
-            const userData: ParsedUserData = {
-                success: userInfo.success,
-                user: userInfo.user,
-                display_name: displayName,
-                email: email,
-                nicename: displayName.toLowerCase().replace(/\s+/g, '-')
-            };
+		// If fetch fails
+		if (!response.ok) {
+			throw error(response.status, 'Authentication failed');
+		}
 
-            // Set user ID in cookies
-            cookies.set('user_id', userData.user.toString(), {
-                path: '/',
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 60 * 60 * 24 * 7 // 7 days
-            });
+		// Here’s the important part:
+		// Parse the JSON the WP JWT plugin sends back. Typically looks like:
+		// {
+		//   "token": "...",
+		//   "user_email": "...",
+		//   "user_nicename": "...",
+		//   "user_display_name": "..."
+		// }
+		const data = await response.json() as {
+			token?: string;
+			user_email?: string;
+			user_display_name?: string;
+			user_nicename?: string;
+		};
 
-            // Return the response with user data
-            return json({
-                success: true,
-                user_display_name: userData.display_name,
-                user_email: userData.email,
-                user_nicename: userData.nicename
-            });
+		// Verify we received a token
+		if (!data.token) {
+			throw error(500, 'No token returned from WordPress');
+		}
 
-        } catch (parseError) {
-            console.error('[/api/auth] Parse Error:', parseError);
-            throw error(500, {
-                message: 'Failed to parse WordPress response'
-            });
-        }
-    } catch (err) {
-        console.error('[/api/auth] Error:', err);
-        
-        // If it's already a SvelteKit error, rethrow it
-        if (err instanceof Error && 'status' in err) {
-            throw err;
-        }
-        
-        // Otherwise throw a generic error
-        throw error(500, {
-            message: 'Failed to authenticate with WordPress'
-        });
-    }
+		// Store the token (or user_id, if you prefer) in a cookie
+		cookies.set('auth_token', data.token, {
+			path: '/',
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 60 * 60 * 24 * 7 // 7 days
+		});
+
+		// Return success + the relevant user fields you want
+		return json({
+			success: true,
+			user_display_name: data.user_display_name,
+			user_email: data.user_email,
+			user_nicename: data.user_nicename
+		});
+	} catch (err) {
+		console.error('[/api/auth] Error:', err);
+
+		if (err instanceof Error && 'status' in err) {
+			throw err; // rethrow any SvelteKit error
+		}
+
+		throw error(500, 'Failed to authenticate with WordPress');
+	}
 };

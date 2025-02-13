@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
+import type { User } from '$lib/stores/userStore';
 
 export const actions = {
     default: async ({ request, fetch, cookies }) => {
@@ -30,16 +31,22 @@ export const actions = {
                 });
             }
 
-            // The JWT token is already set by the /api/auth endpoint
-            // We just need to handle the response
+            // Transform the authentication data to match our User interface
+            const user: User = {
+                id: -1, // We'll need to fetch this separately
+                username: username.toString(),
+                email: result.user_email,
+                displayName: result.user_display_name,
+                roles: [], // We'll need to fetch these separately
+                meta: {},
+                token: cookies.get('auth_token') // The token is already set in the cookie by the auth endpoint
+            };
 
+            // Return success, user data, and redirect URL
             return {
                 success: true,
-                user: {
-                    display_name: result.user_display_name,
-                    email: result.user_email,
-                    nicename: result.user_nicename
-                }
+                user,
+                redirectTo: '/family-dashboard'
             };
         } catch (error) {
             console.error('Login error:', error);

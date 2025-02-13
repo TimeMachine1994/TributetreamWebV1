@@ -1,5 +1,6 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import { goto } from '$app/navigation';
     import type { ActionData } from './$types';
     
     export let form: ActionData;
@@ -20,9 +21,14 @@
             class="mt-8 space-y-6"
             use:enhance={() => {
                 isSubmitting = true;
-                return async ({ update }) => {
+                return async ({ result, update }) => {
                     isSubmitting = false;
                     await update();
+                    
+                    // Check if we have a successful result with a redirect URL
+                    if (result.type === 'success' && result.data?.redirectTo) {
+                        goto(result.data.redirectTo as string);
+                    }
                 };
             }}
         >
@@ -54,12 +60,6 @@
             {#if form?.error}
                 <div class="text-red-500 text-sm text-center">
                     {form.error}
-                </div>
-            {/if}
-
-            {#if form?.success}
-                <div class="text-green-500 text-sm text-center">
-                    {form.message}
                 </div>
             {/if}
 
