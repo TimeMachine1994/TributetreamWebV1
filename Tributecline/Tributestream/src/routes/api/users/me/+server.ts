@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { wpFetch, ApiError, WP_API_BASE } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function GET({ request }) {
   try {
@@ -16,9 +16,10 @@ export async function GET({ request }) {
 
     const token = authHeader.split(' ')[1];
     try {
-      const response = await fetch(`${WP_API_BASE}/wp/v2/users/me`, {
+      const response = await fetch(`${env.WP_API_BASE}/wp/v2/users/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -29,9 +30,12 @@ export async function GET({ request }) {
           statusText: response.statusText,
           error: errorData
         });
-        throw new ApiError(
-          response.status,
-          errorData.message || `Failed to fetch user data: ${response.statusText}`
+        return json(
+          {
+            error: true,
+            message: errorData.message || `Failed to fetch user data: ${response.statusText}`
+          },
+          { status: response.status }
         );
       }
 
@@ -40,7 +44,13 @@ export async function GET({ request }) {
       // Validate required fields
       if (!userData.id || !userData.username || !userData.email) {
         console.error('Invalid user data response:', userData);
-        throw new ApiError(500, 'Invalid user data structure received from WordPress');
+        return json(
+          {
+            error: true,
+            message: 'Invalid user data structure received from WordPress'
+          },
+          { status: 500 }
+        );
       }
       
       // Return only the necessary user data
@@ -56,16 +66,6 @@ export async function GET({ request }) {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
-
-      if (error instanceof ApiError) {
-        return json(
-          {
-            error: true,
-            message: error.message
-          },
-          { status: error.status }
-        );
-      }
 
       return json(
         {

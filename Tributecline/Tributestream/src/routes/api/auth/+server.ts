@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { wpFetch, ApiError, WP_API_BASE } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 /**
  * Handles authentication requests including login and token validation
@@ -23,7 +23,7 @@ export async function POST({ request, url }) {
 
       const token = authHeader.split(' ')[1];
       try {
-        const response = await fetch(`${WP_API_BASE}/jwt-auth/v1/token/validate`, {
+        const response = await fetch(`${env.WP_API_BASE}/jwt-auth/v1/token/validate`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -32,9 +32,16 @@ export async function POST({ request, url }) {
         });
 
         if (!response.ok) {
-          throw new ApiError(
-            response.status,
-            'Token validation failed'
+          console.error('Token validation failed:', {
+            status: response.status,
+            statusText: response.statusText
+          });
+          return json(
+            { 
+              error: true,
+              message: 'Token validation failed'
+            },
+            { status: response.status }
           );
         }
 
@@ -71,7 +78,7 @@ export async function POST({ request, url }) {
 
     try {
       // JWT auth endpoint is at WordPress base URL, not under our custom namespace
-      const response = await fetch(`${WP_API_BASE}/jwt-auth/v1/token`, {
+      const response = await fetch(`${env.WP_API_BASE}/jwt-auth/v1/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -84,9 +91,12 @@ export async function POST({ request, url }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new ApiError(
-          response.status,
-          errorData.message || 'Authentication failed'
+        return json(
+          { 
+            error: true,
+            message: errorData.message || 'Authentication failed'
+          },
+          { status: response.status }
         );
       }
 

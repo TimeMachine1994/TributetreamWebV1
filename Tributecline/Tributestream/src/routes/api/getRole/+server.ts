@@ -1,29 +1,72 @@
 import { json } from '@sveltejs/kit';
 import type { UserRole } from '$lib/types/api';
-import { wpFetch, ApiError } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function GET({ url }) {
   const id = url.searchParams.get('id');
   if (!id) {
     console.error('getRole: Missing user ID in request');
-    return json({ error: 'User ID is required' }, { status: 400 });
+    return json(
+      { 
+        error: true,
+        message: 'User ID is required'
+      },
+      { status: 400 }
+    );
   }
 
   console.log('getRole: Fetching role for user ID:', id);
   
   try {
-    const data = await wpFetch<UserRole>(`/getRole?id=${id}`);
+    const response = await fetch(
+      `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/getRole?id=${id}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Role fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      return json(
+        {
+          error: true,
+          message: errorData.message || `Failed to fetch role: ${response.statusText}`
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json() as UserRole;
     
     // Validate response data structure
     if (!data || typeof data.user_id !== 'number' || !Array.isArray(data.roles)) {
       console.error('getRole: Invalid response structure:', data);
-      throw new ApiError(500, 'Invalid role data structure received');
+      return json(
+        {
+          error: true,
+          message: 'Invalid role data structure received'
+        },
+        { status: 500 }
+      );
     }
 
     // Validate user ID matches
     if (data.user_id !== parseInt(id)) {
       console.error('getRole: User ID mismatch:', { requested: id, received: data.user_id });
-      throw new ApiError(500, 'User ID mismatch in role data');
+      return json(
+        {
+          error: true,
+          message: 'User ID mismatch in role data'
+        },
+        { status: 500 }
+      );
     }
 
     // Ensure roles is never empty
@@ -40,15 +83,11 @@ export async function GET({ url }) {
       stack: error instanceof Error ? error.stack : undefined
     });
 
-    if (error instanceof ApiError) {
-      return json(
-        { error: error.message },
-        { status: error.status }
-      );
-    }
-
     return json(
-      { error: 'Failed to fetch user role data' },
+      {
+        error: true,
+        message: 'Failed to fetch user role data'
+      },
       { status: 500 }
     );
   }

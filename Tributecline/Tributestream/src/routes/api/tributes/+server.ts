@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { Tribute, PaginatedResponse } from '$lib/types/api';
-import { wpFetch, ApiError } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function GET({ url }) {
   try {
@@ -9,9 +9,32 @@ export async function GET({ url }) {
     const search = url.searchParams.get('search') || '';
     
     try {
-      const data = await wpFetch<PaginatedResponse<Tribute>>(
-        `/tributes?page=${page}&per_page=${per_page}&search=${search}`
+      const response = await fetch(
+        `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/tributes?page=${page}&per_page=${per_page}&search=${search}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Tributes fetch failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        return json(
+          {
+            error: true,
+            message: errorData.message || `Failed to fetch tributes: ${response.statusText}`
+          },
+          { status: response.status }
+        );
+      }
+
+      const data = await response.json() as PaginatedResponse<Tribute>;
       return json({ success: true, ...data });
     } catch (error) {
       console.error('WordPress tributes fetch error:', error);
@@ -50,17 +73,35 @@ export async function POST({ request }) {
 
     try {
       const data = await request.json();
-      const result = await wpFetch<{ id: number }>(
-        '/tributes',
+      const response = await fetch(
+        `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/tributes`,
         {
           method: 'POST',
           headers: {
-            Authorization: token
+            'Authorization': token,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
         }
       );
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Tribute creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        return json(
+          {
+            error: true,
+            message: errorData.message || `Failed to create tribute: ${response.statusText}`
+          },
+          { status: response.status }
+        );
+      }
+
+      const result = await response.json();
       return json({ success: true, id: result.id }, { status: 201 });
     } catch (error) {
       console.error('WordPress tribute creation error:', error);

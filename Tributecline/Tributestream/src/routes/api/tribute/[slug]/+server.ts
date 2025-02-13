@@ -1,19 +1,54 @@
 import { json } from '@sveltejs/kit';
 import type { Tribute } from '$lib/types/api';
-import { wpFetch, ApiError } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function GET({ params }) {
   try {
-    const data = await wpFetch<Tribute>(`/tribute/${params.slug}`);
-    if (!data) {
-      return json({ error: 'Tribute not found' }, { status: 404 });
+    const response = await fetch(
+      `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/tribute/${params.slug}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Tribute fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      return json(
+        {
+          error: true,
+          message: errorData.message || `Failed to fetch tribute: ${response.statusText}`
+        },
+        { status: response.status }
+      );
     }
+
+    const data = await response.json() as Tribute;
+    if (!data) {
+      return json(
+        {
+          error: true,
+          message: 'Tribute not found'
+        },
+        { status: 404 }
+      );
+    }
+
     return json(data);
   } catch (error) {
-    if (error instanceof Error) {
-      const status = error instanceof ApiError ? error.status : 500;
-      return json({ error: error.message }, { status });
-    }
-    return json({ error: 'An unknown error occurred' }, { status: 500 });
+    console.error('Tribute fetch error:', error);
+    return json(
+      {
+        error: true,
+        message: error instanceof Error ? error.message : 'An unknown error occurred'
+      },
+      { status: 500 }
+    );
   }
 }

@@ -2,6 +2,7 @@ export interface RegisterData {
     username: string;
     email: string;
     password: string;
+    meta?: Record<string, any>;
 }
 
 export interface UserRole {
@@ -44,4 +45,33 @@ export interface MemorialFormData {
         time: string;
         date: string;
     };
+}
+
+export interface Tribute {
+    id: number;
+    title: string;
+    content: string;
+    status: 'draft' | 'published';
+    author: number;
+    created_at: string;
+    updated_at: string;
+    meta: Record<string, any>;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+    from: number;
+    to: number;
+}
+
+export interface UserMeta {
+    meta_key: string;
+    meta_value: string;
+    user_id: number;
+    created_at: string;
+    updated_at: string;
 }

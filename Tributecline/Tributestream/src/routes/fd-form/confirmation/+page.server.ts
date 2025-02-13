@@ -1,6 +1,5 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { wpFetch } from '$lib/utils/api';
 import type { UserMeta } from '$lib/types/api';
 
 interface UserMetaResponse {

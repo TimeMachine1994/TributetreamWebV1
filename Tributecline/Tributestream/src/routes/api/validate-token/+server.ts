@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { wpFetch, ApiError, WP_API_BASE } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function POST({ request }) {
   try {
@@ -16,7 +16,7 @@ export async function POST({ request }) {
 
     const token = authHeader.split(' ')[1];
     try {
-      const response = await fetch(`${WP_API_BASE}/jwt-auth/v1/token/validate`, {
+      const response = await fetch(`${env.WP_API_BASE}/jwt-auth/v1/token/validate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -25,9 +25,18 @@ export async function POST({ request }) {
       });
 
       if (!response.ok) {
-        throw new ApiError(
-          response.status,
-          'Token validation failed'
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Token validation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        return json(
+          {
+            error: true,
+            message: errorData.message || 'Token validation failed'
+          },
+          { status: response.status }
         );
       }
 

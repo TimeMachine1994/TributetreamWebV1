@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RegisterData } from '$lib/types/api';
-import { wpFetch, ApiError } from '$lib/utils/api';
+import { env } from '$env/dynamic/private';
 
 export async function POST({ request }) {
   try {
@@ -9,16 +9,22 @@ export async function POST({ request }) {
     // Basic validation
     if (!data.username || !data.email || !data.password) {
       return json(
-        { error: 'Username, email, and password are required' },
+        { 
+          error: true,
+          message: 'Username, email, and password are required'
+        },
         { status: 400 }
       );
     }
 
     try {
-      const result = await wpFetch<{ user_id: number }>(
-        '/register',
+      const response = await fetch(
+        `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/register`,
         {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             username: data.username,
             email: data.email,
@@ -28,7 +34,30 @@ export async function POST({ request }) {
         }
       );
 
-      return json({ success: true, user_id: result.user_id }, { status: 201 });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Registration failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        return json(
+          {
+            error: true,
+            message: errorData.message || `Registration failed: ${response.statusText}`
+          },
+          { status: response.status }
+        );
+      }
+
+      const result = await response.json();
+      return json(
+        { 
+          success: true, 
+          user_id: result.user_id 
+        }, 
+        { status: 201 }
+      );
     } catch (error) {
       console.error('WordPress registration error:', error);
       return json(
