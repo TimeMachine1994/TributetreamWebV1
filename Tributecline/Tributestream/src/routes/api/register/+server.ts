@@ -14,25 +14,39 @@ export async function POST({ request }) {
       );
     }
 
-    const result = await wpFetch<{ user_id: number }>(
-      '/register',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          username: data.username,
-          email: data.email,
-          password: data.password,
-          meta: data.meta
-        })
-      }
-    );
+    try {
+      const result = await wpFetch<{ user_id: number }>(
+        '/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            username: data.username,
+            email: data.email,
+            password: data.password,
+            meta: data.meta
+          })
+        }
+      );
 
-    return json(result, { status: 201 });
-  } catch (error) {
-    if (error instanceof Error) {
-      const status = error instanceof ApiError ? error.status : 500;
-      return json({ error: error.message }, { status });
+      return json({ success: true, user_id: result.user_id }, { status: 201 });
+    } catch (error) {
+      console.error('WordPress registration error:', error);
+      return json(
+        { 
+          error: true, 
+          message: error instanceof Error ? error.message : 'Registration failed'
+        }, 
+        { status: 400 }
+      );
     }
-    return json({ error: 'An unknown error occurred' }, { status: 500 });
+  } catch (error) {
+    console.error('Registration endpoint error:', error);
+    return json(
+      { 
+        error: true, 
+        message: 'An unexpected error occurred during registration'
+      }, 
+      { status: 500 }
+    );
   }
 }

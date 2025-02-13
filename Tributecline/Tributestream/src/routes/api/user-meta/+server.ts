@@ -5,26 +5,47 @@ export async function POST({ request }) {
   try {
     const token = request.headers.get('Authorization');
     if (!token) {
-      return json({ error: 'Authorization token is required' }, { status: 401 });
+      return json(
+        { 
+          error: true,
+          message: 'Authorization token is required'
+        }, 
+        { status: 401 }
+      );
     }
 
-    const data = await request.json();
-    const result = await wpFetch<{ success: boolean; message: string }>(
-      '/user-meta',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: token
-        },
-        body: JSON.stringify(data)
-      }
-    );
-    return json(result);
-  } catch (error) {
-    if (error instanceof Error) {
-      const status = error instanceof ApiError ? error.status : 500;
-      return json({ error: error.message }, { status });
+    try {
+      const data = await request.json();
+      const result = await wpFetch<{ success: boolean; message: string }>(
+        '/user-meta',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: token
+          },
+          body: JSON.stringify(data)
+        }
+      );
+
+      return json({ success: true, message: result.message });
+    } catch (error) {
+      console.error('WordPress user-meta error:', error);
+      return json(
+        { 
+          error: true, 
+          message: error instanceof Error ? error.message : 'Failed to save user metadata'
+        }, 
+        { status: 400 }
+      );
     }
-    return json({ error: 'An unknown error occurred' }, { status: 500 });
+  } catch (error) {
+    console.error('User-meta endpoint error:', error);
+    return json(
+      { 
+        error: true, 
+        message: 'An unexpected error occurred while saving user metadata'
+      }, 
+      { status: 500 }
+    );
   }
 }

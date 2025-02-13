@@ -36,7 +36,7 @@
     <!-- Mobile Menu Button -->
     <button 
       class="md:hidden z-50 p-2"
-      on:click={toggleMenu}
+      onclick={() => toggleMenu()}
       aria-label="Toggle menu"
     >
       <i class={`fas fa-${isMenuOpen ? 'times' : 'bars'}`}></i>
@@ -83,7 +83,7 @@
         </li>
         <li>
           <button 
-            on:click={handlePortalClick}
+            onclick={() => handlePortalClick()}
             class="bg-[#D5BA7F] text-black py-2 px-6 rounded-lg hover:shadow-[0_0_10px_4px_#D5BA7F] 
             transition-all duration-300 ease-in-out font-medium"
           >

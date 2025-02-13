@@ -570,15 +570,56 @@ function handle_tributestream_registration($request)
 {
     error_log('Registration attempt started');
     $params   = $request->get_json_params();
+    
+    // Log incoming parameters (excluding password)
+    error_log('Registration params: ' . json_encode(array_diff_key($params, ['password' => ''])));
+    
     $username = sanitize_user($params['username'] ?? '');
     $email    = sanitize_email($params['email'] ?? '');
     $password = $params['password'] ?? '';
     $meta     = $params['meta'] ?? [];
 
+    // Validate required fields
+    if (empty($username) || empty($email) || empty($password)) {
+        error_log('Registration validation failed: Missing required fields');
+        return new WP_Error(
+            'missing_required_fields',
+            'Username, email, and password are required',
+            ['status' => 400]
+        );
+    }
+
+    // Check if username exists
+    if (username_exists($username)) {
+        error_log("Registration failed: Username '$username' already exists");
+        return new WP_Error(
+            'username_exists',
+            'This username is already registered',
+            ['status' => 400]
+        );
+    }
+
+    // Check if email exists
+    if (email_exists($email)) {
+        error_log("Registration failed: Email '$email' already exists");
+        return new WP_Error(
+            'email_exists',
+            'This email address is already registered',
+            ['status' => 400]
+        );
+    }
+
     // Create the new user
     $user_id = wp_create_user($username, $password, $email);
     if (is_wp_error($user_id)) {
-        return new WP_Error('registration_failed', $user_id->get_error_message(), ['status' => 400]);
+        $error_code = $user_id->get_error_code();
+        $error_message = $user_id->get_error_message();
+        error_log("Registration failed: $error_code - $error_message");
+        return new WP_Error(
+            $error_code,
+            $error_message,
+            ['status' => 400]
+        );
     }
 
     // Optionally store meta fields

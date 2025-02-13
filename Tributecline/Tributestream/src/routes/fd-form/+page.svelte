@@ -1,6 +1,76 @@
 <script lang="ts">
-  let { fdForm } = $props();
-  let formData = $state(fdForm);
+  import { enhance } from '$app/forms';
+  import type { ActionData } from './$types';
+
+  let { form } = $props<{ form: ActionData }>();
+  let isSubmitting = $state(false);
+
+  // Utility functions for generating random data
+  function getRandomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function getRandomFirstName(): string {
+    const firstNames = [
+      'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda',
+      'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica',
+      'Thomas', 'Sarah', 'Charles', 'Karen', 'Christopher', 'Nancy', 'Daniel', 'Lisa',
+      'Matthew', 'Betty', 'Anthony', 'Margaret', 'Mark', 'Sandra', 'Donald', 'Ashley'
+    ];
+    return firstNames[Math.floor(Math.random() * firstNames.length)];
+  }
+
+  function getRandomLastName(): string {
+    const lastNames = [
+      'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+      'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson',
+      'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White'
+    ];
+    return lastNames[Math.floor(Math.random() * lastNames.length)];
+  }
+
+  function getRandomPhoneNumber(): string {
+    const areaCode = getRandomInt(200, 999);
+    const prefix = getRandomInt(200, 999);
+    const lineNumber = getRandomInt(1000, 9999);
+    return `${areaCode}-${prefix}-${lineNumber}`;
+  }
+
+  function getRandomEmail(firstName: string, lastName: string): string {
+    const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'example.com'];
+    const domain = domains[Math.floor(Math.random() * domains.length)];
+    return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
+  }
+
+  function getRandomDate(startYear: number, endYear: number): string {
+    const start = new Date(startYear, 0, 1);
+    const end = new Date(endYear, 11, 31);
+    const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    return randomDate.toISOString().split('T')[0];
+  }
+
+  function getRandomLocation(): { name: string; address: string } {
+    const locations = [
+      { name: 'Peaceful Gardens Memorial', address: '123 Memorial Drive' },
+      { name: 'Serenity Chapel', address: '456 Chapel Lane' },
+      { name: 'Highland Memorial Park', address: '789 Highland Avenue' },
+      { name: 'Valley View Funeral Home', address: '321 Valley Road' },
+      { name: 'Riverside Memorial Gardens', address: '654 Riverside Drive' }
+    ];
+    const cities = ['Springfield', 'Rivertown', 'Lakeside', 'Hillcrest', 'Maplewood'];
+    const states = ['NY', 'CA', 'TX', 'FL', 'IL'];
+    const zipCodes = Array.from({ length: 5 }, () => getRandomInt(10000, 99999));
+
+    const location = locations[Math.floor(Math.random() * locations.length)];
+    const city = cities[Math.floor(Math.random() * cities.length)];
+    const state = states[Math.floor(Math.random() * states.length)];
+    const zip = zipCodes[Math.floor(Math.random() * zipCodes.length)];
+
+    return {
+      name: location.name,
+      address: `${location.address}, ${city}, ${state} ${zip}`
+    };
+  }
 
   function fillTestData() {
     // Get today's date for reference
@@ -8,7 +78,7 @@
     const oneWeekFromNow = new Date(today);
     oneWeekFromNow.setDate(today.getDate() + 7);
 
-    // Format dates
+    // Format dates and time
     const formatDate = (date: Date): string => date.toISOString().split('T')[0];
     const formatTime = (date: Date): string => date.toTimeString().slice(0, 5);
 
@@ -20,35 +90,61 @@
       }
     };
 
+    // Generate random data
+    const directorFirst = getRandomFirstName();
+    const directorLast = getRandomLastName();
+    const familyFirst = getRandomFirstName();
+    const familyLast = getRandomLastName();
+    const deceasedFirst = getRandomFirstName();
+    const deceasedLast = getRandomLastName();
+    const location = getRandomLocation();
+
     // Director Info
-    setInputValue('director-first-name', 'John');
-    setInputValue('director-last-name', 'Smith');
+    setInputValue('director-first-name', directorFirst);
+    setInputValue('director-last-name', directorLast);
     
     // Family Member Info
-    setInputValue('family-member-first-name', 'Mary');
-    setInputValue('family-member-last-name', 'Johnson');
-    setInputValue('family-member-dob', '1985-06-15');
+    setInputValue('family-member-first-name', familyFirst);
+    setInputValue('family-member-last-name', familyLast);
+    setInputValue('family-member-dob', getRandomDate(1960, 1990));
     
     // Deceased Info
-    setInputValue('deceased-first-name', 'Robert');
-    setInputValue('deceased-last-name', 'Johnson');
-    setInputValue('deceased-dob', '1945-03-22');
+    setInputValue('deceased-first-name', deceasedFirst);
+    setInputValue('deceased-last-name', deceasedLast);
+    setInputValue('deceased-dob', getRandomDate(1930, 1960));
     setInputValue('deceased-dop', formatDate(today));
     
     // Contact Info
-    setInputValue('email-address', 'test@example.com');
-    setInputValue('phone-number', '555-123-4567');
+    setInputValue('email-address', getRandomEmail(familyFirst, familyLast));
+    setInputValue('phone-number', getRandomPhoneNumber());
     
     // Memorial Info
-    setInputValue('location-name', 'Peaceful Gardens Memorial');
-    setInputValue('location-address', '123 Memorial Drive, Springfield, ST 12345');
+    setInputValue('location-name', location.name);
+    setInputValue('location-address', location.address);
     setInputValue('memorial-time', formatTime(today));
     setInputValue('memorial-date', formatDate(oneWeekFromNow));
   }
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4">
+  {#if form?.error}
+    <div class="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+      <strong class="font-bold">Error!</strong>
+      <span class="block sm:inline">{form.message}</span>
+    </div>
+  {/if}
+
+  <form 
+    method="POST" 
+    class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4"
+    use:enhance={() => {
+      isSubmitting = true;
+      return async ({ update }) => {
+        await update();
+        isSubmitting = false;
+      };
+    }}
+  >
     <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
 
     <!-- Director's Name -->
@@ -208,15 +304,16 @@
       <button
         type="button"
         class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-        onclick={fillTestData}
+        onclick={() => fillTestData()}
       >
         Fill Test Data
       </button>
       <button
         type="submit"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        disabled={isSubmitting}
       >
-        Submit
+        {isSubmitting ? 'Submitting...' : 'Submit'}
       </button>
     </div>
   </form>
