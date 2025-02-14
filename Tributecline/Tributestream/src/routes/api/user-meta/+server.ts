@@ -1,15 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { getServerApiUrl, WP_ENDPOINTS, type WPApiError } from '$lib/config/wordpress.server';
 
 export async function POST({ request }) {
   try {
     const token = request.headers.get('Authorization');
     if (!token) {
       return json(
-        { 
+        {
           error: true,
           message: 'Authorization token is required'
-        }, 
+        },
         { status: 401 }
       );
     }
@@ -17,7 +17,7 @@ export async function POST({ request }) {
     try {
       const data = await request.json();
       const response = await fetch(
-        `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/user-meta`,
+        getServerApiUrl(WP_ENDPOINTS.API.USER_META),
         {
           method: 'POST',
           headers: {

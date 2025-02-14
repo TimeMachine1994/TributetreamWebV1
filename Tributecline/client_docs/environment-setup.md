@@ -1,237 +1,128 @@
-# Environment Variables Setup Guide for Tributestream
+# WordPress API Environment Configuration Guide
+
+Last Updated: 2024-02-13
 
 ## Overview
-This guide details how to set up and use environment variables in the Tributestream SvelteKit 5 project, with specific focus on WordPress JWT authentication, API integration, and security configuration.
 
-## Environment Files
+This document describes the environment variable configuration for the WordPress API integration in our SvelteKit application.
 
-Create the following files in your Tributestream directory:
+## Required Environment Variables
 
-### `.env`
+Create a `.env` file in the root directory with the following variables:
+
 ```env
 # WordPress API Configuration
+WORDPRESS_URL="https://wp.tributestream.com"
 PUBLIC_WORDPRESS_URL="https://wp.tributestream.com"
-VITE_WP_API_BASE="https://wp.tributestream.com/wp-json"
-VITE_WP_API_NAMESPACE="tributestream/v1"
 
-# JWT Authentication
-JWT_SECRET="your-secret-key"
-PUBLIC_JWT_COOKIE_NAME="auth_token"
-PUBLIC_JWT_COOKIE_MAX_AGE="604800" # 7 days in seconds
-PUBLIC_JWT_VALIDATION_ENDPOINT="/wp-json/jwt-auth/v1/token/validate"
-PUBLIC_JWT_TOKEN_ENDPOINT="/wp-json/jwt-auth/v1/token"
+# JWT Configuration
+JWT_SECRET="your-jwt-secret-here"
+JWT_EXPIRES_IN="7d"
 
-# Security Configuration
-PUBLIC_COOKIE_SECURE="true"
-PUBLIC_COOKIE_SAME_SITE="strict"
-PUBLIC_COOKIE_HTTP_ONLY="true"
-PUBLIC_COOKIE_PATH="/"
-
-# API Configuration
-VITE_API_VERSION="v1"
-API_RATE_LIMIT="100"
-
-# Database Configuration (Server-side only)
-DB_HOST="your-db-host"
-DB_USER="your-db-user"
-DB_PASSWORD="your-db-password"
-DB_NAME="your-db-name"
+# Environment
+NODE_ENV="development"
 ```
 
-### `.env.example`
-```env
-# WordPress API Configuration
-PUBLIC_WORDPRESS_URL="https://your-wordpress-site.com"
-VITE_WP_API_BASE="https://your-wordpress-site.com/wp-json"
-VITE_WP_API_NAMESPACE="tributestream/v1"
+## Variable Descriptions
 
-# JWT Authentication
-JWT_SECRET="your-secret-key"
-PUBLIC_JWT_COOKIE_NAME="auth_token"
-PUBLIC_JWT_COOKIE_MAX_AGE="604800" # 7 days in seconds
-PUBLIC_JWT_VALIDATION_ENDPOINT="/wp-json/jwt-auth/v1/token/validate"
-PUBLIC_JWT_TOKEN_ENDPOINT="/wp-json/jwt-auth/v1/token"
+- `WORDPRESS_URL`: The server-side WordPress API URL (not exposed to client)
+- `PUBLIC_WORDPRESS_URL`: The public WordPress API URL (available in browser)
+- `JWT_SECRET`: Secret key for JWT token verification
+- `JWT_EXPIRES_IN`: JWT token expiration time
+- `NODE_ENV`: Application environment ('development' or 'production')
 
-# Security Configuration
-PUBLIC_COOKIE_SECURE="true"
-PUBLIC_COOKIE_SAME_SITE="strict"
-PUBLIC_COOKIE_HTTP_ONLY="true"
-PUBLIC_COOKIE_PATH="/"
+## Configuration Structure
 
-# API Configuration
-VITE_API_VERSION="v1"
-API_RATE_LIMIT="100"
+The environment configuration is managed through several key files:
 
-# Database Configuration (Server-side only)
-DB_HOST="localhost"
-DB_USER="db_user"
-DB_PASSWORD="db_password"
-DB_NAME="tributestream"
-```
+### 1. Environment Configuration (`src/lib/config/env.ts`)
+- Validates required environment variables
+- Provides type-safe access to environment variables
+- Centralizes environment configuration
 
-## Required Code Changes
+### 2. WordPress API Configuration (`src/lib/config/wordpress.ts`)
+- Defines API endpoints
+- Provides URL utilities
+- Handles error types
 
-### Update src/lib/utils/security.ts
+### 3. API Utilities
+- Server-side: `src/lib/utils/api.server.ts`
+- Client-side: `src/lib/utils/api.client.ts`
+
+## Usage Examples
+
+### Server-side Usage
 ```typescript
-import { 
-  PUBLIC_WORDPRESS_URL,
-  PUBLIC_JWT_COOKIE_NAME,
-  PUBLIC_JWT_COOKIE_MAX_AGE,
-  PUBLIC_COOKIE_SECURE,
-  PUBLIC_COOKIE_SAME_SITE,
-  PUBLIC_COOKIE_HTTP_ONLY,
-  PUBLIC_COOKIE_PATH,
-  PUBLIC_JWT_VALIDATION_ENDPOINT
-} from '$env/static/public';
+import { wordpressUrl } from '$lib/config/env';
+import { getServerApiUrl } from '$lib/config/wordpress';
 
-export async function validateToken(token: string, event?: RequestEvent): Promise<boolean> {
-  if (!token) return false;
-  
-  try {
-    const fetchFn = event?.fetch || fetch;
-    
-    const response = await fetchFn(`${PUBLIC_WORDPRESS_URL}${PUBLIC_JWT_VALIDATION_ENDPOINT}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Token validation failed with status:', response.status);
-      return false;
-    }
-
-    const data = await response.json();
-    return data.code === 'jwt_auth_valid_token' && data.data.status === 200;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return false;
-  }
-}
-
-export function setAuthCookie(token: string, cookies: any) {
-  cookies.set(PUBLIC_JWT_COOKIE_NAME, token, {
-    path: PUBLIC_COOKIE_PATH,
-    httpOnly: PUBLIC_COOKIE_HTTP_ONLY === 'true',
-    secure: PUBLIC_COOKIE_SECURE === 'true',
-    sameSite: PUBLIC_COOKIE_SAME_SITE,
-    maxAge: parseInt(PUBLIC_JWT_COOKIE_MAX_AGE)
-  });
-}
+// Use environment variables
+const apiUrl = getServerApiUrl('/wp/v2/users');
 ```
 
-### Update src/lib/utils/api.ts
+### Client-side Usage
 ```typescript
-import { PUBLIC_WORDPRESS_URL } from '$env/static/public';
+import { getClientApiUrl } from '$lib/config/wordpress';
 
-export const WP_API_BASE = `${PUBLIC_WORDPRESS_URL}/wp-json`;
-export const WP_API_NAMESPACE = import.meta.env.VITE_WP_API_NAMESPACE;
-export const WP_API_URL = `${WP_API_BASE}/${WP_API_NAMESPACE}`;
+// Use public environment variables
+const apiUrl = getClientApiUrl('/wp/v2/posts');
 ```
 
-## Security Best Practices
+## Security Considerations
 
-1. **Cookie Configuration**
-   - Use httpOnly cookies for JWT tokens
-   - Enable secure flag in production
-   - Set appropriate sameSite policy
-   - Use path restriction
-   - Set reasonable expiration times
+1. Server-side variables (`WORDPRESS_URL`, `JWT_SECRET`) are never exposed to the client
+2. Public variables must be prefixed with `PUBLIC_`
+3. JWT tokens are stored in HTTP-only cookies
+4. Environment validation runs at startup
 
-2. **Environment Variables**
-   - Use PUBLIC_ prefix only for non-sensitive data
-   - Keep JWT secrets server-side only
-   - Use different values in development and production
-   - Regularly rotate sensitive credentials
+## Development Setup
 
-3. **JWT Token Handling**
-   - Validate tokens on every protected request
-   - Implement proper error handling
-   - Use secure token storage (httpOnly cookies)
-   - Set appropriate token expiration
+1. Copy `.env.example` to `.env`
+2. Update variables with your WordPress installation details
+3. Never commit `.env` to version control
+4. Keep `.env.example` updated with required variables (but not actual values)
 
-## Type Safety
+## Error Handling
 
-Add these types to `src/app.d.ts`:
+The configuration system includes built-in error handling:
 
-```typescript
-/// <reference types="vite/client" />
+1. Startup validation ensures all required variables are present
+2. URL format validation prevents malformed API calls
+3. Type-safe access prevents runtime errors
+4. Custom error types for API-related errors
 
-interface ImportMetaEnv {
-  readonly VITE_WP_API_NAMESPACE: string
-  readonly VITE_API_VERSION: string
-}
+## Best Practices
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
-```
-
-## Implementation Steps
-
-1. Create both `.env` and `.env.example` files
-2. Add `.env` to `.gitignore`
-3. Update security utilities to use environment variables
-4. Update API utilities to use environment variables
-5. Configure cookie settings through environment variables
-6. Test token validation and cookie handling
-7. Verify security configurations in production environment
-
-## Verification Steps
-
-1. **Token Validation**
-```typescript
-const isValid = await validateToken(token);
-console.log('Token validation result:', isValid);
-```
-
-2. **Cookie Settings**
-```typescript
-// Check cookie configuration
-console.log('Cookie settings:', {
-  name: PUBLIC_JWT_COOKIE_NAME,
-  secure: PUBLIC_COOKIE_SECURE,
-  sameSite: PUBLIC_COOKIE_SAME_SITE
-});
-```
+1. Always use the provided configuration utilities instead of accessing process.env directly
+2. Keep sensitive information in server-side variables
+3. Use TypeScript types for environment variables
+4. Validate environment variables at startup
+5. Document any new environment variables in this guide
 
 ## Troubleshooting
 
-1. **Token Validation Issues**
-   - Verify WordPress URL and endpoints
-   - Check JWT plugin configuration
-   - Verify token format and expiration
-   - Check network requests for errors
+Common issues and solutions:
 
-2. **Cookie Problems**
-   - Verify secure flag matches protocol
-   - Check sameSite setting compatibility
-   - Verify cookie name consistency
-   - Check maxAge value format
+1. "Missing required environment variable":
+   - Check if all required variables are defined in .env
+   - Ensure variable names match exactly
 
-3. **Environment Variable Issues**
-   - Verify proper import paths
-   - Check variable prefix usage
-   - Restart development server
-   - Verify production environment configuration
+2. "Invalid WordPress API URL":
+   - Verify URL format includes protocol (https://)
+   - Check for trailing slashes
 
-## Production Deployment
+3. "JWT validation failed":
+   - Verify JWT_SECRET matches WordPress configuration
+   - Check token expiration time
 
-1. Set up secure environment variable management
-2. Use production-grade secrets management
-3. Enable all security features (secure cookies, etc.)
-4. Implement proper SSL/TLS configuration
-5. Set up monitoring for authentication failures
-6. Configure proper CORS settings
+## Adding New Environment Variables
 
-## Next Steps
+When adding new environment variables:
 
-1. Update all security-related files
-2. Implement consistent cookie handling
-3. Test authentication flow end-to-end
-4. Configure production environment
-5. Document security procedures
-6. Set up monitoring and logging
-7. Plan credential rotation schedule
+1. Add to `.env` and `.env.example`
+2. Update `EnvConfig` interface in `src/lib/config/env.ts`
+3. Add validation in `validateEnv()`
+4. Document in this guide
+5. Update any affected configuration modules
+
+Remember to maintain backward compatibility when modifying environment variables.

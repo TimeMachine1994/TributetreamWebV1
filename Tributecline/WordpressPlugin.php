@@ -30,6 +30,91 @@
  */
 
 // -------------------------------------------------------------------------
+// :: CORS Configuration
+// -------------------------------------------------------------------------
+
+// Add CORS headers as early as possible
+add_action('init', function() {
+    // Always send CORS headers for OPTIONS requests
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        send_cors_headers();
+        status_header(200);
+        exit();
+    }
+});
+
+// Add CORS headers to all REST API responses
+add_action('rest_api_init', function() {
+    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
+    add_filter('rest_pre_serve_request', function($value) {
+        send_cors_headers();
+        return $value;
+    });
+});
+
+// Handle CORS for JWT Auth plugin
+add_action('rest_api_init', function() {
+    // Add headers specifically for JWT auth namespace
+    add_filter('rest_pre_dispatch', function($result, $server, $request) {
+        if (strpos($request->get_route(), 'jwt-auth/') !== false) {
+            send_cors_headers();
+            
+            // Handle preflight for JWT endpoints
+            if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+                return new WP_REST_Response(null, 200);
+            }
+        }
+        return $result;
+    }, 10, 3);
+}, 5);
+
+// Add CORS headers to JWT responses
+add_filter('jwt_auth_token_before_dispatch', function($data, $user) {
+    send_cors_headers();
+    return $data;
+}, 10, 2);
+
+// Add CORS headers to JWT validation
+add_filter('jwt_auth_token_validate_response', function($response) {
+    send_cors_headers();
+    return $response;
+});
+
+/**
+ * Send appropriate CORS headers based on environment
+ */
+function send_cors_headers() {
+    $allowed_origins = [
+        'http://localhost:5173',    // SvelteKit dev server
+        'http://localhost:4173',    // SvelteKit preview
+        'http://localhost:3000',    // Alternative dev port
+        'https://wp.tributestream.com', // Production WordPress
+        'https://tributestream.com'    // Production frontend
+    ];
+    
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    
+    // Only allow specific origins
+    if (in_array($origin, $allowed_origins)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With');
+        header('Access-Control-Max-Age: 3600'); // Cache preflight for 1 hour
+        header('Vary: Origin'); // Prevent cache issues with multiple origins
+        
+        // Ensure headers are immediately flushed for OPTIONS requests
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            header('Content-Length: 0');
+            header('Content-Type: text/plain');
+        }
+    }
+}
+
+// Remove default WordPress CORS headers to prevent conflicts
+remove_action('rest_api_init', 'rest_send_cors_headers');
+
+// -------------------------------------------------------------------------
 // :: Global $wpdb
 // -------------------------------------------------------------------------
 global $wpdb;

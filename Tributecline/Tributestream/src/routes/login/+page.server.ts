@@ -1,75 +1,89 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { authenticate } from '$lib/utils/api.server';
+import { WordPressApiError } from '$lib/config/wordpress.server';
 import type { Actions, PageServerLoad } from './$types';
-import type { User } from '$lib/stores/userStore';
-import { validateToken } from '$lib/utils/security';
 
-export const load: PageServerLoad = async ({ cookies, fetch, url }) => {
-    const token = cookies.get('auth_token');
-    
-    if (token) {
-        const isValid = await validateToken(token, fetch);
-        if (isValid) {
-            // Get the return URL from the query parameter or default to family-dashboard
-            const returnUrl = url.searchParams.get('returnUrl') || '/family-dashboard';
-            throw redirect(302, returnUrl);
-        }
-    }
-    
-    // If no token or invalid token, continue to login page
-    return {};
+/**
+ * Server-side load function
+ * Handles redirects for authenticated users and sets up initial page data
+ */
+export const load: PageServerLoad = async ({ locals, url }) => {
+  // If user is already authenticated, redirect to dashboard
+  if (locals.user) {
+    throw redirect(302, '/dashboard');
+  }
+
+  return {
+    // Pass any URL parameters (like returnUrl) to the page
+    returnUrl: url.searchParams.get('returnUrl') || '/dashboard'
+  };
 };
 
-export const actions = {
-    default: async ({ request, fetch, cookies }) => {
-        const data = await request.formData();
-        const username = data.get('username');
-        const password = data.get('password');
+/**
+ * Server-side form actions
+ * Provides an alternative server-side authentication flow
+ * This is useful for progressive enhancement and non-JS scenarios
+ */
+export const actions: Actions = {
+  default: async ({ request, cookies }) => {
+    const data = await request.formData();
+    const username = data.get('username');
+    const password = data.get('password');
 
-        if (!username || !password) {
-            return fail(400, {
-                error: 'Username and password are required'
-            });
-        }
-
-        try {
-            const response = await fetch('/api/auth', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                return fail(response.status, {
-                    error: result.message || 'Login failed'
-                });
-            }
-
-            // Transform the authentication data to match our User interface
-            const user: User = {
-                id: -1, // We'll need to fetch this separately
-                username: username.toString(),
-                email: result.user_email,
-                displayName: result.user_display_name,
-                roles: [], // We'll need to fetch these separately
-                meta: {},
-                token: cookies.get('auth_token') // The token is already set in the cookie by the auth endpoint
-            };
-
-            // Return success, user data, and redirect URL
-            return {
-                success: true,
-                user,
-                redirectTo: '/family-dashboard'
-            };
-        } catch (error) {
-            console.error('Login error:', error);
-            return fail(500, {
-                error: 'An error occurred during login'
-            });
-        }
+    // Validate form inputs
+    if (!username || !password) {
+      return fail(400, {
+        error: 'Username and password are required',
+        username: username?.toString() || ''
+      });
     }
-} satisfies Actions;
+
+    try {
+      // Attempt authentication
+      const response = await authenticate(
+        username.toString(),
+        password.toString()
+      );
+
+      // Set secure HTTP-only cookie with the token
+      cookies.set('auth_token', response.token, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+
+      // Return success data
+      return {
+        success: true,
+        user: {
+          email: response.user_email,
+          displayName: response.user_display_name,
+          nicename: response.user_nicename
+        }
+      };
+    } catch (error) {
+      // Handle WordPress API errors
+      if (error instanceof WordPressApiError) {
+        console.error('WordPress authentication error:', {
+          code: error.code,
+          message: error.message,
+          status: error.status
+        });
+
+        return fail(error.status, {
+          error: error.message,
+          username: username.toString()
+        });
+      }
+
+      // Handle unexpected errors
+      console.error('Authentication error:', error);
+      return fail(500, {
+        error: 'An unexpected error occurred during authentication',
+        username: username.toString()
+      });
+    }
+  }
+};
