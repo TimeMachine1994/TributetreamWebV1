@@ -27,14 +27,14 @@ if (typeof window !== 'undefined') {
 export const WP_ENDPOINTS = {
   // Authentication endpoints
   AUTH: {
-    TOKEN: '/jwt-auth/v1/token',
-    VALIDATE: '/jwt-auth/v1/token/validate',
+    TOKEN: '/wp-json/jwt-auth/v1/token',
+    VALIDATE: '/wp-json/jwt-auth/v1/token/validate',
   },
   // API endpoints
   API: {
-    USERS: '/wp/v2/users',
-    POSTS: '/wp/v2/posts',
-    USER_META: '/wp/v2/user-meta',
+    USERS: '/wp-json/wp/v2/users',
+    POSTS: '/wp-json/wp/v2/posts',
+    USER_META: '/wp-json/wp/v2/user-meta',
   },
 } as const;
 
