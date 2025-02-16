@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WP_AUTH_URL = 'https://wp.tributestream.com/wp-json/jwt-auth/v1/token';
+const WP_AUTH_URL = 'http://localhost:80/wp-json/jwt-auth/v1/token';
 
 export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 	try {
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			throw error(response.status, 'Authentication failed');
 		}
 
-		// Here’s the important part:
+		// Here's the important part:
 		// Parse the JSON the WP JWT plugin sends back. Typically looks like:
 		// {
 		//   "token": "...",

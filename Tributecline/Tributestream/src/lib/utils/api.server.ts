@@ -1,9 +1,21 @@
-import { getServerApiUrl, WP_ENDPOINTS, WordPressApiError, type WPApiError } from '$lib/config/wordpress.server';
+import { WordPressApiError, type WPApiError } from '$lib/config/wordpress.server';
 
 /**
  * Server-side WordPress API utilities
  * Provides secure methods for interacting with the WordPress API
  */
+
+const WP_BASE_URL = 'http://localhost:80/wp-json';
+const WP_ENDPOINTS = {
+  AUTH: {
+    TOKEN: '/jwt-auth/v1/token',
+    VALIDATE: '/jwt-auth/v1/token/validate'
+  },
+  API: {
+    USERS: '/wp/v2/users',
+    USER_META: '/tributestream/v1/user-meta'
+  }
+} as const;
 
 interface RequestOptions extends RequestInit {
   token?: string;
@@ -17,7 +29,7 @@ interface RequestOptions extends RequestInit {
  * @throws WordPressApiError on API errors
  */
 async function makeRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const url = getServerApiUrl(endpoint);
+  const url = `${WP_BASE_URL}${endpoint}`;
   const headers = new Headers(options.headers);
 
   // Set default headers

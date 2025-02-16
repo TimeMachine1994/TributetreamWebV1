@@ -1,6 +1,5 @@
 import { json } from '@sveltejs/kit';
 import type { RegisterData } from '$lib/types/api';
-import { env } from '$env/dynamic/private';
 
 export async function POST({ request }) {
   try {
@@ -19,7 +18,7 @@ export async function POST({ request }) {
 
     try {
       const response = await fetch(
-        `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/register`,
+        'http://localhost:80/wp-json/tributestream/v1/register',
         {
           method: 'POST',
           headers: {

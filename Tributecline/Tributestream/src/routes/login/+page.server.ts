@@ -46,7 +46,29 @@ export const actions: Actions = {
       );
 
       // Set secure HTTP-only cookie with the token
-      cookies.set('auth_token', response.token, {
+      cookies.set('jwt_token', response.token, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+
+      // Fetch user data using the token
+      const userResponse = await fetch('/api/users/me', {
+        headers: {
+          'Authorization': `Bearer ${response.token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = await userResponse.json();
+
+      // Store the user ID in a cookie
+      cookies.set('user_id', userData.id.toString(), {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

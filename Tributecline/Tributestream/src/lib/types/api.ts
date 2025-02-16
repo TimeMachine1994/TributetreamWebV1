@@ -68,10 +68,69 @@ export interface PaginatedResponse<T> {
     to: number;
 }
 
+/** @deprecated Use UserMetaItem and UserMetaResponse instead */
 export interface UserMeta {
     meta_key: string;
     meta_value: string;
     user_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface UserMetaItem {
+    meta_key: string;
+    meta_value: string;
+}
+
+export interface UserMetaResponse {
+    success: boolean;
+    user_id: number;
+    meta: UserMetaItem[];
+}
+
+export interface UserMetaError {
+    code: string;
+    message: string;
+    data: {
+        status: number;
+    };
+}
+
+export interface UserMetaCreateRequest {
+    meta_key: string;
+    meta_value: string;
+    user_id: number;
+}
+
+export interface MemorialFormData {
+    director: {
+        firstName: string;
+        lastName: string;
+    };
+    familyMember: {
+        firstName: string;
+        lastName: string;
+        dob: string;
+    };
+    deceased: {
+        firstName: string;
+        lastName: string;
+        dob: string;
+        dop: string;
+    };
+    contact: {
+        email: string;
+        phone: string;
+    };
+    memorial: {
+        locationName: string;
+        locationAddress: string;
+        time: string;
+        date: string;
+    };
+}
+
+export interface MemorialFormResponse {
+    memorialData?: MemorialFormData;
+    error?: string;
 }

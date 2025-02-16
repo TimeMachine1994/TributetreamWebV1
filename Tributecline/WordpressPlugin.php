@@ -260,40 +260,45 @@ add_action('rest_api_init', function () {
      * ---------------------------------------------------------------------
      */
     register_rest_route(
-        $namespace,
+        'tributestream/v1',
         '/user-meta',
-        [
-            [
-                'methods'             => 'POST',
+        array(
+            array(
+                'methods'             => WP_REST_Server::CREATABLE, // 'POST'
                 'callback'            => 'ts_store_user_meta',
-                'permission_callback' => 'custom_jwt_authenticate', // check JWT
-                'args'                => [
-                    'user_id'    => ['required' => true, 'type' => 'integer'],
-                    'meta_key'   => ['required' => true, 'type' => 'string'],
-                    'meta_value' => ['required' => true, 'type' => 'string'],
-                ],
-            ],
-        ]
+                'permission_callback' => 'custom_jwt_authenticate',
+                'args'                => array(
+                    'meta_key'   => array(
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                    'meta_value' => array(
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+            ),
+        )
     );
 
     register_rest_route(
-        $namespace,
+        'tributestream/v1',
         '/user-meta/(?P<user_id>\d+)',
-        [
-            [
-                'methods'             => 'GET',
+        array(
+            array(
+                'methods'             => WP_REST_Server::READABLE, // 'GET'
                 'callback'            => 'ts_get_all_user_meta',
                 'permission_callback' => 'custom_jwt_authenticate',
-                'args'                => [
-                    'user_id' => [
+                'args'                => array(
+                    'user_id' => array(
                         'required'          => true,
-                        'validate_callback' => function ($param) {
-                            return is_numeric($param);
+                        'validate_callback' => function( $param, $request, $key ) {
+                            return is_numeric( $param );
                         },
-                    ],
-                ],
-            ],
-        ]
+                    ),
+                ),
+            ),
+        )
     );
 
     /**
@@ -587,64 +592,105 @@ function get_tribute_by_slug($request)
 //     POST /user-meta => ts_store_user_meta
 //     GET  /user-meta/<user_id> => ts_get_all_user_meta
 // -------------------------------------------------------------------------
-function ts_store_user_meta($request)
-{
-    $params     = $request->get_json_params();
-    $user_id    = isset($params['user_id'])    ? (int)$params['user_id'] : 0;
-    $meta_key   = isset($params['meta_key'])   ? sanitize_text_field($params['meta_key']) : '';
-    $meta_value = isset($params['meta_value']) ? sanitize_text_field($params['meta_value']) : '';
+/**
+ * ts_get_all_user_meta
+ *
+ * Callback function to retrieve all meta keys and values for a given user.
+ *
+ * @param WP_REST_Request $request The REST request object.
+ * @return WP_Error|WP_REST_Response
+ */
+function ts_get_all_user_meta( $request ) {
+    // Retrieve and sanitize parameters from the request
+    $user_id = $request->get_param( 'user_id' );
 
-    if (!$user_id || !$meta_key) {
-        return new WP_Error('missing_params', 'user_id and meta_key are required', ['status' => 400]);
-    }
-
-    $result = update_user_meta($user_id, $meta_key, $meta_value);
-    if ($result === false) {
+    // Validate the user ID exists
+    if ( ! get_userdata( $user_id ) ) {
         return new WP_Error(
-            'meta_update_failed',
-            'Failed to update user meta. Please check the data and try again.',
-            ['status' => 500]
+            'user_not_found',
+            'The specified user ID does not exist.',
+            array( 'status' => 404 )
         );
     }
 
-    return new WP_REST_Response([
-        'success'    => true,
-        'message'    => 'User meta updated successfully.',
-        'user_id'    => $user_id,
-        'meta_key'   => $meta_key,
-        'meta_value' => $meta_value,
-    ], 200);
-}
-
-function ts_get_all_user_meta($request)
-{
+    // Get all user meta for the given user ID
     global $wpdb;
-    $user_id = (int) $request->get_param('user_id');
-
-    // Confirm that user actually exists
-    if (!get_userdata($user_id)) {
-        return new WP_Error('user_not_found', 'User ID does not exist.', ['status' => 404]);
-    }
-
-    // Query usermeta
     $table_name = $wpdb->usermeta;
-    $results = $wpdb->get_results(
-        $wpdb->prepare("SELECT meta_key, meta_value FROM $table_name WHERE user_id = %d", $user_id),
-        ARRAY_A
+
+    // Safeguard the query
+    try {
+        $query   = $wpdb->prepare( "SELECT meta_key, meta_value FROM $table_name WHERE user_id = %d", $user_id );
+        $results = $wpdb->get_results( $query, ARRAY_A );
+
+        if ( $results === false ) {
+            // Database query failed
+            return new WP_Error(
+                'db_query_failed',
+                'An error occurred while querying the database.',
+                array( 'status' => 500 )
+            );
+        }
+
+        if ( empty( $results ) ) {
+            return new WP_Error(
+                'no_meta_found',
+                'No meta data found for the specified user.',
+                array( 'status' => 404 )
+            );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'success' => true,
+                'user_id' => $user_id,
+                'meta'    => $results,
+            ),
+            200
+        );
+    } catch ( Exception $e ) {
+        return new WP_Error(
+            'unexpected_error',
+            'An unexpected error occurred: ' . $e->getMessage(),
+            array( 'status' => 500 )
+        );
+    }
+}
+ 
+/**
+ * ts_store_user_meta
+ *
+ * Callback function to handle the creation/updating of user meta in the usermeta table.
+ *
+ * @param WP_REST_Request $request The REST request object.
+ * @return WP_Error|WP_REST_Response
+ */
+function ts_store_user_meta( $request ) {
+    // Retrieve and sanitize parameters from the request
+    $user_id    = $request->get_param( 'user_id' );
+    $meta_key   = $request->get_param( 'meta_key' );
+    $meta_value = $request->get_param( 'meta_value' );
+
+    // Update or add user meta
+    $result = update_user_meta( $user_id, $meta_key, $meta_value );
+
+    if ( false === $result ) {
+        return new WP_Error(
+            'meta_update_failed',
+            'Failed to update user meta data. Please check the data and try again.',
+            array( 'status' => 500 )
+        );
+    }
+
+    return new WP_REST_Response(
+        array(
+            'success'      => true,
+            'message'      => 'User meta updated successfully.',
+            'user_id'      => $user_id,
+            'meta_key'     => $meta_key,
+            'meta_value'   => $meta_value
+        ),
+        200
     );
-
-    if ($results === false) {
-        return new WP_Error('db_query_failed', 'Error querying usermeta.', ['status' => 500]);
-    }
-    if (empty($results)) {
-        return new WP_Error('no_meta_found', 'No meta data found for user.', ['status' => 404]);
-    }
-
-    return new WP_REST_Response([
-        'success' => true,
-        'user_id' => $user_id,
-        'meta'    => $results,
-    ], 200);
 }
 
 // -------------------------------------------------------------------------

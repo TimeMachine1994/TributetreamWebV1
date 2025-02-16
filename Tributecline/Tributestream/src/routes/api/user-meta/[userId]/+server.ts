@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { UserMeta } from '$lib/types/api';
+import type { UserMetaResponse, UserMetaError } from '$lib/types/api';
 
 export async function GET({ params, locals, fetch }) {
   console.log('GET request received for user meta', { params });
@@ -30,7 +30,7 @@ export async function GET({ params, locals, fetch }) {
 
     console.log('User authenticated and authorized');
 
-    // Use direct WordPress URL
+    // Use direct WordPress API URL
     const url = `http://localhost:80/wp-json/tributestream/v1/user-meta/${params.userId}`;
     console.log('Fetching user meta from URL:', url);
 
@@ -43,90 +43,61 @@ export async function GET({ params, locals, fetch }) {
     });
     console.log('Response received from external API', { status: response.status, statusText: response.statusText });
 
-    // Handle non-OK responses with detailed logging
+    // Handle non-OK responses
     if (!response.ok) {
-      // Try to get the response text first
-      const responseText = await response.text();
-      let errorMessage = `Failed to fetch user meta: ${response.statusText}`;
-      let errorData: { message?: string } = {};
-
-      // Try to parse as JSON if it looks like JSON
-      if (responseText.trim().startsWith('{')) {
-        try {
-          errorData = JSON.parse(responseText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (err) {
-          console.error('Failed to parse error response as JSON:', err);
-        }
-      }
-
-      // Log the error details
+      const errorData = await response.json().catch(() => ({})) as UserMetaError;
       console.error('Error fetching user meta:', {
         status: response.status,
         statusText: response.statusText,
-        responseText: responseText.substring(0, 200) // Log first 200 chars to avoid huge logs
+        error: errorData
       });
 
-      // Return appropriate error response
-      if (response.status === 404) {
-        return json(
-          {
-            error: true,
-            message: `User meta not found for user ID: ${params.userId}`
-          },
-          { status: 404 }
-        );
+      // Match WordPress error codes
+      switch(errorData.code) {
+        case 'user_not_found':
+          return json({ error: true, message: 'User not found' }, { status: 404 });
+        case 'db_query_failed':
+          return json({ error: true, message: 'Database error' }, { status: 500 });
+        case 'no_meta_found':
+          return json({ error: true, message: 'No meta data found' }, { status: 404 });
+        default:
+          return json(
+            {
+              error: true,
+              message: errorData.message || `Failed to fetch user meta: ${response.statusText}`
+            },
+            { status: response.status }
+          );
       }
-
-      return json(
-        {
-          error: true,
-          message: errorMessage
-        },
-        { status: response.status }
-      );
     }
 
     // Parse the JSON response
-    const data = await response.json().catch((err) => {
-      console.error('Error parsing JSON from response:', err);
-      throw new Error('Invalid JSON response from the user meta API');
-    });
+    const data = await response.json() as UserMetaResponse;
     console.log('Parsed JSON data:', data);
 
     // Check if the API response indicates success
     if (!data.success) {
       console.error('User meta API responded with success:false', data);
       return json(
-        { 
+        {
           error: true,
           message: 'Failed to fetch user meta'
-        }, 
+        },
         { status: 400 }
       );
     }
 
     console.log('User meta fetched successfully');
-    
-    // Transform and validate the response data
-    const transformedData = {
-      meta_key: data.meta_key || '',
-      meta_value: typeof data.meta_value === 'string' ? data.meta_value : JSON.stringify(data.meta_value),
-      user_id: parseInt(params.userId),
-      created_at: data.created_at || new Date().toISOString(),
-      updated_at: data.updated_at || new Date().toISOString()
-    };
 
-    return json(transformedData);
+    // Return the properly typed response
+    return json(data);
   } catch (error) {
     console.error('Exception caught in GET user meta handler:', error);
     return json(
-      { 
+      {
         error: true,
         message: error instanceof Error ? error.message : 'An unknown error occurred'
-      }, 
+      },
       { status: 500 }
     );
   }

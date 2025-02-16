@@ -1,11 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { Tribute } from '$lib/types/api';
-import { env } from '$env/dynamic/private';
 
 export async function GET() {
   try {
     const response = await fetch(
-      `${env.WP_API_BASE}/${env.WP_API_NAMESPACE}/all-tributes`,
+      'http://localhost:80/wp-json/tributestream/v1/all-tributes',
       {
         headers: {
           'Content-Type': 'application/json'

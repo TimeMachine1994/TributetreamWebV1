@@ -1,36 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { UserMeta } from '$lib/types/api';
+import type { UserMetaResponse, UserMetaItem, MemorialFormData, MemorialFormResponse } from '$lib/types/api';
 
-interface MemorialFormData {
-    director: {
-        firstName: string;
-        lastName: string;
-    };
-    familyMember: {
-        firstName: string;
-        lastName: string;
-        dob: string;
-    };
-    deceased: {
-        firstName: string;
-        lastName: string;
-        dob: string;
-        dop: string;
-    };
-    contact: {
-        email: string;
-        phone: string;
-    };
-    memorial: {
-        locationName: string;
-        locationAddress: string;
-        time: string;
-        date: string;
-    };
-}
-
-export const load: PageServerLoad = async ({ locals, fetch }) => {
+export const load: PageServerLoad<MemorialFormResponse> = async ({ locals, fetch }) => {
     console.log('Loading user metadata for memorial form data');
     
     if (!locals.isAuthenticated) {
@@ -45,56 +17,76 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
                 'Authorization': `Bearer ${locals.token}`
             }
         });
+
+        // Log response details
         console.log('Received response from /api/user-meta:', {
             status: response.status,
             statusText: response.statusText
         });
 
+        // Handle non-OK responses
         if (!response.ok) {
-            const errorMsg = `Failed to fetch user metadata: ${response.statusText}`;
-            console.error(errorMsg);
-            throw new Error(errorMsg);
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.message || `Failed to fetch user metadata: ${response.statusText}`;
+            console.error('API Error:', { status: response.status, error: errorData });
+            return { error: errorMsg };
         }
 
-        const data = await response.json();
+        // Parse and validate response
+        const data = await response.json() as UserMetaResponse;
         console.log('User metadata fetched successfully:', data);
 
-        const memorialData = data.meta.find((meta: UserMeta) => meta.meta_key === 'memorial_form_data');
-        if (!memorialData) {
-            console.error('No memorial form data found in user metadata');
-            return {
-                error: 'No memorial form data found'
-            };
+        if (!data.success || !Array.isArray(data.meta)) {
+            console.error('Invalid API response format:', data);
+            return { error: 'Invalid response format from API' };
+        }
+
+        // Find memorial data in user meta
+        const memorialData = data.meta.find((meta: UserMetaItem) => meta.meta_key === 'memorial_form_data');
+        if (!memorialData?.meta_value) {
+            console.log('No memorial form data found in user metadata');
+            return { error: 'No memorial form data found' };
         }
 
         try {
-            console.log('Parsing memorial form data');
+            // Parse and validate memorial data
             const parsedData = JSON.parse(memorialData.meta_value) as MemorialFormData;
-            console.log('Parsed memorial data:', parsedData);
+            
+            // Validate required fields
+            const validationErrors: string[] = [];
 
-            // Validate required fields for deceased information
+            // Deceased information validation
             if (!parsedData.deceased?.firstName || !parsedData.deceased?.lastName) {
-                const errorMsg = 'Missing required deceased information';
-                console.error(errorMsg, parsedData.deceased);
-                throw new Error(errorMsg);
+                validationErrors.push('Missing required deceased information');
+            }
+            if (!parsedData.deceased?.dob || !parsedData.deceased?.dop) {
+                validationErrors.push('Missing required deceased dates');
             }
 
-            // Validate required fields for memorial location information
+            // Memorial information validation
             if (!parsedData.memorial?.locationName || !parsedData.memorial?.locationAddress) {
-                const errorMsg = 'Missing required memorial location information';
-                console.error(errorMsg, parsedData.memorial);
-                throw new Error(errorMsg);
+                validationErrors.push('Missing required memorial location information');
+            }
+            if (!parsedData.memorial?.date || !parsedData.memorial?.time) {
+                validationErrors.push('Missing required memorial date/time');
+            }
+
+            // Contact information validation
+            if (!parsedData.contact?.email || !parsedData.contact?.phone) {
+                validationErrors.push('Missing required contact information');
+            }
+
+            // If any validation errors exist, return them
+            if (validationErrors.length > 0) {
+                console.error('Memorial data validation failed:', validationErrors);
+                return { error: validationErrors.join(', ') };
             }
 
             console.log('Memorial form data validated successfully');
-            return {
-                memorialData: parsedData
-            };
+            return { memorialData: parsedData };
         } catch (parseError) {
             console.error('Error parsing memorial data:', parseError);
-            return {
-                error: 'Invalid memorial data format'
-            };
+            return { error: 'Invalid memorial data format' };
         }
     } catch (error) {
         console.error('Error loading user metadata:', error);
