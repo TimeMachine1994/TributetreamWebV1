@@ -1,4 +1,4 @@
-import { wordpressUrl } from '$lib/config/env.server';
+import { wordpressUrl, wpApiNamespace } from '$lib/config/env.server';
 
 /**
  * WordPress Server API Configuration
@@ -32,7 +32,7 @@ export const WP_ENDPOINTS = {
   API: {
     USERS: '/wp/v2/users',
     POSTS: '/wp/v2/posts',
-    USER_META: '/wp/v2/user-meta',
+    USER_META: `/${wpApiNamespace}/user-meta`,
   },
 } as const;
 

@@ -11,6 +11,8 @@ import { env } from '$env/dynamic/private';
 interface ServerEnvConfig {
   // WordPress API URL (private)
   wordpressUrl: string;
+  // WordPress API namespace
+  wpApiNamespace: string;
   
   // Environment
   isDevelopment: boolean;
@@ -24,6 +26,7 @@ interface ServerEnvConfig {
 function validateServerEnv(): void {
   const required = [
     'WORDPRESS_URL',
+    'VITE_WP_API_NAMESPACE',
     'NODE_ENV'
   ];
 
@@ -47,6 +50,7 @@ function createServerEnvConfig(): ServerEnvConfig {
 
   return {
     wordpressUrl: env.WORDPRESS_URL,
+    wpApiNamespace: env.VITE_WP_API_NAMESPACE,
     isDevelopment: env.NODE_ENV === 'development',
     isProduction: env.NODE_ENV === 'production'
   };
@@ -58,6 +62,7 @@ export const serverConfig = createServerEnvConfig();
 // Export individual environment variables for convenience
 export const {
   wordpressUrl,
+  wpApiNamespace,
   isDevelopment,
   isProduction
 } = serverConfig;

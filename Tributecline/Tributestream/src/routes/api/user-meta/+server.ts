@@ -1,10 +1,13 @@
 import { json } from '@sveltejs/kit';
 import { getServerApiUrl, WP_ENDPOINTS, type WPApiError } from '$lib/config/wordpress.server';
 
-export async function POST({ request }) {
+export async function POST({ request, fetch }) {
+  console.log('POST request received for updating user meta');
   try {
+    // Extract and verify the authorization token
     const token = request.headers.get('Authorization');
     if (!token) {
+      console.error('Authorization token is missing in the request headers');
       return json(
         {
           error: true,
@@ -13,23 +16,34 @@ export async function POST({ request }) {
         { status: 401 }
       );
     }
+    console.log('Authorization token found (not logging sensitive details)');
 
     try {
+      // Parse the incoming JSON request body
       const data = await request.json();
-      const response = await fetch(
-        getServerApiUrl(WP_ENDPOINTS.API.USER_META),
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        }
-      );
+      console.log('Request body parsed successfully:', data);
 
+      // Build the API URL and log it
+      const apiUrl = getServerApiUrl(WP_ENDPOINTS.API.USER_META);
+      console.log('Sending POST request to external API URL:', apiUrl);
+
+      // Perform the fetch to update user meta on the external API
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      console.log('Response received from external API', { status: response.status, statusText: response.statusText });
+
+      // Check for non-OK response statuses
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch((err) => {
+          console.error('Failed to parse error response JSON:', err);
+          return {};
+        });
         console.error('User-meta update failed:', {
           status: response.status,
           statusText: response.statusText,
@@ -44,10 +58,16 @@ export async function POST({ request }) {
         );
       }
 
-      const result = await response.json();
+      // Parse the successful response
+      const result = await response.json().catch((err) => {
+        console.error('Error parsing JSON from success response:', err);
+        throw new Error('Invalid JSON response from the user meta API');
+      });
+      console.log('User meta updated successfully:', result);
+
       return json({ success: true, message: result.message });
     } catch (error) {
-      console.error('WordPress user-meta error:', error);
+      console.error('WordPress user-meta error during POST processing:', error);
       return json(
         { 
           error: true, 
@@ -57,7 +77,7 @@ export async function POST({ request }) {
       );
     }
   } catch (error) {
-    console.error('User-meta endpoint error:', error);
+    console.error('User-meta endpoint unexpected error:', error);
     return json(
       { 
         error: true, 

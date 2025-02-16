@@ -119,7 +119,9 @@ async function makeRequest<T>(endpoint: string, options: RequestOptions = {}): P
  * Authentication response type
  */
 export interface AuthResponse {
+  success: boolean;
   token: string;
+  user_id: number;
   user_email: string;
   user_nicename: string;
   user_display_name: string;

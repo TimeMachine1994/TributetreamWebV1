@@ -31,45 +31,65 @@ interface MemorialFormData {
 }
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
+    console.log('Loading user metadata for memorial form data');
     const userId = cookies.get('user_id');
     const token = cookies.get('jwt_token');
+    console.log('Retrieved cookies:', { userId, token: token ? 'present' : 'missing' });
 
     if (!userId || !token) {
+        console.warn('Missing user_id or jwt_token cookie, redirecting to /login');
         throw redirect(302, '/login');
     }
 
     try {
+        console.log(`Fetching user metadata for userId: ${userId}`);
         const response = await fetch(`/api/user-meta/${userId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
+        console.log('Received response from /api/user-meta:', {
+            status: response.status,
+            statusText: response.statusText
+        });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch user metadata');
+            const errorMsg = `Failed to fetch user metadata: ${response.statusText}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
 
         const data = await response.json();
-        const memorialData = data.meta.find((meta: UserMeta) => meta.meta_key === 'memorial_form_data');
+        console.log('User metadata fetched successfully:', data);
 
+        const memorialData = data.meta.find((meta: UserMeta) => meta.meta_key === 'memorial_form_data');
         if (!memorialData) {
+            console.error('No memorial form data found in user metadata');
             return {
                 error: 'No memorial form data found'
             };
         }
 
         try {
+            console.log('Parsing memorial form data');
             const parsedData = JSON.parse(memorialData.meta_value) as MemorialFormData;
-            
-            // Validate required fields
+            console.log('Parsed memorial data:', parsedData);
+
+            // Validate required fields for deceased information
             if (!parsedData.deceased?.firstName || !parsedData.deceased?.lastName) {
-                throw new Error('Missing required deceased information');
+                const errorMsg = 'Missing required deceased information';
+                console.error(errorMsg, parsedData.deceased);
+                throw new Error(errorMsg);
             }
 
+            // Validate required fields for memorial location information
             if (!parsedData.memorial?.locationName || !parsedData.memorial?.locationAddress) {
-                throw new Error('Missing required memorial location information');
+                const errorMsg = 'Missing required memorial location information';
+                console.error(errorMsg, parsedData.memorial);
+                throw new Error(errorMsg);
             }
 
+            console.log('Memorial form data validated successfully');
             return {
                 memorialData: parsedData
             };

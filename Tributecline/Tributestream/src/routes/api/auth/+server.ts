@@ -48,8 +48,8 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			throw error(500, 'No token returned from WordPress');
 		}
 
-		// Store the token (or user_id, if you prefer) in a cookie
-		cookies.set('auth_token', data.token, {
+		// Store the JWT token in a cookie
+		cookies.set('jwt_token', data.token, {
 			path: '/',
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
@@ -57,9 +57,27 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			maxAge: 60 * 60 * 24 * 7 // 7 days
 		});
 
-		// Return success + the relevant user fields you want
+		// Parse user ID from JWT token (assuming it's in the payload)
+		const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+		const userId = tokenPayload?.data?.user?.id;
+
+		if (!userId) {
+			throw error(500, 'User ID not found in token payload');
+		}
+
+		// Store the user ID in a cookie
+		cookies.set('user_id', userId.toString(), {
+			path: '/',
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 60 * 60 * 24 * 7 // 7 days
+		});
+
+		// Return success + the relevant user fields
 		return json({
 			success: true,
+			user_id: userId,
 			user_display_name: data.user_display_name,
 			user_email: data.user_email,
 			user_nicename: data.user_nicename

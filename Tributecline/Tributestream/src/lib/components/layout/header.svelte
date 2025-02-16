@@ -1,12 +1,23 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { getContext } from 'svelte';
   import '@fortawesome/fontawesome-free/css/all.min.css';
+
+  // Get user context
+  const { user } = getContext<{
+    user: {
+      id: number;
+      email: string;
+      displayName: string;
+      nicename: string;
+    } | null;
+    onLoginSuccess: (userData: any) => void;
+  }>('user');
 
   // State management using runes
   let isMenuOpen = $state(false);
-  let isLoggedIn = $derived(!!$page.data.user);
-  let isAdmin = $derived($page.data.user?.isAdmin ?? false);
+  let isLoggedIn = $derived(!!user);
+  let isAdmin = $derived(user?.email?.endsWith('@admin.com') ?? false);
 
   // Handle portal navigation
   function handlePortalClick(): void {

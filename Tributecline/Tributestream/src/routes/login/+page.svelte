@@ -6,6 +6,23 @@
   import { login, type AuthResponse } from '$lib/utils/api.client';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { getContext } from 'svelte';
+  
+  // Get user context
+  const { onLoginSuccess } = getContext<{
+    user: {
+      id: number;
+      email: string;
+      displayName: string;
+      nicename: string;
+    } | null;
+    onLoginSuccess: (userData: {
+      id: number;
+      email: string;
+      displayName: string;
+      nicename: string;
+    }) => void;
+  }>('user');
   
   // Form state
   let username = $state('');
@@ -31,8 +48,8 @@
       // Store the token and user data
       handleLoginSuccess(response);
       
-      // Redirect to the return URL or dashboard
-      const returnUrl = $page.url.searchParams.get('returnUrl') || '/dashboard';
+      // Redirect to the return URL or family dashboard
+      const returnUrl = $page.url.searchParams.get('returnUrl') || '/family-dashboard';
       goto(returnUrl);
     } catch (e) {
       // Handle login errors
@@ -49,15 +66,17 @@
 
   // Handle successful login
   function handleLoginSuccess(response: AuthResponse) {
-    // Store token in localStorage (or preferably in a secure cookie via server)
-    localStorage.setItem('auth_token', response.token);
+    if (!response.success) {
+      throw new Error('Login failed');
+    }
     
-    // You might want to update a user store here
-    // userStore.set({
-    //   email: response.user_email,
-    //   displayName: response.user_display_name,
-    //   nicename: response.user_nicename
-    // });
+    // Call the onLoginSuccess prop with user data
+    onLoginSuccess({
+      id: response.user_id,
+      email: response.user_email,
+      displayName: response.user_display_name,
+      nicename: response.user_nicename
+    });
   }
 </script>
 
