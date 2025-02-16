@@ -1,5 +1,4 @@
 import { json } from '@sveltejs/kit';
-import { getServerApiUrl, WP_ENDPOINTS, type WPApiError } from '$lib/config/wordpress.server';
 
 export async function POST({ request, fetch }) {
   console.log('POST request received for updating user meta');
@@ -23,15 +22,18 @@ export async function POST({ request, fetch }) {
       const data = await request.json();
       console.log('Request body parsed successfully:', data);
 
-      // Build the API URL and log it
-      const apiUrl = getServerApiUrl(WP_ENDPOINTS.API.USER_META);
+      // Use direct WordPress URL
+      const apiUrl = 'http://localhost:80/wp-json/tributestream/v1/user-meta';
       console.log('Sending POST request to external API URL:', apiUrl);
+
+      // Ensure token has 'Bearer ' prefix
+      const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 
       // Perform the fetch to update user meta on the external API
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': token,
+          'Authorization': authToken,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)

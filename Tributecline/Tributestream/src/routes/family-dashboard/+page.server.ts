@@ -30,22 +30,19 @@ interface MemorialFormData {
     };
 }
 
-export const load: PageServerLoad = async ({ cookies, fetch }) => {
+export const load: PageServerLoad = async ({ locals, fetch }) => {
     console.log('Loading user metadata for memorial form data');
-    const userId = cookies.get('user_id');
-    const token = cookies.get('jwt_token');
-    console.log('Retrieved cookies:', { userId, token: token ? 'present' : 'missing' });
-
-    if (!userId || !token) {
-        console.warn('Missing user_id or jwt_token cookie, redirecting to /login');
+    
+    if (!locals.isAuthenticated) {
+        console.warn('User not authenticated, redirecting to /login');
         throw redirect(302, '/login');
     }
 
     try {
-        console.log(`Fetching user metadata for userId: ${userId}`);
-        const response = await fetch(`/api/user-meta/${userId}`, {
+        console.log(`Fetching user metadata for userId: ${locals.userId}`);
+        const response = await fetch(`/api/user-meta/${locals.userId}`, {
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${locals.token}`
             }
         });
         console.log('Received response from /api/user-meta:', {

@@ -32,7 +32,7 @@ export const WP_ENDPOINTS = {
   API: {
     USERS: '/wp/v2/users',
     POSTS: '/wp/v2/posts',
-    USER_META: `/${wpApiNamespace}/user-meta`,
+    USER_META: `${wpApiNamespace}/user-meta`,  // Include full path since base URL has wp-json
   },
 } as const;
 

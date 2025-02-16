@@ -185,5 +185,32 @@ export async function getCurrentUser(token: string): Promise<WordPressUser> {
   });
 }
 
+/**
+ * Get user meta data
+ * @param userId - The user ID to get meta data for
+ * @param token - Valid JWT token
+ * @returns Promise with user meta data
+ */
+export async function getUserMeta(userId: string | number, token: string) {
+  // Use the SvelteKit endpoint instead of WordPress directly
+  const response = await fetch(`/api/user-meta/${userId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new ApiError(
+      error.code || 'user_meta_error',
+      error.message || 'Failed to fetch user meta',
+      response.status
+    );
+  }
+
+  return response.json();
+}
+
 // Export the base request function for other client-side modules
 export { makeRequest };

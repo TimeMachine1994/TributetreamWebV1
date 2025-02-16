@@ -1,33 +1,43 @@
 import { json } from '@sveltejs/kit';
 import type { UserMeta } from '$lib/types/api';
-import { getServerApiUrl, WP_ENDPOINTS } from '$lib/config/wordpress.server';
 
-export async function GET({ params, request, fetch }) {
+export async function GET({ params, locals, fetch }) {
   console.log('GET request received for user meta', { params });
 
   try {
-    // Log the authorization header presence (but avoid logging the full token)
-    const token = request.headers.get('Authorization');
-    if (!token) {
-      console.error('Authorization token is missing in the request headers');
+    if (!locals.isAuthenticated) {
+      console.error('User not authenticated');
       return json(
         {
           error: true,
-          message: 'Authorization token is required'
+          message: 'Authentication required'
         },
         { status: 401 }
       );
     }
-    console.log('Authorization token found (not logging sensitive details)');
 
-    // Build and log the API URL
-    const url = getServerApiUrl(`${WP_ENDPOINTS.API.USER_META}/${params.userId}`);
+    // Ensure user can only access their own data
+    if (params.userId !== locals.userId) {
+      console.error('User attempting to access unauthorized data');
+      return json(
+        {
+          error: true,
+          message: 'Unauthorized access'
+        },
+        { status: 403 }
+      );
+    }
+
+    console.log('User authenticated and authorized');
+
+    // Use direct WordPress URL
+    const url = `http://localhost:80/wp-json/tributestream/v1/user-meta/${params.userId}`;
     console.log('Fetching user meta from URL:', url);
 
-    // Make the fetch request
+    // Make the fetch request with token from locals
     const response = await fetch(url, {
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${locals.token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -35,19 +45,45 @@ export async function GET({ params, request, fetch }) {
 
     // Handle non-OK responses with detailed logging
     if (!response.ok) {
-      const errorData = await response.json().catch((err) => {
-        console.error('Failed to parse error response JSON:', err);
-        return {};
-      });
+      // Try to get the response text first
+      const responseText = await response.text();
+      let errorMessage = `Failed to fetch user meta: ${response.statusText}`;
+      let errorData: { message?: string } = {};
+
+      // Try to parse as JSON if it looks like JSON
+      if (responseText.trim().startsWith('{')) {
+        try {
+          errorData = JSON.parse(responseText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (err) {
+          console.error('Failed to parse error response as JSON:', err);
+        }
+      }
+
+      // Log the error details
       console.error('Error fetching user meta:', {
         status: response.status,
         statusText: response.statusText,
-        error: errorData
+        responseText: responseText.substring(0, 200) // Log first 200 chars to avoid huge logs
       });
+
+      // Return appropriate error response
+      if (response.status === 404) {
+        return json(
+          {
+            error: true,
+            message: `User meta not found for user ID: ${params.userId}`
+          },
+          { status: 404 }
+        );
+      }
+
       return json(
         {
           error: true,
-          message: errorData.message || `Failed to fetch user meta: ${response.statusText}`
+          message: errorMessage
         },
         { status: response.status }
       );
@@ -73,7 +109,17 @@ export async function GET({ params, request, fetch }) {
     }
 
     console.log('User meta fetched successfully');
-    return json(data);
+    
+    // Transform and validate the response data
+    const transformedData = {
+      meta_key: data.meta_key || '',
+      meta_value: typeof data.meta_value === 'string' ? data.meta_value : JSON.stringify(data.meta_value),
+      user_id: parseInt(params.userId),
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString()
+    };
+
+    return json(transformedData);
   } catch (error) {
     console.error('Exception caught in GET user meta handler:', error);
     return json(
