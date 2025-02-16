@@ -1,94 +1,101 @@
-import { error, json } from '@sveltejs/kit';
+import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const WP_AUTH_URL = 'http://localhost:80/wp-json/jwt-auth/v1/token';
+const WORDPRESS_API_URL = 'http://localhost:80/wp-json';
+export const POST: RequestHandler = async ({ request }) => {
+  try {
+    const { username, password } = await request.json();
 
-export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
-	try {
-		const body = await request.json();
+    if (!username || !password) {
+      return json(
+        { 
+          error: 'Username and password are required' 
+        }, 
+        { status: 400 }
+      );
+    }
 
-		// Validate required fields
-		if (!body.username || !body.password) {
-			throw error(400, 'Username and password are required');
-		}
+    // Make request to WordPress JWT auth endpoint
+    const response = await fetch(`${WORDPRESS_API_URL}/jwt-auth/v1/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
 
-		const response = await fetch(WP_AUTH_URL, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				username: body.username,
-				password: body.password
-			})
-		});
+    const data = await response.json();
 
-		// If fetch fails
-		if (!response.ok) {
-			throw error(response.status, 'Authentication failed');
-		}
+    if (!response.ok) {
+      return json(
+        { 
+          error: data.message || 'Authentication failed' 
+        }, 
+        { status: response.status }
+      );
+    }
 
-		// Here's the important part:
-		// Parse the JSON the WP JWT plugin sends back. Typically looks like:
-		// {
-		//   "token": "...",
-		//   "user_email": "...",
-		//   "user_nicename": "...",
-		//   "user_display_name": "..."
-		// }
-		const data = await response.json() as {
-			token?: string;
-			user_email?: string;
-			user_display_name?: string;
-			user_nicename?: string;
-		};
+    // Return successful response with token and user data
+    return json({
+      token: data.token,
+      user: {
+        email: data.user_email,
+        displayName: data.user_display_name,
+        nicename: data.user_nicename
+      }
+    });
+  } catch (error) {
+    console.error('Auth error:', error);
+    return json(
+      { 
+        error: 'Internal server error' 
+      }, 
+      { status: 500 }
+    );
+  }
+};
 
-		// Verify we received a token
-		if (!data.token) {
-			throw error(500, 'No token returned from WordPress');
-		}
+// Validate token endpoint
+export const PUT: RequestHandler = async ({ request }) => {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    
+    if (!authHeader) {
+      return json(
+        { 
+          error: 'No token provided' 
+        }, 
+        { status: 401 }
+      );
+    }
 
-		// Store the JWT token in a cookie
-		cookies.set('jwt_token', data.token, {
-			path: '/',
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 60 * 60 * 24 * 7 // 7 days
-		});
+    // Make request to WordPress JWT token validation endpoint
+    const response = await fetch(`${WORDPRESS_API_URL}/jwt-auth/v1/token/validate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader
+      }
+    });
 
-		// Parse user ID from JWT token (assuming it's in the payload)
-		const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
-		const userId = tokenPayload?.data?.user?.id;
+    const data = await response.json();
 
-		if (!userId) {
-			throw error(500, 'User ID not found in token payload');
-		}
+    if (!response.ok) {
+      return json(
+        { 
+          error: data.message || 'Token validation failed' 
+        }, 
+        { status: response.status }
+      );
+    }
 
-		// Store the user ID in a cookie
-		cookies.set('user_id', userId.toString(), {
-			path: '/',
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 60 * 60 * 24 * 7 // 7 days
-		});
-
-		// Return success + the relevant user fields
-		return json({
-			success: true,
-			user_id: userId,
-			user_display_name: data.user_display_name,
-			user_email: data.user_email,
-			user_nicename: data.user_nicename
-		});
-	} catch (err) {
-		console.error('[/api/auth] Error:', err);
-
-		if (err instanceof Error && 'status' in err) {
-			throw err; // rethrow any SvelteKit error
-		}
-
-		throw error(500, 'Failed to authenticate with WordPress');
-	}
+    return json({ valid: true });
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return json(
+      { 
+        error: 'Internal server error' 
+      }, 
+      { status: 500 }
+    );
+  }
 };
