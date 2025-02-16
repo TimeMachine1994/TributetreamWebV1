@@ -6,7 +6,8 @@ import { userStore, type User } from './userStore';
  */
 interface AuthState {
     isAuthenticated: boolean;
-    role: string | null;
+    role: string | null;    // Primary role (for backwards compatibility)
+    roles: string[];       // All user roles
     calculatorStatus: {
         completed: boolean;
     } | null;
@@ -19,6 +20,7 @@ function createAuthStore() {
     const initialState: AuthState = {
         isAuthenticated: false,
         role: null,
+        roles: [],
         calculatorStatus: null
     };
 
@@ -36,11 +38,18 @@ function createAuthStore() {
 
         clear: () => set(initialState),
 
-        initFromUser: (user: User) => update(() => ({
-            isAuthenticated: true,
-            role: user.roles[0] || 'subscriber',
-            calculatorStatus: user.meta?.calculatorStatus || null
-        }))
+        initFromUser: (user: User) => {
+            // Ensure roles is always an array
+            const roles = Array.isArray(user.roles) ? user.roles : 
+                         user.roles ? [user.roles] : ['subscriber'];
+            
+            update(() => ({
+                isAuthenticated: true,
+                roles,
+                role: roles[0], // Set primary role for backwards compatibility
+                calculatorStatus: user.meta?.calculatorStatus || null
+            }));
+        }
     };
 }
 
@@ -49,11 +58,19 @@ export const authStore = createAuthStore();
 
 // Computed properties as functions
 export function isAdmin(state: AuthState): boolean {
-    return state.role === 'administrator';
+    return state.roles.includes('administrator');
 }
 
 export function isSubscriber(state: AuthState): boolean {
-    return state.role === 'subscriber';
+    return state.roles.includes('subscriber') && !isAdmin(state);
+}
+
+export function getPrimaryRole(state: AuthState): string {
+    return state.role || state.roles[0] || 'subscriber';
+}
+
+export function hasRole(state: AuthState, role: string): boolean {
+    return state.roles.includes(role);
 }
 
 export function needsCalculator(state: AuthState): boolean {

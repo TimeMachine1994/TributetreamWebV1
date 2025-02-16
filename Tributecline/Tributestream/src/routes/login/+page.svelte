@@ -1,6 +1,6 @@
 <!-- 
   Login Page Component
-  Handles user authentication against WordPress using JWT
+  Handles user authentication using mock data store for development
 -->
 <script lang="ts">
   import { goto } from '$app/navigation';
@@ -33,9 +33,9 @@
       username: string;
       email: string;
       displayName: string;
-      role: string;
-      meta?: Record<string, unknown>;
-      token: string;
+      roles: string[];
+      role?: string;
+      token?: string;
     };
     error?: string;
   }
@@ -49,8 +49,8 @@
         username: response.user.username,
         email: response.user.email,
         displayName: response.user.displayName,
-        roles: [response.user.role],
-        meta: response.user.meta || {},
+        roles: response.user.roles,
+        meta: {},
         token: response.user.token
       };
 
@@ -95,6 +95,15 @@
       <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
         Sign in to your account
       </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Demo Accounts:
+        <br />
+        admin/admin123 - Administrator
+        <br />
+        user/user123 - Regular User
+        <br />
+        family/family123 - Family Member
+      </p>
     </div>
 
     <!-- Login Form -->

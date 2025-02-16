@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { isAdmin } from '$lib/stores/authStore.svelte';
+import { mockAuthenticate } from '$lib/stores/mockData';
 
 type ActionData = {
     success: boolean;
@@ -9,7 +10,8 @@ type ActionData = {
     user?: {
         email: string;
         displayName: string;
-        role: string;
+        roles: string[];
+        role?: string;
     };
 }
 
@@ -29,7 +31,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions = {
-    default: async ({ request, fetch }) => {
+    default: async ({ request, locals }) => {
         const formData = await request.formData();
         const username = formData.get('username')?.toString() || '';
         const password = formData.get('password')?.toString() || '';
@@ -43,57 +45,38 @@ export const actions = {
         }
 
         try {
-            // 1. Authenticate using our internal API endpoint
-            const authResponse = await fetch('/api/auth', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            });
+            // Use mock authentication instead of API calls
+            const authResult = mockAuthenticate(username, password);
 
-            if (!authResponse.ok) {
+            if (!authResult.success || !authResult.user) {
                 return fail(401, {
                     success: false,
                     username,
-                    error: 'Invalid credentials'
+                    error: authResult.error || 'Authentication failed'
                 } as ActionData);
             }
 
-            const authData = await authResponse.json();
-            
-            if (!authData.success) {
-                return fail(401, {
-                    success: false,
-                    username,
-                    error: authData.error || 'Authentication failed'
-                } as ActionData);
-            }
+            const { user } = authResult;
 
-            // 2. Get user role using our internal endpoint
-            // Note: We need to extract user ID from the auth response
-            const userId = authData.user_id; // Assuming auth endpoint returns user_id
-            const roleResponse = await fetch(`/api/getRole?id=${userId}`);
+            // Update locals.auth with the user information
+            locals.auth = {
+                isAuthenticated: true,
+                token: user.token || '',
+                userId: user.id.toString(), // Convert id to string
+                role: user.roles[0], // Primary role
+                roles: user.roles,   // All roles
+                calculatorStatus: user.meta?.calculatorStatus || null
+            };
 
-            if (!roleResponse.ok) {
-                return fail(500, {
-                    success: false,
-                    username,
-                    error: 'Failed to get user role'
-                } as ActionData);
-            }
-
-            const roleData = await roleResponse.json();
-            const role = roleData.role || 'subscriber';
-
-            // 3. Return success with user data
+            // Return success with user data
             return {
                 success: true,
                 username,
                 user: {
-                    email: authData.user_email,
-                    displayName: authData.user_display_name,
-                    role
+                    email: user.email,
+                    displayName: user.displayName,
+                    roles: user.roles,
+                    role: user.roles[0] // Keep for backwards compatibility
                 }
             } as ActionData;
         } catch (error) {

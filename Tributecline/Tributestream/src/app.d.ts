@@ -7,7 +7,8 @@ declare global {
                 isAuthenticated: boolean;
                 token: string | null;
                 userId: string | null;
-                role: string | null;
+                role: string | null;   // Primary role (for backwards compatibility)
+                roles: string[];       // All user roles
                 calculatorStatus: {
                     completed: boolean;
                 } | null;
