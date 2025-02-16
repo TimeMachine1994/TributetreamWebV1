@@ -35,6 +35,7 @@ export const WP_ENDPOINTS = {
     USERS: '/wp-json/wp/v2/users',
     POSTS: '/wp-json/wp/v2/posts',
     USER_META: '/wp-json/wp/v2/user-meta',
+    GET_ROLE: '/api/getRole',  // Our SvelteKit endpoint for role checking
   },
 } as const;
 

@@ -3,61 +3,88 @@
   Handles user authentication against WordPress using JWT
 -->
 <script lang="ts">
-  import { login, type AuthResponse } from '$lib/utils/api.client';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { authStore, isAdmin, needsCalculator } from '$lib/stores/authStore.svelte';
+  import { userStore } from '$lib/stores/userStore';
+  import { enhance } from '$app/forms';
+  import type { ActionResult } from '@sveltejs/kit';
   
-  // Form state
+  // Form state using SvelteKit 5 runes
   let username = $state('');
   let password = $state('');
   let isLoading = $state(false);
   let error = $state<string | null>(null);
 
-  // Handle form submission
-  async function handleSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    error = null;
-    isLoading = true;
+  // Subscribe to auth store
+  let currentAuth = $state($authStore);
+  $effect(() => {
+    const unsubscribe = authStore.subscribe(value => {
+      currentAuth = value;
+    });
+    return unsubscribe;
+  });
 
-    try {
-      // Validate inputs
-      if (!username || !password) {
-        throw new Error('Please enter both username and password');
-      }
+  // Response type for login action
+  interface LoginResponse {
+    success: boolean;
+    user?: {
+      id: number;
+      username: string;
+      email: string;
+      displayName: string;
+      role: string;
+      meta?: Record<string, unknown>;
+      token: string;
+    };
+    error?: string;
+  }
 
-      // Attempt login
-      const response = await login(username, password);
-      
-      // Store the token and user data
-      handleLoginSuccess(response);
-      
-      // Redirect to the return URL or dashboard
-      const returnUrl = $page.url.searchParams.get('returnUrl') || '/dashboard';
-      goto(returnUrl);
-    } catch (e) {
-      // Handle login errors
-      if (e instanceof Error) {
-        error = e.message;
+  // Handle successful login response
+  function handleLoginSuccess(response: LoginResponse) {
+    if (response.success && response.user) {
+      // Update stores with user data
+      const userData = {
+        id: response.user.id,
+        username: response.user.username,
+        email: response.user.email,
+        displayName: response.user.displayName,
+        roles: [response.user.role],
+        meta: response.user.meta || {},
+        token: response.user.token
+      };
+
+      userStore.setUser(userData);
+      authStore.initFromUser(userData);
+
+      // Handle redirect based on role and returnUrl
+      const returnUrl = $page.url.searchParams.get('returnUrl') || '';
+      if (isAdmin(currentAuth)) {
+        goto('/admin-dashboard', { replaceState: true });
+      } else if (needsCalculator(currentAuth)) {
+        goto('/calculator', { replaceState: true });
       } else {
-        error = 'An unexpected error occurred';
+        goto(returnUrl || '/family-dashboard', { replaceState: true });
       }
-      console.error('Login error:', e);
-    } finally {
-      isLoading = false;
     }
   }
 
-  // Handle successful login
-  function handleLoginSuccess(response: AuthResponse) {
-    // Store token in localStorage (or preferably in a secure cookie via server)
-    localStorage.setItem('auth_token', response.token);
+  // Form submission handler
+  function handleSubmit() {
+    isLoading = true;
+    error = null;
     
-    // You might want to update a user store here
-    // userStore.set({
-    //   email: response.user_email,
-    //   displayName: response.user_display_name,
-    //   nicename: response.user_nicename
-    // });
+    return async ({ result }: { result: ActionResult }) => {
+      isLoading = false;
+      
+      if (result.type === 'failure') {
+        const failureData = result.data as { error?: string };
+        error = failureData?.error || 'An unexpected error occurred';
+      } else if (result.type === 'success') {
+        const successData = result.data as LoginResponse;
+        handleLoginSuccess(successData);
+      }
+    };
   }
 </script>
 
@@ -71,7 +98,11 @@
     </div>
 
     <!-- Login Form -->
-    <form class="mt-8 space-y-6" on:submit={handleSubmit}>
+    <form 
+      method="POST" 
+      class="mt-8 space-y-6"
+      use:enhance={handleSubmit}
+    >
       <!-- Error Display -->
       {#if error}
         <div class="rounded-md bg-red-50 p-4">

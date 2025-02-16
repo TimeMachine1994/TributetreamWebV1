@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { validateToken } from '$lib/utils/api.server';
-import { WordPressApiError } from '$lib/config/wordpress.server';
+
+const PUBLIC_WORDPRESS_URL = 'https://wp.tributestream.com';
 
 /**
  * Token validation endpoint
@@ -24,48 +24,40 @@ export async function POST({ request }) {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Validate token using our server-side API utility
-      const isValid = await validateToken(token);
+      // Validate token directly with WordPress
+      const response = await fetch(`${PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (!isValid) {
+      if (!response.ok) {
+        const errorData = await response.json();
         return json(
           {
             error: true,
-            message: 'Invalid token'
+            message: errorData.message || 'Invalid token',
+            code: errorData.code || 'jwt_auth_invalid_token'
           },
-          { status: 401 }
+          { status: response.status }
         );
       }
 
+      // Token is valid
       return json({
         code: 'jwt_auth_valid_token',
         data: { status: 200 }
       });
     } catch (error) {
-      // Handle specific WordPress API errors
-      if (error instanceof WordPressApiError) {
-        console.error('WordPress API Error:', {
-          code: error.code,
-          message: error.message,
-          status: error.status
-        });
-
-        return json(
-          {
-            error: true,
-            message: error.message,
-            code: error.code
-          },
-          { status: error.status }
-        );
-      }
-
-      // Handle unexpected errors
-      console.error('Token validation error:', error);
+      // Handle WordPress API errors
+      console.error('WordPress API Error:', error);
       return json(
         {
           error: true,
-          message: 'Invalid token'
+          message: error instanceof Error ? error.message : 'Token validation failed',
+          code: 'jwt_auth_invalid_token'
         },
         { status: 401 }
       );

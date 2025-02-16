@@ -1,89 +1,108 @@
+import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { authenticate } from '$lib/utils/api.server';
-import { WordPressApiError } from '$lib/config/wordpress.server';
-import type { Actions, PageServerLoad } from './$types';
+import { isAdmin } from '$lib/stores/authStore.svelte';
 
-/**
- * Server-side load function
- * Handles redirects for authenticated users and sets up initial page data
- */
+type ActionData = {
+    success: boolean;
+    username?: string;
+    error?: string;
+    user?: {
+        email: string;
+        displayName: string;
+        role: string;
+    };
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
-  // If user is already authenticated, redirect to dashboard
-  if (locals.user) {
-    throw redirect(302, '/dashboard');
-  }
+    // If user is already authenticated, redirect based on role
+    if (locals.auth.isAuthenticated) {
+        const defaultRedirect = isAdmin(locals.auth) 
+            ? '/admin-dashboard' 
+            : '/family-dashboard';
 
-  return {
-    // Pass any URL parameters (like returnUrl) to the page
-    returnUrl: url.searchParams.get('returnUrl') || '/dashboard'
-  };
-};
-
-/**
- * Server-side form actions
- * Provides an alternative server-side authentication flow
- * This is useful for progressive enhancement and non-JS scenarios
- */
-export const actions: Actions = {
-  default: async ({ request, cookies }) => {
-    const data = await request.formData();
-    const username = data.get('username');
-    const password = data.get('password');
-
-    // Validate form inputs
-    if (!username || !password) {
-      return fail(400, {
-        error: 'Username and password are required',
-        username: username?.toString() || ''
-      });
+        throw redirect(302, url.searchParams.get('returnUrl') || defaultRedirect);
     }
 
-    try {
-      // Attempt authentication
-      const response = await authenticate(
-        username.toString(),
-        password.toString()
-      );
+    return {
+        auth: locals.auth
+    };
+};
 
-      // Set secure HTTP-only cookie with the token
-      cookies.set('auth_token', response.token, {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-      });
+export const actions = {
+    default: async ({ request, fetch }) => {
+        const formData = await request.formData();
+        const username = formData.get('username')?.toString() || '';
+        const password = formData.get('password')?.toString() || '';
 
-      // Return success data
-      return {
-        success: true,
-        user: {
-          email: response.user_email,
-          displayName: response.user_display_name,
-          nicename: response.user_nicename
+        if (!username || !password) {
+            return fail(400, {
+                success: false,
+                username,
+                error: 'Username and password are required'
+            } as ActionData);
         }
-      };
-    } catch (error) {
-      // Handle WordPress API errors
-      if (error instanceof WordPressApiError) {
-        console.error('WordPress authentication error:', {
-          code: error.code,
-          message: error.message,
-          status: error.status
-        });
 
-        return fail(error.status, {
-          error: error.message,
-          username: username.toString()
-        });
-      }
+        try {
+            // 1. Authenticate using our internal API endpoint
+            const authResponse = await fetch('/api/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
 
-      // Handle unexpected errors
-      console.error('Authentication error:', error);
-      return fail(500, {
-        error: 'An unexpected error occurred during authentication',
-        username: username.toString()
-      });
+            if (!authResponse.ok) {
+                return fail(401, {
+                    success: false,
+                    username,
+                    error: 'Invalid credentials'
+                } as ActionData);
+            }
+
+            const authData = await authResponse.json();
+            
+            if (!authData.success) {
+                return fail(401, {
+                    success: false,
+                    username,
+                    error: authData.error || 'Authentication failed'
+                } as ActionData);
+            }
+
+            // 2. Get user role using our internal endpoint
+            // Note: We need to extract user ID from the auth response
+            const userId = authData.user_id; // Assuming auth endpoint returns user_id
+            const roleResponse = await fetch(`/api/getRole?id=${userId}`);
+
+            if (!roleResponse.ok) {
+                return fail(500, {
+                    success: false,
+                    username,
+                    error: 'Failed to get user role'
+                } as ActionData);
+            }
+
+            const roleData = await roleResponse.json();
+            const role = roleData.role || 'subscriber';
+
+            // 3. Return success with user data
+            return {
+                success: true,
+                username,
+                user: {
+                    email: authData.user_email,
+                    displayName: authData.user_display_name,
+                    role
+                }
+            } as ActionData;
+        } catch (error) {
+            console.error('Login error:', error);
+            return fail(500, {
+                success: false,
+                username,
+                error: 'An unexpected error occurred'
+            } as ActionData);
+        }
     }
-  }
-};
+} satisfies Actions;

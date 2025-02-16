@@ -3,6 +3,18 @@ import type { RequestHandler } from './$types';
 
 const WP_AUTH_URL = 'https://wp.tributestream.com/wp-json/jwt-auth/v1/token';
 
+// Helper function to decode JWT payload
+function decodeJwtPayload(token: string): { data?: { user?: { id?: string } } } {
+	try {
+		const base64Payload = token.split('.')[1];
+		const payload = Buffer.from(base64Payload, 'base64').toString('utf8');
+		return JSON.parse(payload);
+	} catch (err) {
+		console.error('Error decoding JWT:', err);
+		return {};
+	}
+}
+
 export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 	try {
 		const body = await request.json();
@@ -28,14 +40,7 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			throw error(response.status, 'Authentication failed');
 		}
 
-		// Here’s the important part:
-		// Parse the JSON the WP JWT plugin sends back. Typically looks like:
-		// {
-		//   "token": "...",
-		//   "user_email": "...",
-		//   "user_nicename": "...",
-		//   "user_display_name": "..."
-		// }
+		// Parse the JSON the WP JWT plugin sends back
 		const data = await response.json() as {
 			token?: string;
 			user_email?: string;
@@ -48,7 +53,15 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			throw error(500, 'No token returned from WordPress');
 		}
 
-		// Store the token (or user_id, if you prefer) in a cookie
+		// Extract user ID from JWT payload
+		const payload = decodeJwtPayload(data.token);
+		const userId = payload.data?.user?.id;
+
+		if (!userId) {
+			throw error(500, 'Could not extract user ID from token');
+		}
+
+		// Store the token in a cookie
 		cookies.set('auth_token', data.token, {
 			path: '/',
 			httpOnly: true,
@@ -57,9 +70,10 @@ export const POST: RequestHandler = async ({ fetch, request, cookies }) => {
 			maxAge: 60 * 60 * 24 * 7 // 7 days
 		});
 
-		// Return success + the relevant user fields you want
+		// Return success + the relevant user fields including user_id
 		return json({
 			success: true,
+			user_id: userId,
 			user_display_name: data.user_display_name,
 			user_email: data.user_email,
 			user_nicename: data.user_nicename

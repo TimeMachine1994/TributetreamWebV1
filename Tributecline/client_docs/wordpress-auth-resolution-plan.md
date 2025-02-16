@@ -1,82 +1,110 @@
 # WordPress Authentication Resolution Plan
-Last Updated: 2/14/2025
+Last Updated: 2/16/2025
 
-## Current Issues
-1. WordPress backend login works but API authentication fails
-2. Port configuration mismatch:
-   - Current .env uses port 80
-   - Documentation specifies port 8080
-3. Potential CORS configuration issues
-4. JWT plugin configuration needs verification
+## Problem Statement
+The login flow fails when trying to fetch the current user's data because requests are being made directly to WordPress endpoints instead of going through our SvelteKit API routes. This causes CORS and authentication issues.
 
-## Resolution Steps
+## Current Flow
+1. User submits login form
+2. Client calls `/wp-json/jwt-auth/v1/token` to get JWT token (works)
+3. Client tries to fetch user data from `/wp-json/wp/v2/users/me` (fails)
+   - CORS error because direct WordPress access is blocked
+   - Authentication fails because token handling is bypassing our API layer
 
-### 1. WordPress Configuration Verification
-- [ ] Verify WordPress is running on the correct port (80 vs 8080)
-- [ ] Confirm JWT Authentication plugin is activated
-- [ ] Check wp-config.php for required JWT configuration:
-  ```php
-  define('JWT_AUTH_SECRET_KEY', 'your-secret-key');
-  define('JWT_AUTH_CORS_ENABLE', true);
-  ```
+## Solution Steps
 
-### 2. Environment Configuration Updates
-- [ ] Align .env configuration with actual WordPress installation:
-  ```env
-  WORDPRESS_URL="http://localhost:80"  # Verify this matches WordPress installation
-  VITE_WORDPRESS_URL="http://localhost:80"
-  VITE_WP_API_NAMESPACE="tributestream/v1"
-  ```
-- [ ] Update documentation to reflect correct port number
+### 1. Update WordPress Client Configuration
+File: `src/lib/config/wordpress.client.ts`
+Changes needed:
+- Update API endpoint configuration to use our SvelteKit routes
+- Add new endpoint constants for user-related operations
+```typescript
+export const WP_ENDPOINTS = {
+  AUTH: {
+    TOKEN: '/wp-json/jwt-auth/v1/token',
+    VALIDATE: '/wp-json/jwt-auth/v1/token/validate',
+  },
+  API: {
+    USERS: '/api/users',           // Changed from /wp-json/wp/v2/users
+    USERS_ME: '/api/users/me',     // New endpoint for current user
+    USER_META: '/api/user-meta',   // Changed from /wp-json/wp/v2/user-meta
+    GET_ROLE: '/api/getRole',      // Already correct
+  }
+};
+```
 
-### 3. CORS Configuration
-- [ ] Add CORS headers to WordPress:
-  ```php
-  add_action('init', function() {
-    header("Access-Control-Allow-Origin: http://localhost:5173");
-    header("Access-Control-Allow-Credentials: true");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    header("Access-Control-Allow-Headers: Authorization, Content-Type");
+### 2. Update API Client Functions
+File: `src/lib/utils/api.client.ts`
+Changes needed:
+- Update getCurrentUser function to use new endpoint
+```typescript
+export async function getCurrentUser(token: string): Promise<WordPressUser> {
+  return makeRequest<WordPressUser>(WP_ENDPOINTS.API.USERS_ME, {
+    token
   });
-  ```
+}
+```
 
-### 4. Testing Plan
-1. WordPress Backend:
-   - [ ] Verify WordPress admin login
-   - [ ] Check JWT plugin status
-   - [ ] Test JWT endpoints directly:
-     ```
-     /wp-json/jwt-auth/v1/token
-     /wp-json/jwt-auth/v1/token/validate
-     ```
+### 3. Verify Server-Side Implementation
+File: `src/routes/api/users/me/+server.ts`
+Current implementation is correct:
+- Properly forwards Authorization header
+- Handles WordPress API communication
+- Manages error responses
+- No changes needed
 
-2. API Testing:
-   - [ ] Test authentication endpoint with Postman/curl
-   - [ ] Verify CORS headers in response
-   - [ ] Check network requests in browser dev tools
-   - [ ] Validate JWT token format and content
+### 4. Update Login Flow Error Handling
+File: `src/routes/login/+page.svelte`
+Changes needed:
+- Add more specific error handling for authentication failures
+```typescript
+catch (e) {
+  if (e instanceof ApiError) {
+    switch (e.code) {
+      case 'jwt_auth_error':
+        error = 'Invalid username or password';
+        break;
+      case 'cors_error':
+        error = 'Unable to connect to authentication service';
+        break;
+      default:
+        error = e.message;
+    }
+  } else {
+    error = 'An unexpected error occurred';
+  }
+  console.error('Login error:', e);
+}
+```
 
-3. Frontend Integration:
-   - [ ] Test login through SvelteKit frontend
-   - [ ] Verify token storage
-   - [ ] Check protected route access
-   - [ ] Validate error handling
+## Implementation Order
+1. Update wordpress.client.ts first to establish new endpoint structure
+2. Modify api.client.ts to use new endpoints
+3. Update error handling in login page
+4. Test full authentication flow:
+   - Login attempt with valid credentials
+   - Verify token acquisition
+   - Verify user data retrieval
+   - Verify role fetching
+   - Test error scenarios (invalid credentials, network issues)
 
-## Success Criteria
-1. Successful JWT token generation via API
-2. No CORS errors in browser console
-3. Successful frontend login
-4. Protected route access with JWT token
-5. Proper error handling for invalid credentials
+## Expected Outcome
+- All WordPress API interactions will go through our SvelteKit API routes
+- Proper CORS handling via our server
+- Consistent error handling and user feedback
+- Secure authentication flow with proper token management
 
-## Documentation Updates Needed
-1. Update api-configuration-update.md with correct port numbers
-2. Document JWT plugin configuration steps
-3. Add CORS configuration guide
-4. Update troubleshooting section with common issues/solutions
+## Validation Steps
+1. Successful login with valid credentials
+2. Proper error message for invalid credentials
+3. Verify token storage in localStorage
+4. Confirm user data retrieval
+5. Verify correct role-based routing
+6. Check network tab for proper request flow through our API routes
 
-## Next Steps
-1. Implement this resolution plan
-2. Update relevant documentation
-3. Add automated tests for authentication flow
-4. Document production deployment considerations
+## Rollback Plan
+If issues occur:
+1. Revert wordpress.client.ts changes
+2. Revert api.client.ts changes
+3. Restore original error handling
+4. Document any new issues discovered during implementation
