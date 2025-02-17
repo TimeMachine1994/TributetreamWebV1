@@ -1,6 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
 
+  export let title: string = "Preserve Your Legacy";
+  export let subtitle: string = "Create timeless video tributes that celebrate life's most precious moments";
+  export let showButtons: boolean = true;
+
   function handleScheduleClick(): void {
     goto('/schedule');
   }
@@ -19,32 +23,34 @@
     <div class="max-w-4xl mx-auto text-center">
       <!-- Main heading -->
       <h1 class="font-great-vibes text-6xl md:text-7xl lg:text-8xl mb-6">
-        Preserve Your Legacy
+        {title}
       </h1>
       
       <!-- Subheading -->
       <p class="text-xl md:text-2xl mb-8 text-gray-300 font-fanwood">
-        Create timeless video tributes that celebrate life's most precious moments
+        {subtitle}
       </p>
       
       <!-- Call to action buttons -->
-      <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
-        <button
-          on:click={handleScheduleClick}
-          class="bg-[#D5BA7F] text-black px-8 py-3 rounded-lg text-lg font-medium
-          hover:shadow-[0_0_15px_5px_#D5BA7F] transition-all duration-300 ease-in-out"
-        >
-          Schedule Now
-        </button>
-        
-        <button
-          on:click={handleLearnMoreClick}
-          class="border-2 border-[#D5BA7F] text-[#D5BA7F] px-8 py-3 rounded-lg text-lg
-          hover:bg-[#D5BA7F] hover:text-black transition-all duration-300 ease-in-out"
-        >
-          Learn More
-        </button>
-      </div>
+      {#if showButtons}
+        <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
+          <button
+            on:click={handleScheduleClick}
+            class="bg-[#D5BA7F] text-black px-8 py-3 rounded-lg text-lg font-medium
+            hover:shadow-[0_0_15px_5px_#D5BA7F] transition-all duration-300 ease-in-out"
+          >
+            Schedule Now
+          </button>
+          
+          <button
+            on:click={handleLearnMoreClick}
+            class="border-2 border-[#D5BA7F] text-[#D5BA7F] px-8 py-3 rounded-lg text-lg
+            hover:bg-[#D5BA7F] hover:text-black transition-all duration-300 ease-in-out"
+          >
+            Learn More
+          </button>
+        </div>
+      {/if}
       
       <!-- Feature highlights -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">

@@ -9,22 +9,8 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.token = token;
     event.locals.isAuthenticated = true;
     
-    // Create new headers with Authorization
-    const headers = new Headers(event.request.headers);
-    headers.set('Authorization', `Bearer ${token}`);
-
-    // Create a new request with the updated headers
-    const request = new Request(
-      event.request.url,
-      {
-        method: event.request.method,
-        headers,
-        body: event.request.body
-      }
-    );
-
-    // Update the event request
-    event.request = request;
+    // Add Authorization header to the existing request
+    event.request.headers.set('Authorization', `Bearer ${token}`);
   } else {
     // Reset authentication state if no token
     event.locals.isAuthenticated = false;

@@ -11,8 +11,30 @@ export const load: PageServerLoad<MemorialFormResponse> = async ({ locals, fetch
     }
 
     try {
-        console.log(`Fetching user metadata for userId: ${locals.userId}`);
-        const response = await fetch(`/api/user-meta/${locals.userId}`, {
+        if (!locals.token) {
+            console.error('No authentication token found');
+            return { error: 'Authentication token is missing' };
+        }
+
+        // First, fetch the user data from /api/users/me
+        console.log('Fetching user data from /api/users/me');
+        const userResponse = await fetch('/api/users/me', {
+            headers: {
+                'Authorization': locals.token
+            }
+        });
+
+        if (!userResponse.ok) {
+            const errorData = await userResponse.json().catch(() => ({}));
+            console.error('Failed to fetch user data:', errorData);
+            return { error: 'Failed to fetch user data' };
+        }
+
+        const userData = await userResponse.json();
+        const userId = userData.id;
+
+        console.log(`Fetching user metadata for userId: ${userId}`);
+        const response = await fetch(`/api/user-meta/${userId}`, {
             headers: {
                 'Authorization': `Bearer ${locals.token}`
             }

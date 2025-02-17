@@ -1,7 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { authenticate } from '$lib/utils/api.server';
 import type { Actions, PageServerLoad } from './$types';
 import { dev } from '$app/environment';
+
+const WORDPRESS_URL = 'http://localhost:80/wp-json';
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (locals.user) {
@@ -24,10 +25,30 @@ export const actions: Actions = {
     }
 
     try {
-      const response = await authenticate(username.toString(), password.toString());
+      // Make request to WordPress JWT auth endpoint
+      const response = await fetch(`${WORDPRESS_URL}/jwt-auth/v1/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          username: username.toString(), 
+          password: password.toString() 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return fail(response.status, {
+          error: errorData.message || 'Authentication failed',
+          username: username.toString()
+        });
+      }
+
+      const data = await response.json();
 
       // Set token in cookie
-      cookies.set('jwt_token', response.token, {
+      cookies.set('jwt_token', data.token, {
         path: '/',
         httpOnly: true,
         secure: !dev,
@@ -36,16 +57,17 @@ export const actions: Actions = {
       });
 
       // Update locals with authentication data
-      locals.token = response.token;
+      locals.token = data.token;
       locals.isAuthenticated = true;
       locals.user = {
-        email: response.user_email,
-        displayName: response.user_display_name,
-        nicename: response.user_nicename
+        email: data.user_email,
+        displayName: data.user_display_name,
+        nicename: data.user_nicename
       };
 
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       return fail(401, {
         error: 'Invalid credentials',
         username: username.toString()
