@@ -1,45 +1,35 @@
-import { json } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { mockAuthenticate } from '$lib/stores/mockData';
 
-export const POST: RequestHandler = async ({ request }) => {
+const WP_AUTH_URL = 'http://localhost:80/wp-json/jwt-auth/v1/token';
+
+export const POST: RequestHandler = async ({ fetch, request }) => {
     try {
-        const { username, password } = await request.json();
-
-        if (!username || !password) {
-            return json({
-                success: false,
-                error: 'Username and password are required'
-            }, { status: 400 });
-        }
-
-        const authResult = mockAuthenticate(username, password);
-
-        if (!authResult.success || !authResult.user) {
-            return json({
-                success: false,
-                error: authResult.error || 'Authentication failed'
-            }, { status: 401 });
-        }
-
-        // Return successful authentication response
-        return json({
-            success: true,
-            user: {
-                id: authResult.user.id,
-                username: authResult.user.username,
-                email: authResult.user.email,
-                displayName: authResult.user.displayName,
-                roles: authResult.user.roles,
-                meta: authResult.user.meta,
-                token: authResult.user.token
-            }
+        const body = await request.json();
+        
+        const response = await fetch(WP_AUTH_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: body.username,
+                password: body.password
+            })
         });
-    } catch (error) {
-        console.error('Auth error:', error);
-        return json({
-            success: false,
-            error: 'An unexpected error occurred'
-        }, { status: 500 });
+
+        if (!response.ok) {
+            throw error(response.status, {
+                message: 'Authentication failed'
+            });
+        }
+
+        const data = await response.json();
+        return json(data);
+    } catch (err) {
+        console.error('[/api/auth] Error:', err);
+        throw error(500, {
+            message: 'Failed to authenticate with WordPress'
+        });
     }
 };

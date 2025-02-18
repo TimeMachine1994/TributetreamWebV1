@@ -35,14 +35,38 @@ export const actions: Actions = {
             // Step 3: Parse the response
             result = await response.json();
             console.log('📝 [Login Action] Parsed response JSON:', result);
-//get the user id ?
-            // Ensure the login was successful and user_id is available
-            if (!response.ok || !result.user_id) {
-                console.error('❌ [Login Action] Login failed or missing user_id.');
-                return fail(400, { error: result.message || 'Login failed.' });
-            }
 
-            console.log('✅ [Login Action] Extracted user_id:', result.user_id);
+            const userId = await fetch('http://localhost:80/wp-json/v2/users/me', {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${result.token}`
+                }
+            });
+            
+            // Get the JSON response
+            const userResponse = await userId.json();
+
+
+			// Step 4: Call our /api/me endpoint with the token to get the user_id
+			// console.log('🔄 [Login Action] Calling /api/me to retrieve user_id...');
+			// const meResponse = await fetch('/api/me', {
+			// 	method: 'GET',
+			// 	headers: { 'Authorization': `Bearer ${token}` }
+			// });
+			// const meData = await meResponse.json();
+			// if (!meResponse.ok || !meData.user_id) {
+			// 	console.error('❌ [Login Action] Failed to retrieve user_id from /api/me.');
+			// 	return fail(400, { error: meData.error || 'Failed to retrieve user_id.' });
+			// }
+			// const userId = meData.user_id;
+			// console.log('✅ [Login Action] Retrieved user_id:', userId);
+            // Ensure the login was successful and user_id is available
+            // if (!response.ok || !result.user_id) {
+            //     console.error('❌ [Login Action] Login failed or missing user_id.');
+            //     return fail(400, { error: result.message || 'Login failed.' });
+            // }
+
+            console.log('✅ [Login Action] Extracted user_id:', userResponse);
 
             // Step 4: Set JWT token cookie
             cookies.set('jwt', result.token, {
