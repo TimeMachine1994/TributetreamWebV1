@@ -1,0 +1,43 @@
+{
+	"/": [],
+	"/api/all-tributes": [
+		"src/routes/api/all-tributes/+server.ts"
+	],
+	"/api/auth": [
+		"src/routes/api/auth/+server.ts"
+	],
+	"/api/getRole": [
+		"src/routes/api/getRole/+server.ts"
+	],
+	"/api/register": [
+		"src/routes/api/register/+server.ts"
+	],
+	"/api/tributes": [
+		"src/routes/api/tributes/+server.ts"
+	],
+	"/api/tributes/[id]": [
+		"src/routes/api/tributes/[id]/+server.ts"
+	],
+	"/api/tribute/[slug]": [
+		"src/routes/api/tribute/[slug]/+server.ts"
+	],
+	"/api/user-meta": [
+		"src/routes/api/user-meta/+server.ts"
+	],
+	"/api/user-meta/[userId]": [
+		"src/routes/api/user-meta/[userId]/+server.ts"
+	],
+	"/calculator-payment": [],
+	"/family-dashboard": [
+		"src/routes/family-dashboard/+page.server.ts"
+	],
+	"/fd-form": [
+		"src/routes/fd-form/+page.server.ts"
+	],
+	"/fd-form/confirmation": [
+		"src/routes/fd-form/confirmation/+page.server.ts"
+	],
+	"/login": [
+		"src/routes/login/+page.server.ts"
+	]
+}
