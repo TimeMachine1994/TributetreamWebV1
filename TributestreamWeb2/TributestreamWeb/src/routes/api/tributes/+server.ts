@@ -56,12 +56,23 @@ export const GET: RequestHandler = async ({ url, fetch, locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, fetch, locals }) => {
+    console.log('🚀 [POST] Creating a new tribute...');
+    console.time('⏳ Tribute Creation Time');
+
     try {
         // Validate JWT
+        console.log('🔐 Validating JWT...');
         validateJWT(locals.jwt);
+        console.log('✅ JWT validated.');
 
+        // Parse incoming request JSON
+        console.log('📝 Parsing tribute data from request...');
         const tribute = await request.json();
+        console.log('📦 Parsed tribute data:', tribute);
 
+        // Send the data to WordPress API
+        console.log(`🚀 Sending tribute to WordPress API: ${WP_API_BASE}/tributes`);
+        console.time('⏳ API Request Time');
         const response = await fetch(`${WP_API_BASE}/tributes`, {
             method: 'POST',
             headers: {
@@ -70,19 +81,27 @@ export const POST: RequestHandler = async ({ request, fetch, locals }) => {
             },
             body: JSON.stringify(tribute)
         });
+        console.timeEnd('⏳ API Request Time');
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to create tribute');
+            const errorResponse = await response.json();
+            console.error('❌ Tribute creation failed:', errorResponse);
+            throw new Error(errorResponse.message || 'Failed to create tribute');
         }
 
+        // Parse response from WordPress
+        console.log('✅ Tribute created successfully. Parsing response...');
         const data = await response.json();
+        console.log('🎉 Received response data:', data);
+
+        console.timeEnd('⏳ Tribute Creation Time');
         return json({
             tribute: data,
             success: true
         });
     } catch (error) {
-        console.error('Error creating tribute:', error);
+        console.error('💥 Error creating tribute:', error);
+        console.timeEnd('⏳ Tribute Creation Time');
         return json({
             tribute: null,
             success: false,
@@ -92,16 +111,28 @@ export const POST: RequestHandler = async ({ request, fetch, locals }) => {
 };
 
 export const PUT: RequestHandler = async ({ request, fetch, locals }) => {
+    console.log('🚀 [PUT] Updating a tribute...');
+    console.time('⏳ Tribute Update Time');
+
     try {
         // Validate JWT
+        console.log('🔐 Validating JWT...');
         validateJWT(locals.jwt);
+        console.log('✅ JWT validated.');
 
+        // Parse incoming request JSON
+        console.log('📝 Parsing tribute update data from request...');
         const { id, ...data } = await request.json();
-        
+        console.log('📦 Parsed tribute update data:', { id, ...data });
+
         if (!id) {
+            console.error('❌ Tribute ID is missing.');
             return json({ error: 'Tribute ID is required' }, { status: 400 });
         }
 
+        // Send the updated data to WordPress API
+        console.log(`🚀 Sending updated tribute to WordPress API: ${WP_API_BASE}/tributes/${id}`);
+        console.time('⏳ API Update Request Time');
         const response = await fetch(`${WP_API_BASE}/tributes/${id}`, {
             method: 'PUT',
             headers: {
@@ -110,19 +141,27 @@ export const PUT: RequestHandler = async ({ request, fetch, locals }) => {
             },
             body: JSON.stringify(data)
         });
+        console.timeEnd('⏳ API Update Request Time');
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to update tribute');
+            const errorResponse = await response.json();
+            console.error('❌ Tribute update failed:', errorResponse);
+            throw new Error(errorResponse.message || 'Failed to update tribute');
         }
 
+        // Parse response from WordPress
+        console.log('✅ Tribute updated successfully. Parsing response...');
         const updatedTribute = await response.json();
+        console.log('🎉 Received updated tribute data:', updatedTribute);
+
+        console.timeEnd('⏳ Tribute Update Time');
         return json({
             tribute: updatedTribute,
             success: true
         });
     } catch (error) {
-        console.error('Error updating tribute:', error);
+        console.error('💥 Error updating tribute:', error);
+        console.timeEnd('⏳ Tribute Update Time');
         return json({
             tribute: null,
             success: false,
@@ -130,6 +169,7 @@ export const PUT: RequestHandler = async ({ request, fetch, locals }) => {
         }, { status: error instanceof Error && error.message === 'No JWT provided' ? 401 : 500 });
     }
 };
+
 
 export const DELETE: RequestHandler = async ({ request, fetch, locals }) => {
     try {

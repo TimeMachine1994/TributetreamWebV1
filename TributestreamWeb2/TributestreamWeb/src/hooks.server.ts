@@ -1,11 +1,11 @@
 import { redirect, type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    console.log('🔄 [Hook] Intercepting Request:', event.url.pathname);
+    //console.log('🔄 [Hook] Intercepting Request:', event.url.pathname);
 
     // Get all cookies for logging
     const cookies = event.cookies.getAll();
-    console.log('🍪 [Hook] All cookies:', cookies);
+  //  console.log('🍪 [Hook] All cookies:', cookies);
 
     // Get JWT and user data
     const jwt = event.cookies.get('jwt');
@@ -20,7 +20,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
     // Continue resolving the request
     const response = await resolve(event);
-    console.log('✅ [Hook] Response Status:', response.status);
+    //console.log('✅ [Hook] Response Status:', response.status);
 
     return response;
 };

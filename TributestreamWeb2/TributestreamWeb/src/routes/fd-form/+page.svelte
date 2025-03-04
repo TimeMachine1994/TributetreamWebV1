@@ -1,6 +1,7 @@
 <script lang="ts">
   let { fdForm } = $props();
   let formData = $state(fdForm);
+	import { enhance } from '$app/forms';
 
   function fillTestData() {
     // Get today's date for reference
@@ -48,7 +49,8 @@
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4">
+  <form method="POST" use:enhance
+    class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4" use:enhance>
     <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
 
     <!-- Director's Name -->

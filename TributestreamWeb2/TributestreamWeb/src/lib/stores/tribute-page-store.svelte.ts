@@ -216,7 +216,6 @@ export class TributePageStore {
         user_name: tributeData.user_name || 'Anonymous',
         user_email: tributeData.user_email || 'anonymous@example.com',
         user_phone: tributeData.user_phone || '000-000-0000',
-        ...tributeData
       };
 
       const result = await saveTribute(formattedData, this.authToken);
