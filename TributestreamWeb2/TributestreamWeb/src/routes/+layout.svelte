@@ -11,22 +11,40 @@ let { data, children } = $props();
 const masterStore = setMasterStoreContext();
 const tributeStore = setTributePageStoreContext();
 
+// State flags to prevent reactivity loops
+let storesInitialized = $state(false);
+let saveInProgress = $state(false);
+
 // Load data from localStorage on mount (client-side only)
 onMount(() => {
-    // Load data from localStorage for both stores
-    masterStore.loadFromLocalStorage();
-    
-    // Set up auth token from cookies if available
-    if (data.user && data.token) {
-        tributeStore.setAuthToken(data.token);
-    }
-    
-    // Set up effect to persist store data when it changes
-    $effect(() => {
-        if (typeof window !== 'undefined') {
-            masterStore.saveToLocalStorage();
+    // Only initialize once to prevent reactivity loops
+    if (!storesInitialized) {
+        console.log('Initializing stores from localStorage');
+        // Load data from localStorage for both stores
+        masterStore.loadFromLocalStorage();
+        
+        // Set up auth token from cookies if available
+        if (data.user && data.token) {
+            tributeStore.setAuthToken(data.token);
         }
-    });
+        
+        storesInitialized = true;
+    }
+});
+
+// Separate the effect from onMount to avoid nesting reactivity
+$effect(() => {
+    // Skip if a save is already in progress to prevent circular updates
+    if (typeof window !== 'undefined' && !saveInProgress) {
+        saveInProgress = true;
+        console.log('Saving masterStore to localStorage');
+        masterStore.saveToLocalStorage();
+        
+        // Reset the flag after a small delay to avoid immediate re-triggering
+        setTimeout(() => {
+            saveInProgress = false;
+        }, 100);
+    }
 });
 </script>
 

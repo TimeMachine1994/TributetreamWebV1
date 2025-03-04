@@ -21,21 +21,36 @@
     let isEditing = $state(false);
     let showSecondForm = $state(false);
 
-    // Initialize from master store if available
-    $effect(() => {
-        if (masterStore.lovedOneInfo.fullName) {
-            // Set slug for display
-            setSlugFromName(masterStore.lovedOneInfo.fullName);
-        }
-    });
-
+    // Reactive control flags
+    let slugSet = $state(false);
+    let formSubmitting = $state(false);
+    
+    // Derived value for display purposes only
+    let currentSlug = $derived(tributeStore.currentTribute.slug || '');
+    
+    // Update only when needed to avoid infinite loops
     function setSlugFromName(name: string): void {
+        // Skip if the slug is already set for this name or name is empty
+        if (slugSet || !name.trim()) return;
+        
+        console.log('Setting slug from name:', name);
         const slug = createTributeSlug(name, false);
         tributeStore.updateCurrentTribute({
             title: name,
             slug: slug
         });
+        
+        // Mark as set to prevent re-running
+        slugSet = true;
     }
+    
+    // Initialize from master store if available
+    $effect(() => {
+        // Only update the slug if it hasn't been set and we have a name
+        if (masterStore.lovedOneInfo.fullName && !slugSet) {
+            setSlugFromName(masterStore.lovedOneInfo.fullName);
+        }
+    });
 
     // Handle next page button click
     function handleNextPage() {
@@ -53,9 +68,19 @@
             userError = 'Name cannot be empty';
             return;
         }
+        
+        // Name is changing, so we need to reset the slug flag
+        slugSet = false;
+        
+        // Update the master store
         masterStore.updateLovedOneInfo({ fullName: tempNameChange });
+        
+        // Generate a new slug
         setSlugFromName(tempNameChange);
+        
+        // Exit editing mode
         isEditing = false;
+        console.log('Name updated, new slug:', currentSlug);
     }
 
     // Cancel edit
@@ -192,8 +217,36 @@
                 {/if}
             </p>
   
-            <!-- Main form -->
-            <form method="POST" action="?/createTribute" class="w-full max-w-md" use:enhance>
+            <!-- Main form with enhanced submission handler to prevent infinite loops -->
+            <form
+                method="POST"
+                action="?/createTribute"
+                class="w-full max-w-md"
+                use:enhance={({ formElement, formData, action, cancel }) => {
+                    // Prevent multiple submissions
+                    if (formSubmitting) {
+                        console.log('Form submission canceled - already submitting');
+                        cancel();
+                        return;
+                    }
+                    
+                    console.log('Form submission started');
+                    formSubmitting = true;
+                    
+                    return {
+                        result: (result) => {
+                            // Reset the submitting state when done
+                            console.log('Form submission completed');
+                            formSubmitting = false;
+                            
+                            // If the request was successful, reset the slug flag for new submissions
+                            if (result.type === 'success') {
+                                slugSet = false;
+                            }
+                        }
+                    };
+                }}
+            >
                 {#if !showSecondForm}
                     <!-- Input for loved one's name -->
                     <input
@@ -234,7 +287,7 @@
                                     bind:value={tempNameChange}
                                 />
                             {:else}
-                                <span class="text-white">{tributeStore.currentTribute.slug}</span>
+                                <span class="text-white">{currentSlug}</span>
                             {/if}
                         </span>
 
