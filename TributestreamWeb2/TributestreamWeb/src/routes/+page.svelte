@@ -2,49 +2,48 @@
     import { error } from '@sveltejs/kit';
     import { goto } from '$app/navigation';
     import type { Tribute } from '../types/tribute';
+    import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
+    import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
+    import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
+    import { enhance } from '$app/forms';
+
+    // Get store contexts
+    const masterStore = getMasterStoreContext();
+    const tributeStore = getTributePageStoreContext();
 
     // Error and UI state
     let userError = $state('');
     let searchResults = $state<Tribute[]>([]);
     let isSearching = $state(false);
     let showResults = $state(false);
-
-    let userInfo = $state({
-        name: '',
-        email: '',
-        phone: '',
-    });
-    let lovedOneName = $state('');
-    let slugifiedName = $state('');
     let isBlurred = $state(false);
     let tempNameChange = $state('');
     let isEditing = $state(false);
     let showSecondForm = $state(false);
-    const uuid1 = crypto.randomUUID();
-    const uuid2 = crypto.randomUUID(); 
 
-    function slugify(text: string): string {
-        console.log("Slugifying text:", text);
-        const slug = text
-            .toString()
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-')
-            .replace(/^-+/, '')
-            .replace(/-+$/, '');
-        console.log("Generated slug:", slug);
-        slugifiedName = slug;
-        return slug;
+    // Initialize from master store if available
+    $effect(() => {
+        if (masterStore.lovedOneInfo.fullName) {
+            // Set slug for display
+            setSlugFromName(masterStore.lovedOneInfo.fullName);
+        }
+    });
+
+    function setSlugFromName(name: string): void {
+        const slug = createTributeSlug(name, false);
+        tributeStore.updateCurrentTribute({
+            title: name,
+            slug: slug
+        });
     }
 
     // Handle next page button click
     function handleNextPage() {
-        if (lovedOneName.trim() === '') {
+        if (!masterStore.lovedOneInfo.fullName?.trim()) {
             userError = 'Please enter a valid name';
             return;
         }
-        slugifiedName = slugify(lovedOneName);
+        setSlugFromName(masterStore.lovedOneInfo.fullName);
         showSecondForm = true;
     }
 
@@ -54,9 +53,9 @@
             userError = 'Name cannot be empty';
             return;
         }
-        slugifiedName = slugify(tempNameChange);
+        masterStore.updateLovedOneInfo({ fullName: tempNameChange });
+        setSlugFromName(tempNameChange);
         isEditing = false;
-        lovedOneName = tempNameChange;
     }
 
     // Cancel edit
@@ -67,7 +66,7 @@
 
     // Edit name (toggle to editing mode)
     function editName() {
-        tempNameChange = lovedOneName;
+        tempNameChange = masterStore.lovedOneInfo.fullName || '';
         isEditing = true;
     }
 
@@ -78,18 +77,16 @@
 
     // Handle search
     async function handleSearch() {
-        if (!lovedOneName.trim()) {
+        if (!masterStore.lovedOneInfo.fullName?.trim()) {
             searchResults = [];
             return;
         }
         isSearching = true;
         showResults = true;
+        
         try {
-            const response = await fetch(`/api/tributestream/v1/all-tributes?search=${encodeURIComponent(lovedOneName)}`);
-            if (response.ok) {
-                const data = await response.json();
-                searchResults = data.tributes || [];
-            }
+            await tributeStore.searchTributes(masterStore.lovedOneInfo.fullName, 1, 10);
+            searchResults = tributeStore.searchResults.tributes;
         } catch (err) {
             console.error('Search error:', err);
             searchResults = [];
@@ -196,15 +193,15 @@
             </p>
   
             <!-- Main form -->
-            <form method="POST" action="?/homeRegister" class="w-full max-w-md">
+            <form method="POST" action="?/createTribute" class="w-full max-w-md" use:enhance>
                 {#if !showSecondForm}
                     <!-- Input for loved one's name -->
                     <input
                         type="text"
-                        name="lovedOneName"
+                        name="lovedOneInfo.fullName"
                         placeholder="Enter name to create or search tributes..."
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center"
-                        bind:value={lovedOneName}
+                        bind:value={masterStore.lovedOneInfo.fullName}
                     />
   
                     <!-- Buttons for creating tribute or searching -->
@@ -237,10 +234,10 @@
                                     bind:value={tempNameChange}
                                 />
                             {:else}
-                                <span class="text-white">{slugifiedName}</span>
+                                <span class="text-white">{tributeStore.currentTribute.slug}</span>
                             {/if}
                         </span>
-  
+
                         <!-- Edit controls -->
                         {#if isEditing}
                             <button type="button" class="ml-2 text-green-500" onclick={editNameSave}>
@@ -255,28 +252,28 @@
                             </button>
                         {/if}
                     </div>
-  
+
                     <!-- Additional input fields -->
                     <input
                         type="text"
-                        name="userInfo.name"
+                        name="userInfo.fullName"
                         placeholder="Your Name"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={userInfo.name}
+                        bind:value={masterStore.userInfo.fullName}
                     />
                     <input
                         type="email"
-                        name="userInfo.email"
+                        name="userInfo.emailAddress"
                         placeholder="Email Address"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={userInfo.email}
+                        bind:value={masterStore.userInfo.emailAddress}
                     />
                     <input
                         type="tel"
-                        name="userInfo.phone"
+                        name="userInfo.phoneNumber"
                         placeholder="Phone Number"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={userInfo.phone}
+                        bind:value={masterStore.userInfo.phoneNumber}
                     />
   
                     <!-- Navigation buttons -->
@@ -288,11 +285,9 @@
                         >
                             <i class="fas fa-arrow-left"></i>
                         </button>
-                        <input type="hidden" name="lovedOneName" value={lovedOneName} />
-                        <input type="hidden" name="slugifiedName" value={slugifiedName} />
-                        <button 
-                            type="submit" 
-                            formaction="?/homeRegister"
+                        <!-- Fields are bound to masterStore directly, so no hidden fields needed -->
+                        <button
+                            type="submit"
                             class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
                         >
                             Create Tribute
@@ -307,11 +302,11 @@
                     <div class="bg-black bg-opacity-70 p-6 rounded-lg">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-2xl text-center flex-grow">Search Results</h2>
-                            <button 
+                            <button
                                 type="button"
                                 onclick={() => {
                                     showResults = false;
-                                    searchResults = [];
+                                    tributeStore.searchResults.tributes = [];
                                 }}
                                 class="text-white hover:text-gray-300"
                             >
@@ -319,18 +314,42 @@
                             </button>
                         </div>
                         <div class="space-y-2">
-                            {#if isSearching}
+                            {#if tributeStore.searchResults.isLoading}
                                 <div class="text-center text-white">Searching...</div>
-                            {:else if searchResults.length > 0}
-                                {#each searchResults as result}
+                            {:else if tributeStore.searchResults.tributes.length > 0}
+                                {#each tributeStore.searchResults.tributes as result}
                                     <div class="bg-white bg-opacity-10 p-3 rounded-md hover:bg-opacity-20 transition-all cursor-pointer"
                                          onclick={() => goto(`/celebration-of-life-for-${result.slug}`)}>
-                                        <div class="text-lg text-white">{result.loved_one_name}</div>
+                                        <div class="text-lg text-white">{result.title}</div>
                                         <div class="text-sm text-gray-300">
-                                            Created {new Date(result.created_at).toLocaleDateString()}
+                                            Created {result.created_at ? new Date(result.created_at).toLocaleDateString() : 'Recently'}
                                         </div>
                                     </div>
                                 {/each}
+                                
+                                {#if tributeStore.searchResults.total_pages > 1}
+                                    <div class="flex justify-center mt-4 space-x-2">
+                                        <button
+                                            class="px-3 py-1 bg-gray-700 text-white rounded-md disabled:opacity-50"
+                                            disabled={tributeStore.searchResults.currentPage === 1}
+                                            onclick={() => tributeStore.searchTributes(masterStore.lovedOneInfo.fullName || '', tributeStore.searchResults.currentPage - 1)}
+                                        >
+                                            Previous
+                                        </button>
+                                        <span class="px-3 py-1 text-white">
+                                            Page {tributeStore.searchResults.currentPage} of {tributeStore.searchResults.total_pages}
+                                        </span>
+                                        <button
+                                            class="px-3 py-1 bg-gray-700 text-white rounded-md disabled:opacity-50"
+                                            disabled={tributeStore.searchResults.currentPage === tributeStore.searchResults.total_pages}
+                                            onclick={() => tributeStore.searchTributes(masterStore.lovedOneInfo.fullName || '', tributeStore.searchResults.currentPage + 1)}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                {/if}
+                            {:else if tributeStore.searchResults.error}
+                                <div class="text-center text-red-400">{tributeStore.searchResults.error}</div>
                             {:else}
                                 <div class="text-center text-white">No tributes found</div>
                             {/if}
