@@ -50,24 +50,97 @@ export class TributePageStore {
 
   // Current JWT token
   authToken = $state<string | null>(null);
+  
+  // Prevent infinite reactivity loops with localStorage
+  private saveInProgress = $state(false);
 
   // Constructor initializes from localStorage if available
   constructor() {
     if (typeof window !== 'undefined') {
       this.loadFromLocalStorage();
     }
-
-    // Automatic persistence with $effect
+    
+    // Set up persistence with effect inside the constructor
     $effect(() => {
-      if (typeof window !== 'undefined') {
+      // Skip if a save is already in progress to prevent circular updates
+      if (typeof window !== 'undefined' && !this.saveInProgress) {
+        this.saveInProgress = true;
+        console.log('Saving tributeStore to localStorage');
         this.saveToLocalStorage();
+        
+        // Reset the flag after a small delay to avoid immediate re-triggering
+        setTimeout(() => {
+          this.saveInProgress = false;
+        }, 100);
       }
     });
   }
 
+  // Method to save to localStorage
+  saveToLocalStorage(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tributePageStore', JSON.stringify({
+        currentTribute: this.currentTribute,
+        recentTributes: this.recentTributes,
+        authToken: this.authToken
+      }));
+    }
+  }
+
+  // Method to load from localStorage
+  loadFromLocalStorage(): boolean {
+    if (typeof window !== 'undefined') {
+      const savedData = localStorage.getItem('tributePageStore');
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData);
+          this.currentTribute = data.currentTribute || { title: '', slug: '', custom_html: null };
+          this.recentTributes = data.recentTributes || [];
+          this.authToken = data.authToken || null;
+          return true;
+        } catch (e) {
+          console.error('Failed to parse saved tribute data:', e);
+        }
+      }
+    }
+    return false;
+  }
+
   // Method to update current tribute
-  updateCurrentTribute(tributeData: Partial<Tribute>) {
+  updateCurrentTribute(tributeData: Partial<Tribute>): void {
     this.currentTribute = { ...this.currentTribute, ...tributeData };
+  }
+
+  // Method to set the auth token
+  setAuthToken(token: string): void {
+    this.authToken = token;
+  }
+
+  // Method to generate a slug from a title
+  generateSlug(title: string): string {
+    const baseSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars except spaces and hyphens
+      .replace(/\s+/g, '-')          // Replace spaces with hyphens
+      .replace(/-+/g, '-')           // Replace multiple hyphens with a single one
+      .trim();
+    
+    return `celebration-of-life-for-${baseSlug}`;
+  }
+
+  // Method to generate the tribute page URL
+  generateTributeUrl(tribute?: Partial<Tribute>): string {
+    const slug = tribute?.slug || this.currentTribute.slug;
+    if (!slug) {
+      return '';
+    }
+    
+    // If slug already contains the prefix, return as is
+    if (slug.startsWith('celebration-of-life-for-')) {
+      return `/${slug}`;
+    }
+    
+    return `/celebration-of-life-for-${slug}`;
   }
 
   // Method to search tributes
@@ -253,70 +326,8 @@ export class TributePageStore {
     }
   }
 
-  // Method to generate a slug from a title
-  generateSlug(title: string): string {
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars except spaces and hyphens
-      .replace(/\s+/g, '-')          // Replace spaces with hyphens
-      .replace(/-+/g, '-')           // Replace multiple hyphens with a single one
-      .trim();
-    
-    return `celebration-of-life-for-${baseSlug}`;
-  }
-
-  // Method to generate the tribute page URL
-  generateTributeUrl(tribute?: Partial<Tribute>): string {
-    const slug = tribute?.slug || this.currentTribute.slug;
-    if (!slug) {
-      return '';
-    }
-    
-    // If slug already contains the prefix, return as is
-    if (slug.startsWith('celebration-of-life-for-')) {
-      return `/${slug}`;
-    }
-    
-    return `/celebration-of-life-for-${slug}`;
-  }
-
-  // Method to set the auth token
-  setAuthToken(token: string) {
-    this.authToken = token;
-  }
-
-  // Method to save to localStorage
-  saveToLocalStorage() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tributePageStore', JSON.stringify({
-        currentTribute: this.currentTribute,
-        recentTributes: this.recentTributes,
-        authToken: this.authToken
-      }));
-    }
-  }
-
-  // Method to load from localStorage
-  loadFromLocalStorage(): boolean {
-    if (typeof window !== 'undefined') {
-      const savedData = localStorage.getItem('tributePageStore');
-      if (savedData) {
-        try {
-          const data = JSON.parse(savedData);
-          this.currentTribute = data.currentTribute || { title: '', slug: '', custom_html: null };
-          this.recentTributes = data.recentTributes || [];
-          this.authToken = data.authToken || null;
-          return true;
-        } catch (e) {
-          console.error('Failed to parse saved tribute data:', e);
-        }
-      }
-    }
-    return false;
-  }
-
   // Method to reset the store
-  reset() {
+  reset(): void {
     this.currentTribute = { title: '', slug: '', custom_html: null };
     this.searchResults = {
       tributes: [],
@@ -329,7 +340,7 @@ export class TributePageStore {
   }
 }
 
-export function setTributePageStoreContext() {
+export function setTributePageStoreContext(): TributePageStore {
   const store = new TributePageStore();
   setContext(tributeStoreKey, store);
   return store;
