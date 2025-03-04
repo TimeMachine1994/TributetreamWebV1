@@ -2,7 +2,13 @@ import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
 import { saveTribute } from '$lib/utils/api-helpers';
-import { generateSecurePassword, setAuthCookies, sendWelcomeEmail, storeMasterDataInUserMeta } from '$lib/utils/auth-helpers';
+import {
+    generateSecurePassword,
+    setAuthCookies,
+    sendWelcomeEmail,
+    storeMasterDataInUserMeta,
+    convertMasterStoreToUserMeta
+} from '$lib/utils/auth-helpers';
 import type { Tribute } from '$lib/stores/tribute-page-store.svelte';
 
 export const actions = {
@@ -156,7 +162,11 @@ export const actions = {
                 }
             };
             
-            await storeMasterDataInUserMeta(userId, masterData, authResult.token, fetch);
+            // Use the conversion function to ensure all required fields are present
+            const completeUserMetaData = convertMasterStoreToUserMeta(masterData);
+            console.log('🔄 Complete user meta data structure:', JSON.stringify(completeUserMetaData, null, 2));
+            
+            await storeMasterDataInUserMeta(userId, completeUserMetaData, authResult.token, fetch);
             console.log('✅ Master data stored in user meta.');
             
             // Enhanced tribute data for better integration with TributePageStore

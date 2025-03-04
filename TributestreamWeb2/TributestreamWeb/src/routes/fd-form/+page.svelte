@@ -208,7 +208,7 @@
       <button
         type="button"
         class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-        on:click={fillTestData}
+        onclick={fillTestData}
       >
         Fill Test Data
       </button>
