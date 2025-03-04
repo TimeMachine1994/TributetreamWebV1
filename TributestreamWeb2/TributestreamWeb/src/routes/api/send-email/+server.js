@@ -1,11 +1,10 @@
 import { json } from '@sveltejs/kit';
 import sgMail from '@sendgrid/mail';
-import dotenv from 'dotenv';
+import { env } from '$env/dynamic/private';
 
-dotenv.config(); // Load environment variables
-
+ 
 // Set SendGrid API Key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+sgMail.setApiKey(env.SENDGRID_API_KEY || '');
 
 export async function POST({ request }) {
   try {
@@ -13,8 +12,8 @@ export async function POST({ request }) {
     const { to, subject, text, html } = body;
 
     const msg = {
-      to: to || 'contact@tributestream.com', // Fallback recipient
-      from: 'tributestream@tributestream.com    ', // Your verified sender email
+      to: to || 'tributestream@gmail.com', // Fallback recipient
+      from: 'tributestream@tributestream.com', // Your verified sender email
       subject: subject || 'No Subject',
       text: text || 'No text provided',
       html: html || '<strong>No HTML content provided</strong>',
