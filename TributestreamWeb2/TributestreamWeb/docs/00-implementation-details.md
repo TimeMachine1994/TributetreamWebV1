@@ -1,6 +1,49 @@
- # Implementation Plan for Funeral Service Application
-
-## **1. Overview**
+ # Implementation Details for Funeral Service Application
+ 
+ ## **1. System Architecture**
+ The Tributestream application follows a modular architecture with the following key components:
+ 
+ - **Frontend (SvelteKit 5)**: Implements the UI and client-side logic.
+ - **Backend (WordPress API)**: Provides authentication, tribute management, and data persistence.
+ - **State Management (Master Store & Tribute Store)**: Manages application-wide and tribute-specific state.
+ - **Form Actions**: Handles form submissions and integrates with the backend.
+ - **Authentication (JWT-based)**: Secures API interactions.
+ 
+ ### **Architecture Diagram**
+ ```mermaid
+ graph TD;
+     UI[Frontend (SvelteKit 5)] -->|Form Actions| Server[WordPress API]
+     UI -->|State Management| MasterStore[Master Store]
+     UI -->|Tribute Data| TributeStore[Tribute Store]
+     Server -->|Authentication| Auth[JWT Auth]
+     Server -->|Data Persistence| Database[WordPress Database]
+ ```
+ 
+ ## **2. Data Flow and System Interactions**
+ 
+ ### **Updated Data Flow Diagram**
+ ```mermaid
+ graph TD;
+     User[User Interaction] -->|Form Submission| FormActions[Form Actions]
+     FormActions -->|Validate & Process| Server[WordPress API]
+     Server -->|Store Data| Database[WordPress Database]
+     Server -->|Return Response| FormActions
+     FormActions -->|Update State| MasterStore[Master Store]
+     FormActions -->|Update Tribute Data| TributeStore[Tribute Store]
+     TributeStore -->|Persist Data| LocalStorage[Local Storage]
+     TributeStore -->|Fetch Tribute| TributePage[Tribute Page]
+ ```
+ 
+ This diagram illustrates how user interactions trigger form actions, which validate and process data before updating the state and interacting with the backend.
+ 
+ ### **Form Actions and API Integration**
+ - **Form Actions**: Handle form submissions, validate input, and send data to the backend.
+ - **API Endpoints**:
+   - `POST /api/tributes` - Creates a new tribute.
+   - `GET /api/tributes/[id]` - Fetches tribute details.
+   - `POST /api/auth` - Handles user authentication.
+   - `POST /api/payment` - Processes payments.
+ 
 We have implemented the following pages:
 - **Home Page** (`src/routes/+page.svelte`)
 - **Search Page** (`src/routes/search/+page.svelte`)
@@ -131,7 +174,23 @@ Each page interacts with two central stores:
 - Understand the current layout and data display, and then refactor  so the data is displayed using our custom store and the layouts and tailwind css is unchanged. 
 ---
 
-## **3. Store Integration**
+## **3. Functionality Breakdown**
+
+### **Key Utility Files**
+- `src/lib/utils/api-helpers.ts` - Handles API requests and responses.
+- `src/lib/utils/auth-helpers.ts` - Manages authentication and JWT handling.
+- `src/lib/utils/form-action-helper.ts` - Provides helper functions for form actions.
+- `src/lib/utils/string-helper.ts` - Contains string manipulation utilities.
+
+### **API Routes**
+- `src/routes/api/auth/+server.ts` - Handles user authentication.
+- `src/routes/api/tributes/+server.ts` - Manages tribute creation and retrieval.
+- `src/routes/api/payment/+server.js` - Processes payments.
+- `src/routes/api/logout/+server.ts` - Handles user logout.
+
+These files and routes form the core of the application's backend interactions.
+
+## **4. Store Integration**
 
 ### **Master Store Integration**
 - **State Management:**
@@ -169,7 +228,61 @@ Each page interacts with two central stores:
 
 ---
 
-## **4. Routing Structure**
+## **5. Error Handling Mechanisms**
+
+### **Client-Side Error Handling**
+- `src/routes/+error.svelte` - Handles global errors and displays user-friendly messages.
+- `src/lib/utils/api-helpers.ts` - Centralized error handling for API requests.
+
+### **API Error Responses**
+- **400 Bad Request** - Invalid input data.
+- **401 Unauthorized** - Invalid or missing authentication token.
+- **403 Forbidden** - User lacks necessary permissions.
+- **500 Internal Server Error** - Unexpected server failure.
+
+### **Example API Error Handling**
+```typescript
+try {
+  const response = await fetch('/api/tributes');
+  if (!response.ok) {
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+} catch (error) {
+  console.error('API request failed:', error);
+}
+```
+
+## **6. Authentication & Authorization**
+
+### **Authentication Flow**
+1. User submits login credentials via `/api/auth`.
+2. Server validates credentials and returns a JWT token.
+3. Token is stored in local storage and used for subsequent API requests.
+4. Protected routes verify the token before granting access.
+
+### **Key Authentication Files**
+- `src/lib/utils/auth-helpers.ts` - Manages JWT token storage and validation.
+- `src/routes/api/auth/+server.ts` - Handles authentication requests.
+- `src/routes/api/logout/+server.ts` - Manages user logout.
+
+### **Example JWT Authentication**
+```typescript
+export async function login(email: string, password: string) {
+  const response = await fetch('/api/auth', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  if (!response.ok) throw new Error('Login failed');
+
+  const { token } = await response.json();
+  localStorage.setItem('authToken', token);
+}
+```
+
+## **7. Routing Structure**
 ```(NEEDS TO BE UDPATED)
 src/routes/
   ├── +page.svelte (Home Page)
@@ -225,16 +338,5 @@ graph TD;
     TributeStore -->|API Calls| WordPressBackend;
     CustomURL -->|Access tribute| TributePage;
 ```
-
----
-
-## **6. Implementation Status & Future Enhancements**
-
-### **Completed Implementation**
-1. ✅ **Tribute Store** – Implemented the tribute-page-store.svelte.ts with full CRUD operations.
-2. ✅ **API Integration** – Enhanced API helpers to support tribute operations.
-3. ✅ **Custom URL Generation** – Implemented URL generation with "celebration-of-life-for-" pattern.
-4. ✅ **Search Feature** – Added server-side searching with pagination and results display.
-5. ✅ **Integration with Master Store** – Connected both stores for consistent data flow.
 
  
