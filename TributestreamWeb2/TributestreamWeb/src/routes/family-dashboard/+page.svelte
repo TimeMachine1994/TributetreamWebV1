@@ -128,28 +128,6 @@
       <span>Est. Duration</span>
       <span>Location</span>
     </div>
-    
-    <!-- Schedule Entries (Mock Data) -->
-    <!-- Entry 1 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 items-center text-gray-800 py-3 border-b border-gray-100">
-      <span class="font-semibold">11:00 AM</span>
-      <span>Viewing</span>
-      <span>1 Hour</span>
-      <span>A Community Funeral Home, 910 W Michigan St, Orlando, FL 32805</span>
-    </div>
-    <!-- Entry 2 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 items-center text-gray-800 py-3 border-b border-gray-100">
-      <span class="font-semibold">12:00 PM</span>
-      <span>Service</span>
-      <span>1 Hour</span>
-      <span>A Community Funeral Home, 910 W Michigan St, Orlando, FL 32805</span>
-    </div>
-    <!-- Entry 3 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 items-center text-gray-800 py-3">
-      <span class="font-semibold">12:30 PM</span>
-      <span>Burial</span>
-      <span>30 Min</span>
-      <span>Woodlawn Memory Gardens, 400 Woodlawn Cemetery Rd, Gotha, FL 34734</span>
-    </div>
+     
   </div>
 </div>
