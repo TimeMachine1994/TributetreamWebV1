@@ -87,8 +87,8 @@ export function processFormActionResult(
     masterStore.updateScheduleDays(form.data.scheduleDays);
   }
 
-  // Persist changes to localStorage
-  masterStore.saveToLocalStorage();
+  // No longer persisting here - let the layout's coordinated persistence handle it
+  // masterStore.saveToLocalStorage();
 
   // Note: We don't need to handle redirects here anymore
   // When using SvelteKit's redirect() function, the browser
@@ -128,6 +128,6 @@ export function processFormActionForBothStores(
     }
   }
   
-  // Persist tribute store changes to localStorage
-  tributeStore.saveToLocalStorage();
+  // No longer persisting here - let the layout's coordinated persistence handle it
+  // tributeStore.saveToLocalStorage();
 }
