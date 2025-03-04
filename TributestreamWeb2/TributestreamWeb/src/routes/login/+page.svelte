@@ -1,17 +1,21 @@
 <script lang="ts">
 import { enhance } from '$app/forms';
+import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
 
 let { form } = $props();
+const masterStore = getMasterStoreContext();
 
-// Auto-filled credentials for demo
+// State variables for the form inputs
 let username = $state('');
 let password = $state('');
+let isLoading = $state(false);
 </script>
 
 <div class="flex min-h-screen items-center justify-center">
   <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
     <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
     
+    <!-- Form with standard enhancement for progressive enhancement -->
     <form method="POST" use:enhance>
       {#if form?.error}
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

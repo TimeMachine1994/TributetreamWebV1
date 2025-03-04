@@ -103,11 +103,12 @@ export const actions: Actions = {
         }
 
         // Define redirect path based on user role
-        let redirectPath = '/dashboard'; // Default user redirect
+        // Default redirect for non-admin users
+        let redirectPath = '/calculate-livestream';
+        
+        // If user has admin role, redirect to family dashboard
         if (roles.includes('administrator')) {
-            redirectPath = '/admin-dashboard';
-        } else if (roles.includes('editor')) {
-            redirectPath = '/editor-dashboard'; // Redirect editors
+            redirectPath = '/family-dashboard';
         }
 
         console.log(`🚀 [Login Action] Redirecting user to: ${redirectPath}`);
