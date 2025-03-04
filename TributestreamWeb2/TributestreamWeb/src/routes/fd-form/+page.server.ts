@@ -108,34 +108,40 @@ export const actions = {
             console.log('📝 Writing user metadata...');
             const metaPayload = {
                 user_id: userId,
-                meta_key: 'memorial_form_data',
-                meta_value: JSON.stringify({
-                    director: {
+                masterData: {
+                    directorInfo: {
                         firstName: data.directorFirstName,
-                        lastName: data.directorLastName
+                        lastName: data.directorLastName,
+                        // Using location data for funeral home if appropriate
+                        funeralHomeName: data.locationName,
+                        funeralHomeAddress: data.locationAddress
                     },
-                    familyMember: {
-                        firstName: data.familyMemberFirstName,
-                        lastName: data.familyMemberLastName,
-                        dob: data.familyMemberDOB
+                    lovedOneInfo: {
+                        // Creating the fullName by combining first and last name
+                        fullName: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                        dateOfBirth: data.deceasedDOB,
+                        dateOfPassing: data.deceasedDOP
                     },
-                    deceased: {
-                        firstName: data.deceasedFirstName,
-                        lastName: data.deceasedLastName,
-                        dob: data.deceasedDOB,
-                        dop: data.deceasedDOP
+                    userInfo: {
+                        // Combining family member's first and last name for the user's fullName
+                        fullName: `${data.familyMemberFirstName} ${data.familyMemberLastName}`,
+                        emailAddress: data.email,
+                        phoneNumber: data.phone,
+                        dateOfBirth: data.familyMemberDOB
                     },
-                    contact: {
-                        email: data.email,
-                        phone: data.phone
-                    },
-                    memorial: {
-                        locationName: data.locationName,
-                        locationAddress: data.locationAddress,
-                        time: data.memorialTime,
+                    memorialInfo: {
+                        locations: [{
+                            name: data.locationName,
+                            address: data.locationAddress
+                        }],
+                        startTime: data.memorialTime,
                         date: data.memorialDate
-                    }
-                })
+                    },
+                    // Including empty objects for the remaining properties
+                    liveStreamInfo: {},
+                    packageInfo: {},
+                    billingInfo: {}
+                }
             };
 
             const metaResponse = await fetch('/api/user-meta', {
