@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { masterStore } from './stores/userStore';
+    import { masterStore } from './stores/master-store.svelte';
     import { packages } from './data/packages';
-    import type { PackageDetails } from './stores/types';
-
+ 
     let selectedSquare: number | null = $state(null);
 
     // Initialize with no selection before subscription
