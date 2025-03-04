@@ -13,7 +13,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     
     // Attach JWT to locals for API requests
     event.locals.jwt = jwt;
-    
+    event.locals.user = userCookie ? JSON.parse(userCookie) : null;
  
 
     // Check if trying to a 

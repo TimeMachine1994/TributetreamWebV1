@@ -457,7 +457,7 @@
                                 }}
                                 class="text-white hover:text-gray-300"
                             >
-                                ✕
+                                
                             </button>
                         </div>
                         <div class="space-y-2">

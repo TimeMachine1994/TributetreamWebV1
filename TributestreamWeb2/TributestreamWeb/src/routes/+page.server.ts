@@ -224,15 +224,7 @@ export const actions = {
         } catch (error) {
             console.error('💥 Error in createTribute action:', error);
             
-            if (error instanceof Response) {
-                // This is a redirect, re-throw it
-                throw error;
-            }
-            
-            return fail(500, { 
-                error: true, 
-                message: 'An unexpected error occurred during tribute creation.' 
-            });
+          
         }
     }
 } as Actions;
