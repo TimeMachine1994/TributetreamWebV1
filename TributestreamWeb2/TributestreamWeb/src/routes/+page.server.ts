@@ -3,6 +3,7 @@ import type { Actions } from './$types';
 import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
 import { saveTribute } from '$lib/utils/api-helpers';
 import { generateSecurePassword, setAuthCookies, sendWelcomeEmail, storeMasterDataInUserMeta } from '$lib/utils/auth-helpers';
+import type { Tribute } from '$lib/stores/tribute-page-store.svelte';
 
 export const actions = {
     createTribute: async ({ request, fetch, cookies }) => {
@@ -158,28 +159,55 @@ export const actions = {
             await storeMasterDataInUserMeta(userId, masterData, authResult.token, fetch);
             console.log('✅ Master data stored in user meta.');
             
-            // Save tribute to the database
+            // Enhanced tribute data for better integration with TributePageStore
             const tributeData = {
                 title: lovedOneFullName,
                 slug: tributeSlug,
                 user_name: userFullName,
                 user_email: userEmail,
-                user_phone: userPhone
+                user_phone: userPhone,
+                description: `Memorial tribute for ${lovedOneFullName}`,
+                memorialDate: new Date().toISOString().split('T')[0], // Default to today's date
+                memorialLocation: '',  // Will be updated during the user flow
+                created_at: new Date().toISOString()
             };
             
             const tributeResponse = await saveTribute(tributeData, authResult.token);
             
             if (!tributeResponse.success) {
                 console.error('❌ Tribute creation failed:', tributeResponse);
-                return fail(500, { 
-                    error: true, 
-                    message: 'Failed to create tribute. Please try again.' 
+                return fail(500, {
+                    error: true,
+                    message: 'Failed to create tribute. Please try again.'
                 });
             }
             
             console.log('✅ Tribute created successfully:', tributeResponse);
-            console.log('🔀 Redirecting to tribute page...');
             
+            // Include tribute data in form result to update TributePageStore
+            // This would be caught by use:enhance in the component and used to update the store
+            const tribute: Partial<Tribute> = {
+                ...tributeData,
+                id: tributeResponse.tribute?.id
+            };
+            
+            // Structure result to include data for both stores
+            const result = {
+                success: true,
+                data: {
+                    // MasterStore data
+                    lovedOneInfo: { fullName: lovedOneFullName },
+                    userInfo: {
+                        fullName: userFullName,
+                        emailAddress: userEmail,
+                        phoneNumber: userPhone
+                    },
+                    // TributePageStore data
+                    tribute: tribute
+                }
+            };
+            
+            console.log('🔀 Redirecting to tribute page...');
             // Redirect to the tribute page
             throw redirect(303, tributeUrl);
             

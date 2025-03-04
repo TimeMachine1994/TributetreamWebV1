@@ -6,6 +6,7 @@
     import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
     import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
     import { enhance } from '$app/forms';
+    import { processFormActionForBothStores } from '$lib/utils/form-action-helper';
 
     // Get store contexts
     const masterStore = getMasterStoreContext();
@@ -44,11 +45,22 @@
         slugSet = true;
     }
     
-    // Initialize from master store if available
+    // Initialize from master store and synchronize with tribute store
     $effect(() => {
         // Only update the slug if it hasn't been set and we have a name
         if (masterStore.lovedOneInfo.fullName && !slugSet) {
+            // Set the title in tribute store to match master store
+            tributeStore.updateCurrentTribute({
+                title: masterStore.lovedOneInfo.fullName
+            });
             setSlugFromName(masterStore.lovedOneInfo.fullName);
+        }
+    });
+
+    // Keep both stores synchronized
+    $effect(() => {
+        if (tributeStore.currentTribute.title && tributeStore.currentTribute.title !== masterStore.lovedOneInfo.fullName) {
+            masterStore.updateLovedOneInfo({ fullName: tributeStore.currentTribute.title });
         }
     });
 
@@ -272,13 +284,29 @@
                         
                         if (result.type === 'failure') {
                             // Display error message to user
-                            userError = result.data?.message || 'Form submission failed';
+                            userError = typeof result.data?.message === 'string'
+                                ? result.data.message
+                                : 'Form submission failed';
                             console.error('Form error:', result.data);
                         }
                         
                         // If the request was successful, reset the slug flag for new submissions
+                        // and update both stores
                         if (result.type === 'success') {
                             slugSet = false;
+                            
+                            // Convert SvelteKit action result to our FormActionResult format
+                            const formActionResult = {
+                                success: true,
+                                data: result.data || {}
+                            };
+                            
+                            // Process the form action result for both stores
+                            processFormActionForBothStores(
+                                formActionResult,
+                                masterStore,
+                                tributeStore
+                            );
                         }
                         
                         // Allow default update to proceed

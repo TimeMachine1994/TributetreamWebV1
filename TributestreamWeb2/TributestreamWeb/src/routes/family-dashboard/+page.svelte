@@ -1,133 +1,417 @@
-     <script lang="ts">
-	import { page } from '$app/stores';
-    import CcForm from '$lib/CcForm.svelte';
-    import type { PageData } from './$types';
-    let { data }: { data: PageData } = $props();
-    const appId = data.appId;
-    const locationId = data.locationId;
-    let fdFormData = data.userMeta.memorial_form_data;
-    console.log('Form Data (Raw):', fdFormData);
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { enhance } from '$app/forms';
+  import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
+  import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
+  import { processFormActionForBothStores } from '$lib/utils/form-action-helper';
+  import CcForm from '$lib/CcForm.svelte';
+  import type { PageData } from './$types';
 
-     // Parse and flatten the JSON string
-     let flattenedFormData: any = {};
-    if (fdFormData) {
-        try {
-            const parsedData = JSON.parse(fdFormData);
+  // Get the props and stores
+  let { data, form }: { data: PageData, form: any } = $props();
+  const masterStore = getMasterStoreContext();
+  const tributeStore = getTributePageStoreContext();
 
-            // Flattening logic
-            flattenedFormData = {
-                directorFirstName: parsedData.director.firstName,
-                directorLastName: parsedData.director.lastName,
-                familyMemberFirstName: parsedData.familyMember.firstName,
-                familyMemberLastName: parsedData.familyMember.lastName,
-                familyMemberDob: parsedData.familyMember.dob,
-                deceasedFirstName: parsedData.deceased.firstName,
-                deceasedLastName: parsedData.deceased.lastName,
-                deceasedDob: parsedData.deceased.dob,
-                deceasedDop: parsedData.deceased.dop,
-                contactEmail: parsedData.contact.email,
-                contactPhone: parsedData.contact.phone,
-                memorialLocationName: parsedData.memorial.locationName,
-                memorialLocationAddress: parsedData.memorial.locationAddress,
-                memorialTime: parsedData.memorial.time,
-                memorialDate: parsedData.memorial.date
-            };
-
-            console.log('Flattened Form Data:', flattenedFormData);
-        } catch (error) {
-            console.error('Failed to parse and flatten JSON data:', error);
-        }
+  // Data from the server
+  const appId = data.appId;
+  const locationId = data.locationId;
+  const userMeta = data.userMeta || {};
+  // Cast tributes data to correct type (handle case where it might not exist in data)
+  const tributes = (data as any).tributes || [];
+  
+  // Set authentication token for API calls
+  $effect(() => {
+    if (data.token) {
+      tributeStore.setAuthToken(data.token);
     }
-    </script>
- 
- <div class="max-w-4xl mx-auto space-y-6">
+  });
+  
+  // State variables
+  let isEditingSchedule = $state(false);
+  let isUploadingMedia = $state(false);
+  let currentTributeId = $state('');
+  let formSubmitting = $state(false);
+  let formError = $state('');
+  
+  // Format a date into a readable string
+  function formatDate(dateStr: string): string {
+    if (!dateStr) return 'Date not set';
     
-  <!-- Card: Payment Status and Event Overview -->
-  <div class="bg-white rounded-lg shadow p-6 space-y-4">
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
+  // Format a time into a readable string
+  function formatTime(timeStr: string): string {
+    if (!timeStr) return 'Time not set';
     
-    <!-- Payment Status Bar -->
-    <div class="flex items-center justify-between bg-green-50 border border-green-300 rounded p-3">
-      <div class="flex items-center space-x-2 text-green-700">
-        <!-- Checkmark icon (optional) -->
-        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-          <path d="M20.285 2.998a1 1 0 0 1 .709 1.707l-11 11a1 1 0 0 1-1.414 0l-5-5a1 1 0 1 1 1.414-1.414l4.293 4.293 10.293-10.293a1 1 0 0 1 1.414 0z"/>
-        </svg>
-        <span class="font-semibold">Payment Status: Complete</span>
+    try {
+      // Handle different time formats
+      if (timeStr.includes(':')) {
+        // Already in HH:MM format
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const formattedHours = hours % 12 || 12;
+        return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+      } else {
+        return timeStr;
+      }
+    } catch (e) {
+      return timeStr;
+    }
+  }
+  
+  // Load tribute data into stores on mount
+  onMount(() => {
+    // Set token if available
+    if (data.token) {
+      tributeStore.setAuthToken(data.token);
+    }
+    
+    // Process user's memorial form data if available
+    if (userMeta.memorial_form_data) {
+      try {
+        const parsedData = typeof userMeta.memorial_form_data === 'string' 
+          ? JSON.parse(userMeta.memorial_form_data)
+          : userMeta.memorial_form_data;
+        
+        // Update master store with form data
+        masterStore.updateDirectorInfo({
+          firstName: parsedData.director?.firstName || '',
+          lastName: parsedData.director?.lastName || '',
+          funeralHomeName: parsedData.memorial?.locationName || '',
+          funeralHomeAddress: parsedData.memorial?.locationAddress || ''
+        });
+        
+        masterStore.updateLovedOneInfo({
+          fullName: `${parsedData.deceased?.firstName || ''} ${parsedData.deceased?.lastName || ''}`.trim(),
+          dateOfBirth: parsedData.deceased?.dob || '',
+          dateOfPassing: parsedData.deceased?.dop || ''
+        });
+        
+        masterStore.updateUserInfo({
+          fullName: `${parsedData.familyMember?.firstName || ''} ${parsedData.familyMember?.lastName || ''}`.trim(),
+          emailAddress: parsedData.contact?.email || '',
+          phoneNumber: parsedData.contact?.phone || ''
+        });
+        
+        // Update memorial info (without locations)
+        masterStore.updateMemorialInfo({
+          startTime: parsedData.memorial?.time || '',
+          date: parsedData.memorial?.date || ''
+        });
+      } catch (error) {
+        console.error('Failed to parse memorial form data:', error);
+      }
+    }
+    
+    // Load user's tributes into tribute store
+    if (tributes && tributes.length > 0) {
+      // Update recentTributes directly rather than using a setter method
+      tributeStore.recentTributes = tributes;
+      
+      // Set current tribute to the first one
+      if (tributes[0]) {
+        currentTributeId = tributes[0].id;
+        tributeStore.updateCurrentTribute(tributes[0]);
+      }
+    }
+  });
+  
+  // Get the current tribute
+  $effect(() => {
+    // If current tribute ID changes, update the current tribute in the store
+    if (currentTributeId) {
+      const tribute = tributes.find((t: any) => t.id === currentTributeId);
+      if (tribute) {
+        tributeStore.updateCurrentTribute(tribute);
+      }
+    }
+  });
+  
+  // Process form action result
+  $effect(() => {
+    if (form) {
+      // Convert SvelteKit form result to our FormActionResult format
+      const formActionResult = {
+        success: form.success || false,
+        error: form.error || false,
+        message: form.message || '',
+        data: form.data || {}
+      };
+      
+      // Process the form action result for both stores
+      processFormActionForBothStores(
+        formActionResult,
+        masterStore,
+        tributeStore
+      );
+      
+      // Reset submission state
+      formSubmitting = false;
+    }
+  });
+</script>
+
+<div class="max-w-4xl mx-auto space-y-6 py-8 px-4">
+  <h1 class="text-3xl font-bold text-gray-800">Family Dashboard</h1>
+  
+  <!-- Tributes Selection -->
+  {#if tributes.length > 0}
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4">Your Tributes</h2>
+      
+      <div class="space-y-2">
+        {#each tributes as tribute}
+          <button 
+            class="block w-full text-left p-3 rounded border {currentTributeId === tribute.id ? 'border-primary bg-primary/10' : 'border-gray-200 hover:bg-gray-50'}"
+            on:click={() => currentTributeId = tribute.id}
+          >
+            <span class="font-medium">{tribute.title || 'Untitled Tribute'}</span>
+            {#if tribute.memorialDate}
+              <span class="text-sm text-gray-600 block">
+                {formatDate(tribute.memorialDate)}
+              </span>
+            {/if}
+          </button>
+        {/each}
       </div>
     </div>
-    
-    <!-- Main Event Details (Title / Info / Media Placeholder) -->
-    <div class="flex flex-col md:flex-row md:space-x-6">
-      
-      <!-- Text Details -->
-      <div class="md:flex-1 space-y-2 mb-4 md:mb-0">
-        <!-- Title of the Event -->
-        <h2 class="text-2xl font-bold text-gray-700">Celebration of life for Marie Marie Marie</h2>
-
-        <!-- Starting Location -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-600">Starting Location</h3>
-          <p class="text-gray-800">Test Data</p>
-          <p class="text-gray-800">10114 Test Data Road</p>
-        </div>
-
-        <!-- Start Time -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-600">Start Time</h3>
-          <p class="text-gray-800">Jan 1, 2024 @ 3:30 PM</p>
-        </div>
-
-        <!-- Notes -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-600">Notes</h3>
-          <p class="text-gray-800">As needed.</p>
+  {/if}
+  
+  <!-- Current Tribute Details -->
+  {#if tributeStore.currentTribute.id}
+    <div class="bg-white rounded-lg shadow p-6 space-y-4">
+      <!-- Payment Status Bar -->
+      <div class="flex items-center justify-between bg-green-50 border border-green-300 rounded p-3">
+        <div class="flex items-center space-x-2 text-green-700">
+          <!-- Checkmark icon -->
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M20.285 2.998a1 1 0 0 1 .709 1.707l-11 11a1 1 0 0 1-1.414 0l-5-5a1 1 0 1 1 1.414-1.414l4.293 4.293 10.293-10.293a1 1 0 0 1 1.414 0z"/>
+          </svg>
+          <span class="font-semibold">Payment Status: Complete</span>
         </div>
       </div>
       
-      <!-- Media Placeholder -->
-      <div class="md:w-1/2 h-48 bg-black rounded flex items-center justify-center text-white">
-        <span class="text-sm">Media Placeholder</span>
+      <!-- Main Event Details -->
+      <div class="flex flex-col md:flex-row md:space-x-6">
+        <!-- Text Details -->
+        <div class="md:flex-1 space-y-2 mb-4 md:mb-0">
+          <!-- Title of the Event -->
+          <h2 class="text-2xl font-bold text-gray-700">
+            Celebration of life for {tributeStore.currentTribute.title || 'Loved One'}
+          </h2>
+
+          <!-- Starting Location -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-600">Location</h3>
+            <p class="text-gray-800">{tributeStore.currentTribute.memorialLocation || masterStore.memorialInfo.locations[0]?.name || 'Not specified'}</p>
+            <p class="text-gray-800">{masterStore.memorialInfo.locations[0]?.address || ''}</p>
+          </div>
+
+          <!-- Start Time -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-600">Date & Time</h3>
+            <p class="text-gray-800">
+              {formatDate(tributeStore.currentTribute.memorialDate || masterStore.memorialInfo.date || '')}
+              @ {formatTime(masterStore.memorialInfo.startTime || '')}
+            </p>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-600">Notes</h3>
+            <p class="text-gray-800">{tributeStore.currentTribute.notes || 'No notes provided.'}</p>
+          </div>
+          
+          <!-- Share link -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-600">Share Link</h3>
+            {#if tributeStore.currentTribute.slug && typeof tributeStore.currentTribute.slug === 'string'}
+              <div class="flex items-center mt-1">
+                <input
+                  readonly
+                  value={`${window.location.origin}/celebration-of-life-for-${tributeStore.currentTribute.slug}`}
+                  class="text-sm bg-gray-100 p-2 rounded mr-2 flex-grow"
+                />
+                <button
+                  class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-sm"
+                  on:click={() => {
+                    const slug = tributeStore.currentTribute.slug;
+                    if (slug) {
+                      navigator.clipboard.writeText(`${window.location.origin}/celebration-of-life-for-${slug}`);
+                      alert('Link copied to clipboard!');
+                    }
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            {:else}
+              <p class="text-gray-800">No share link available.</p>
+            {/if}
+          </div>
+        </div>
+        
+        <!-- Media Placeholder -->
+        {#if tributeStore.currentTribute.thumbnailUrl}
+          <div class="md:w-1/2">
+            <img 
+              src={tributeStore.currentTribute.thumbnailUrl} 
+              alt={tributeStore.currentTribute.title} 
+              class="w-full h-48 object-cover rounded"
+            />
+          </div>
+        {:else}
+          <div class="md:w-1/2 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+            <span class="text-sm">No Media Available</span>
+          </div>
+        {/if}
       </div>
     </div>
-  </div> <!-- End of Payment Status + Event Details Card -->
+  {/if}
   
   <!-- Action Buttons -->
-  <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
-    <!-- Button 1 -->
-    <button class="flex-1 bg-blue-100 text-blue-800 py-2 px-4 rounded shadow text-center font-semibold">
-      Upload Media for Livestream
-    </button>
-    <!-- Button 2 -->
-    <button class="flex-1 bg-red-100 text-red-800 py-2 px-4 rounded shadow text-center font-semibold">
-      Edit Livestream Schedule
-    </button>
-    <!-- Button 3 -->
-    <button class="flex-1 bg-pink-100 text-pink-800 py-2 px-4 rounded shadow text-center font-semibold">
-      Transfer Family Point of Contact
-    </button>
-    <!-- Button 4 -->
-    <button class="flex-1 bg-purple-100 text-purple-800 py-2 px-4 rounded shadow text-center font-semibold">
-      Invite Others to Share Media
-    </button>
-  </div>
-
-  <!-- Current Livestream Schedule Section -->
-  <div class="bg-white rounded-lg shadow p-6">
-    <!-- Header with "Current Livestream Schedule" and "Edit" button -->
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-xl font-bold text-gray-700">Current Livestream Schedule</h3>
-      <button class="bg-red-100 text-red-800 py-1 px-3 rounded shadow font-semibold">
-        Edit
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <!-- Button 1: Upload Media -->
+    <form 
+      method="POST" 
+      action="/upload-media" 
+      class="contents"
+    >
+      <button 
+        type="submit" 
+        class="bg-blue-100 text-blue-800 py-2 px-4 rounded shadow text-center font-semibold hover:bg-blue-200 transition"
+      >
+        Upload Media for Livestream
       </button>
-    </div>
+    </form>
     
-    <!-- Table Headers -->
-    <div class="hidden md:grid grid-cols-4 text-gray-600 font-semibold text-sm border-b border-gray-200 pb-2">
-      <span>Start Time</span>
-      <span>Stream Type</span>
-      <span>Est. Duration</span>
-      <span>Location</span>
-    </div>
-     
+    <!-- Button 2: Edit Schedule -->
+    <form 
+      method="POST" 
+      action="?/editSchedule" 
+      use:enhance={() => {
+        formSubmitting = true;
+        formError = '';
+        
+        return ({ result }) => {
+          if (result.type === 'failure') {
+            formSubmitting = false;
+            // Ensure message is a string before assigning to formError
+            formError = typeof result.data?.message === 'string'
+              ? result.data.message
+              : 'Failed to process request';
+          }
+          // For redirect responses, we don't need to do anything
+        };
+      }}
+      class="contents"
+    >
+      <button 
+        type="submit" 
+        class="bg-red-100 text-red-800 py-2 px-4 rounded shadow text-center font-semibold hover:bg-red-200 transition"
+        disabled={formSubmitting}
+      >
+        {formSubmitting ? 'Processing...' : 'Edit Livestream Schedule'}
+      </button>
+    </form>
+    
+    <!-- Button 3: Edit Tribute -->
+    <button
+      on:click={() => {
+        const slug = tributeStore.currentTribute.slug;
+        if (typeof slug === 'string' && slug.length > 0) {
+          window.location.href = `/celebration-of-life-for-${slug}/edit`;
+        } else {
+          alert('No tribute selected or no slug available');
+        }
+      }}
+      class="bg-purple-100 text-purple-800 py-2 px-4 rounded shadow text-center font-semibold hover:bg-purple-200 transition"
+    >
+      Edit Tribute Page
+    </button>
+    
+    <!-- Button 4: View Live Page -->
+    <button
+      on:click={() => {
+        const slug = tributeStore.currentTribute.slug;
+        if (typeof slug === 'string' && slug.length > 0) {
+          window.open(`/celebration-of-life-for-${slug}`, '_blank');
+        } else {
+          alert('No tribute selected or no slug available');
+        }
+      }}
+      class="bg-green-100 text-green-800 py-2 px-4 rounded shadow text-center font-semibold hover:bg-green-200 transition"
+    >
+      View Live Tribute Page
+    </button>
   </div>
+  
+  <!-- Error Message -->
+  {#if formError}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+      <span class="block sm:inline">{formError}</span>
+    </div>
+  {/if}
+  
+  <!-- Current Livestream Schedule Section -->
+  {#if masterStore.scheduleDays && masterStore.scheduleDays.length > 0}
+    <div class="bg-white rounded-lg shadow p-6">
+      <!-- Header with "Current Livestream Schedule" and "Edit" button -->
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-gray-700">Current Livestream Schedule</h3>
+        <form method="POST" action="?/editSchedule">
+          <button 
+            type="submit"
+            class="bg-red-100 text-red-800 py-1 px-3 rounded shadow font-semibold hover:bg-red-200 transition"
+          >
+            Edit
+          </button>
+        </form>
+      </div>
+      
+      <!-- Table Headers -->
+      <div class="hidden md:grid grid-cols-4 text-gray-600 font-semibold text-sm border-b border-gray-200 pb-2">
+        <span>Date & Time</span>
+        <span>Location</span>
+        <span>Duration</span>
+        <span>Notes</span>
+      </div>
+      
+      <!-- Schedule Content -->
+      <div class="mt-3 space-y-4">
+        {#each masterStore.scheduleDays as day, dayIndex}
+          <div class="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+            <div class="font-medium text-gray-700 mb-2">Day {dayIndex + 1}: {formatDate(day.date)}</div>
+            
+            {#each day.locations as location, locIndex}
+              <div class="md:grid grid-cols-4 py-2 border-t border-gray-100 first:border-t-0">
+                <!-- Mobile view shows labels -->
+                <div class="md:hidden font-semibold text-xs text-gray-500 uppercase mt-2">Date & Time</div>
+                <div class="mb-2 md:mb-0">{formatTime(location.startTime)}</div>
+                
+                <div class="md:hidden font-semibold text-xs text-gray-500 uppercase mt-2">Location</div>
+                <div class="mb-2 md:mb-0">{location.name}</div>
+                
+                <div class="md:hidden font-semibold text-xs text-gray-500 uppercase mt-2">Duration</div>
+                <div class="mb-2 md:mb-0">{location.duration} hours</div>
+                
+                <div class="md:hidden font-semibold text-xs text-gray-500 uppercase mt-2">Notes</div>
+                <div>{location.notes || 'No notes'}</div>
+              </div>
+            {/each}
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
 </div>

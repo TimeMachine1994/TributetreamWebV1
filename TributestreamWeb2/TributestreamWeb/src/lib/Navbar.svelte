@@ -55,9 +55,9 @@
     }
 
     if (isAdmin) {
-      goto('/admin');
+      goto('/admin-dashboard');
     } else {
-      goto('/schedule');
+      goto('/family-dashboard');
     }
   }
 

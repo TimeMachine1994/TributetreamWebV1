@@ -1,4 +1,5 @@
 import type { MasterStore, DirectorInfo, LovedOneInfo, UserInfo, MemorialInfo, LiveStreamInfo, PackageInfo, BillingInfo } from '$lib/stores/master-store.svelte';
+import type { TributePageStore, Tribute } from '$lib/stores/tribute-page-store.svelte';
 
 /**
  * Type for common form action response
@@ -92,4 +93,41 @@ export function processFormActionResult(
   // Note: We don't need to handle redirects here anymore
   // When using SvelteKit's redirect() function, the browser
   // will automatically follow the HTTP redirect from the server
+}
+
+/**
+ * Process a form action response to update both master store and tribute page store
+ * This combines the functionality of processFormActionResult with tribute-specific updates
+ *
+ * @param form The form result from the action
+ * @param masterStore The master store instance
+ * @param tributeStore The tribute page store instance
+ * @param nextPage Optional URL to navigate to on success
+ */
+export function processFormActionForBothStores(
+  form: FormActionResult | null | undefined,
+  masterStore: MasterStore,
+  tributeStore: TributePageStore,
+  nextPage?: string
+): void {
+  // If form is not successful or has no data, don't proceed
+  if (!form?.success || !form?.data) return;
+
+  // First, update the master store using the existing function
+  processFormActionResult(form, masterStore);
+  
+  // Then, handle tribute-specific data
+  const data = form.data; // Reassign to a constant to help TypeScript understand it's defined
+  
+  if (data && data.tribute) {
+    tributeStore.updateCurrentTribute(data.tribute);
+    
+    // If a new tribute was created, add it to recent tributes
+    if (data.tribute.id && !tributeStore.recentTributes.some(t => t.id === data.tribute.id)) {
+      tributeStore.recentTributes = [...tributeStore.recentTributes, data.tribute as Tribute];
+    }
+  }
+  
+  // Persist tribute store changes to localStorage
+  tributeStore.saveToLocalStorage();
 }
