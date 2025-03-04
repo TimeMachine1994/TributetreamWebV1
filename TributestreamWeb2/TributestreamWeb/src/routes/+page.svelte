@@ -1,7 +1,7 @@
 <script lang="ts">
     import { error } from '@sveltejs/kit';
     import { goto } from '$app/navigation';
-    import type { Tribute } from '../types/tribute';
+    import type { Tribute } from '$lib/stores/tribute-page-store.svelte';
     import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
     import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
     import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
@@ -222,28 +222,67 @@
                 method="POST"
                 action="?/createTribute"
                 class="w-full max-w-md"
-                use:enhance={({ formElement, formData, action, cancel }) => {
-                    // Prevent multiple submissions
-                    if (formSubmitting) {
-                        console.log('Form submission canceled - already submitting');
-                        cancel();
-                        return;
-                    }
-                    
-                    console.log('Form submission started');
-                    formSubmitting = true;
-                    
-                    return {
-                        result: (result) => {
-                            // Reset the submitting state when done
-                            console.log('Form submission completed');
-                            formSubmitting = false;
-                            
-                            // If the request was successful, reset the slug flag for new submissions
-                            if (result.type === 'success') {
-                                slugSet = false;
-                            }
+                use:enhance={() => {
+                    // Pre-submission setup
+                    const preSubmit = () => {
+                        // Prevent multiple submissions
+                        if (formSubmitting) {
+                            console.log('Form submission canceled - already submitting');
+                            return false;
                         }
+                        
+                        // Validate form data before submission
+                        const lovedOneFullName = masterStore.lovedOneInfo.fullName;
+                        const userFullName = masterStore.userInfo.fullName;
+                        const userEmail = masterStore.userInfo.emailAddress;
+                        const userPhone = masterStore.userInfo.phoneNumber;
+                        
+                        console.log('Form submission validation:', {
+                            lovedOneFullName,
+                            userFullName,
+                            userEmail,
+                            userPhone
+                        });
+                        
+                        // Client-side validation
+                        if (!lovedOneFullName || !userFullName || !userEmail || !userPhone) {
+                            console.error('Missing required fields in client validation');
+                            userError = 'Please fill in all required fields';
+                            return false;
+                        }
+                        
+                        // Ensure the slug is set before submission
+                        if (!tributeStore.currentTribute.slug) {
+                            console.log('Setting slug before submission');
+                            setSlugFromName(lovedOneFullName);
+                        }
+                        
+                        console.log('Form submission started');
+                        formSubmitting = true;
+                        return true;
+                    };
+
+                    // If validation fails, don't proceed with submission
+                    if (!preSubmit()) return;
+                    
+                    return ({ update, result }) => {
+                        // Reset the submitting state when done
+                        console.log('Form submission completed:', result);
+                        formSubmitting = false;
+                        
+                        if (result.type === 'failure') {
+                            // Display error message to user
+                            userError = result.data?.message || 'Form submission failed';
+                            console.error('Form error:', result.data);
+                        }
+                        
+                        // If the request was successful, reset the slug flag for new submissions
+                        if (result.type === 'success') {
+                            slugSet = false;
+                        }
+                        
+                        // Allow default update to proceed
+                        update();
                     };
                 }}
             >
@@ -329,6 +368,13 @@
                         bind:value={masterStore.userInfo.phoneNumber}
                     />
   
+                    <!-- Error message display -->
+                    {#if userError}
+                        <div class="bg-red-500 text-white p-3 rounded-md mb-4 text-center">
+                            {userError}
+                        </div>
+                    {/if}
+                    
                     <!-- Navigation buttons -->
                     <div class="flex justify-between items-center">
                         <button 
@@ -338,7 +384,27 @@
                         >
                             <i class="fas fa-arrow-left"></i>
                         </button>
-                        <!-- Fields are bound to masterStore directly, so no hidden fields needed -->
+                        <!-- Add hidden fields to ensure values are submitted properly -->
+                        <input
+                            type="hidden"
+                            name="lovedOneInfo.fullName"
+                            value={masterStore.lovedOneInfo.fullName || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="userInfo.fullName"
+                            value={masterStore.userInfo.fullName || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="userInfo.emailAddress"
+                            value={masterStore.userInfo.emailAddress || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="userInfo.phoneNumber"
+                            value={masterStore.userInfo.phoneNumber || ''}
+                        />
                         <button
                             type="submit"
                             class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"
@@ -371,13 +437,13 @@
                                 <div class="text-center text-white">Searching...</div>
                             {:else if tributeStore.searchResults.tributes.length > 0}
                                 {#each tributeStore.searchResults.tributes as result}
-                                    <div class="bg-white bg-opacity-10 p-3 rounded-md hover:bg-opacity-20 transition-all cursor-pointer"
-                                         onclick={() => goto(`/celebration-of-life-for-${result.slug}`)}>
+                                    <a href={`/celebration-of-life-for-${result.slug}`}
+                                       class="block bg-white bg-opacity-10 p-3 rounded-md hover:bg-opacity-20 transition-all cursor-pointer">
                                         <div class="text-lg text-white">{result.title}</div>
                                         <div class="text-sm text-gray-300">
                                             Created {result.created_at ? new Date(result.created_at).toLocaleDateString() : 'Recently'}
                                         </div>
-                                    </div>
+                                    </a>
                                 {/each}
                                 
                                 {#if tributeStore.searchResults.total_pages > 1}

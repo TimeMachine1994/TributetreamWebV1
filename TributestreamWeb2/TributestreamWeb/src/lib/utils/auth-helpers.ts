@@ -123,6 +123,7 @@ import type {
    * @param password User's generated password
    * @param fetchFn Optional fetch function (use event.fetch in server contexts)
    */
+  
   /**
    * Gets the user data from cookies
    * @param cookies The cookies object from the event

@@ -60,20 +60,8 @@ export class TributePageStore {
       this.loadFromLocalStorage();
     }
     
-    // Set up persistence with effect inside the constructor
-    $effect(() => {
-      // Skip if a save is already in progress to prevent circular updates
-      if (typeof window !== 'undefined' && !this.saveInProgress) {
-        this.saveInProgress = true;
-        console.log('Saving tributeStore to localStorage');
-        this.saveToLocalStorage();
-        
-        // Reset the flag after a small delay to avoid immediate re-triggering
-        setTimeout(() => {
-          this.saveInProgress = false;
-        }, 100);
-      }
-    });
+    // Note: Persistence is now managed by the layout component
+    // We've disabled the internal persistence effect to prevent loops
   }
 
   // Method to save to localStorage

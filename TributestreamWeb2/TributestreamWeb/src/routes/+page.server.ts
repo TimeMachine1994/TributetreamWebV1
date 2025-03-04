@@ -12,15 +12,33 @@ export const actions = {
             // Parse form data
             const formData = await request.formData();
             
+            // Debug: Log all form entries
+            console.log('🔍 Form data entries:');
+            for (const [key, value] of formData.entries()) {
+                console.log(`   ${key}: ${value}`);
+            }
+            
             // Extract MasterStore data
             const lovedOneFullName = formData.get('lovedOneInfo.fullName') as string;
             const userFullName = formData.get('userInfo.fullName') as string;
             const userEmail = formData.get('userInfo.emailAddress') as string;
             const userPhone = formData.get('userInfo.phoneNumber') as string;
             
+            // Debug: Log extracted values
+            console.log('🔍 Extracted form values:');
+            console.log(`   lovedOneFullName: "${lovedOneFullName}"`);
+            console.log(`   userFullName: "${userFullName}"`);
+            console.log(`   userEmail: "${userEmail}"`);
+            console.log(`   userPhone: "${userPhone}"`);
+            
             // Validate required fields
             if (!lovedOneFullName || !userFullName || !userEmail || !userPhone) {
-                console.error('❌ Missing required fields');
+                console.error('❌ Missing required fields:', {
+                    lovedOneFullName: !lovedOneFullName ? 'MISSING' : 'ok',
+                    userFullName: !userFullName ? 'MISSING' : 'ok',
+                    userEmail: !userEmail ? 'MISSING' : 'ok',
+                    userPhone: !userPhone ? 'MISSING' : 'ok'
+                });
                 return fail(400, { 
                     error: true, 
                     message: 'All fields are required to create a tribute.' 
@@ -39,26 +57,51 @@ export const actions = {
             
             console.log('🔄 Registering user...');
             
+            // Prepare the registration data
+            const registrationData = {
+                username: userEmail,
+                email: userEmail,
+                password: password,
+                // All additional data goes in meta object
+                meta: {
+                    name: userFullName,
+                    phone: userPhone,
+                    fullName: userFullName,
+                    lovedOne: lovedOneFullName
+                }
+            };
+            
+            // Debug the exact JSON being sent - with additional tracking
+            console.log('📦 Registration payload:', JSON.stringify(registrationData, null, 2));
+            console.log('🧩 Type assertion fix applied, using "as Actions" instead of "satisfies Actions"');
+            
             // Register the user
             const registerResponse = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: userEmail,
-                    email: userEmail,
-                    password: password,
-                    name: userFullName,
-                    phone: userPhone
-                })
+                body: JSON.stringify(registrationData)
             });
             
             if (!registerResponse.ok) {
-                const errorData = await registerResponse.json();
-                console.error('❌ Registration failed:', errorData);
-                return fail(registerResponse.status, { 
-                    error: true, 
-                    message: errorData.message || 'User registration failed' 
-                });
+                try {
+                    const errorData = await registerResponse.json();
+                    console.error('❌ Registration failed with status:', registerResponse.status);
+                    console.error('❌ Error details:', JSON.stringify(errorData, null, 2));
+                    return fail(registerResponse.status, {
+                        error: true,
+                        message: errorData.message || 'User registration failed',
+                        details: errorData
+                    });
+                } catch (parseError) {
+                    // If we can't parse the error response as JSON
+                    console.error('❌ Registration failed with status:', registerResponse.status);
+                    console.error('❌ Could not parse error response:', await registerResponse.text());
+                    return fail(registerResponse.status, {
+                        error: true,
+                        message: `User registration failed: ${registerResponse.statusText}`,
+                        parseError: true
+                    });
+                }
             }
             
             const registerResult = await registerResponse.json();
@@ -67,7 +110,14 @@ export const actions = {
             console.log('✅ User registered successfully. User ID:', userId);
             
             // Send welcome email with login credentials
-            await sendWelcomeEmail(userEmail, userEmail, password, fetch);
+            try {
+                console.log('🔄 Sending welcome email...');
+                const emailResult = await sendWelcomeEmail(userEmail, userEmail, password, fetch);
+                console.log('✅ Welcome email sent successfully');
+            } catch (emailError) {
+                // Don't fail the registration if email sending fails
+                console.warn('⚠️ Failed to send welcome email, but continuing:', emailError);
+            }
             
             console.log('🔄 Authenticating user...');
             
@@ -147,4 +197,4 @@ export const actions = {
             });
         }
     }
-} satisfies Actions;
+} as Actions;

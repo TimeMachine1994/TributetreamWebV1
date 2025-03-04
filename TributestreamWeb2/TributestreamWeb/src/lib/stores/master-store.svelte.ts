@@ -332,9 +332,15 @@ export class MasterStore {
     }];
   }
 
+  // Flag to prevent infinite localStorage save loops
+  private saveInProgress = $state(false);
+
   // Method to save to localStorage
   saveToLocalStorage() {
-    if (typeof window !== 'undefined') {
+    // Skip if save is already in progress to prevent circular updates
+    if (typeof window !== 'undefined' && !this.saveInProgress) {
+      this.saveInProgress = true;
+      
       const data = {
         directorInfo: this.directorInfo,
         lovedOneInfo: this.lovedOneInfo,
@@ -345,7 +351,13 @@ export class MasterStore {
         billingInfo: this.billingInfo,
         scheduleDays: this.scheduleDays
       };
+      
       localStorage.setItem('funeralServiceData', JSON.stringify(data));
+      
+      // Reset the flag after a delay to prevent immediate re-triggering
+      setTimeout(() => {
+        this.saveInProgress = false;
+      }, 100);
     }
   }
 

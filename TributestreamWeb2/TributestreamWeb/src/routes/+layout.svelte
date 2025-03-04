@@ -32,19 +32,46 @@ onMount(() => {
     }
 });
 
+// Explicitly keep track of which values we want to trigger persistence
+let lastPersistenceCheck = $state(Date.now());
+
+// Helper function to manually trigger a persistence check
+function schedulePersistence() {
+    lastPersistenceCheck = Date.now();
+}
+
 // Separate the effect from onMount to avoid nesting reactivity
 $effect(() => {
+    // This will only run when explicitly triggered by schedulePersistence
+    const _ = lastPersistenceCheck; // Read the value to create dependency
+    
     // Skip if a save is already in progress to prevent circular updates
     if (typeof window !== 'undefined' && !saveInProgress) {
         saveInProgress = true;
-        console.log('Saving masterStore to localStorage');
-        masterStore.saveToLocalStorage();
+        console.log('Coordinated store persistence');
         
-        // Reset the flag after a small delay to avoid immediate re-triggering
+        // Serial persistence to avoid conflicts
+        masterStore.saveToLocalStorage();
+        tributeStore.saveToLocalStorage();
+        
+        // Reset the flag after a longer delay to avoid re-triggering
         setTimeout(() => {
             saveInProgress = false;
-        }, 100);
+            console.log('Persistence complete');
+        }, 200);
     }
+});
+
+// Set up interval-based persistence rather than reactive persistence
+onMount(() => {
+    // Set up a periodic save interval instead of relying on reactivity
+    const persistenceInterval = setInterval(() => {
+        schedulePersistence();
+    }, 5000); // Save every 5 seconds
+    
+    return () => {
+        clearInterval(persistenceInterval);
+    };
 });
 </script>
 
