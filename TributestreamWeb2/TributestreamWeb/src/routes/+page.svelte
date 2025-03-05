@@ -267,8 +267,7 @@
                         // Reset the submitting state when done
                         console.log('Form submission completed:', result);
                         formSubmitting = false;
-                        
-                        if (result.type === 'failure') {
+                         if (result.type === 'failure') {
                             // Display error message to user
                             userError = typeof result.data?.message === 'string'
                                 ? result.data.message
@@ -311,11 +310,11 @@
   
                     <!-- Buttons for creating tribute or searching -->
                     <div class="flex space-x-4 justify-center">
-                        <button 
+                        <button  
                             type="button"
                             onclick={handleNextPage}
                             class="bg-[#D5BA7F] text-black font-bold py-2 px-4 border border-transparent rounded-lg hover:text-black hover:shadow-[0_0_10px_4px_#D5BA7F] transition-all duration-300 ease-in-out"
-                        >
+                                >
                             Create Tribute
                         </button>
               <button 

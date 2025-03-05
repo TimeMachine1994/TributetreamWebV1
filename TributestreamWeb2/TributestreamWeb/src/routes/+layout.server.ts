@@ -5,7 +5,7 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
     console.log('🔧 [Layout Server] load() triggered');
   
     // 1. Retrieve JWT from locals (populated by hooks.server.ts)
-    const jwt = locals.jwt;
+    const jwt = cookies.get('jwt');
     console.log('🔑 [Layout Server] JWT in locals:', jwt);
   
     // 2. Retrieve user data from cookie, if any
