@@ -222,9 +222,7 @@ export const actions = {
             console.log('🔀 Redirecting to tribute page...');
             // Redirect to the tribute page
             throw redirect(303, tributeUrl);
-            
-        } catch (error) {
-            console.error('💥 Error in createTribute action:', error);
         }
-    }
-} as Actions;
+    } satisfies Actions;
+    } as Actions;
+    } as Actions;
