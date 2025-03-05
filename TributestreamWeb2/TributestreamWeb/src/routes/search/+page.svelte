@@ -2,13 +2,11 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { enhance } from '$app/forms';
-  import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
-  import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
-  import { processFormActionForBothStores } from '$lib/utils/form-action-helper';
+  import { getUnifiedStoreContext } from '$lib/stores/unified-store.svelte';
+  import { processFormActionResult } from '$lib/utils/unified-form-helper';
 
-  // Get store contexts
-  const masterStore = getMasterStoreContext();
-  const tributeStore = getTributePageStoreContext();
+  // Get the unified store context
+  const store = getUnifiedStoreContext();
 
   // Get the initial data from the server
   const { data } = $props();
@@ -21,15 +19,15 @@
   
   // Synchronize query with lovedOne name when appropriate
   $effect(() => {
-    if (masterStore.lovedOneInfo.fullName && !query) {
-      query = masterStore.lovedOneInfo.fullName;
+    if (store.lovedOneInfo.fullName && !query) {
+      query = store.lovedOneInfo.fullName;
     }
   });
   
-  // Initialize the tribute store search results with server data
+  // Initialize the store search results with server data
   $effect(() => {
     if (data.initialResults && data.initialResults.length > 0) {
-      tributeStore.searchResults = {
+      store.searchResults = {
         tributes: data.initialResults,
         total_pages: data.totalPages || 1,
         currentPage: data.currentPage || 1,
@@ -56,7 +54,7 @@
     errorMessage = '';
     
     try {
-      await tributeStore.searchTributes(query, 1, 10);
+      await store.searchTributes(query, 1, 10);
     } catch (error) {
       console.error('Search error:', error);
       errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -67,13 +65,13 @@
   
   // Navigate to a specific page of results
   async function changePage(newPage: number) {
-    if (newPage < 1 || newPage > tributeStore.searchResults.total_pages) return;
+    if (newPage < 1 || newPage > store.searchResults.total_pages) return;
     
     isSearching = true;
     currentPage = newPage;
     
     try {
-      await tributeStore.searchTributes(query, newPage, 10);
+      await store.searchTributes(query, newPage, 10);
     } catch (error) {
       console.error('Page navigation error:', error);
       errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -123,8 +121,8 @@
             page?: number;
           } || {};
           
-          // Update the tribute store with the search results
-          tributeStore.searchResults = {
+          // Update the unified store with the search results
+          store.searchResults = {
             tributes: resultData.data?.tributes || [],
             total_pages: resultData.data?.total_pages || 1,
             currentPage: (resultData.page || 1) as number,
@@ -157,22 +155,22 @@
   </form>
 
   <!-- Loading indicator -->
-  {#if isSearching || tributeStore.searchResults.isLoading}
+  {#if isSearching || store.searchResults.isLoading}
     <div class="text-lg text-[#070707] animate-pulse mb-4">Searching...</div>
   {/if}
   
   <!-- Error message -->
-  {#if errorMessage || tributeStore.searchResults.error}
+  {#if errorMessage || store.searchResults.error}
     <div class="w-full max-w-2xl bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
       <p class="font-semibold">Error:</p>
-      <p>{errorMessage || tributeStore.searchResults.error}</p>
+      <p>{errorMessage || store.searchResults.error}</p>
     </div>
   {/if}
   
   <!-- Search results -->
-  {#if tributeStore.searchResults.tributes.length > 0}
+  {#if store.searchResults.tributes.length > 0}
     <div class="w-full max-w-2xl space-y-4">
-      {#each tributeStore.searchResults.tributes as tribute}
+      {#each store.searchResults.tributes as tribute}
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-200">
           <h2 class="text-xl font-bold text-[#070707] mb-2">{tribute.title}</h2>
           
@@ -196,7 +194,7 @@
       {/each}
       
       <!-- Pagination controls -->
-      {#if tributeStore.searchResults.total_pages > 1}
+      {#if store.searchResults.total_pages > 1}
         <div class="flex justify-center mt-6 space-x-2">
           <button
             on:click={() => changePage(currentPage - 1)}
@@ -207,12 +205,12 @@
           </button>
           
           <span class="px-4 py-2 bg-white border border-gray-300 rounded">
-            Page {currentPage} of {tributeStore.searchResults.total_pages}
+            Page {currentPage} of {store.searchResults.total_pages}
           </span>
           
           <button
             on:click={() => changePage(currentPage + 1)}
-            disabled={currentPage === tributeStore.searchResults.total_pages}
+            disabled={currentPage === store.searchResults.total_pages}
             class="px-4 py-2 bg-gray-200 text-gray-800 rounded disabled:opacity-50"
           >
             Next

@@ -1,5 +1,4 @@
-import type { MasterStore, DirectorInfo, LovedOneInfo, UserInfo, MemorialInfo, LiveStreamInfo, PackageInfo, BillingInfo } from '$lib/stores/master-store.svelte';
-import type { TributePageStore, Tribute } from '$lib/stores/tribute-page-store.svelte';
+import type { UnifiedStore, Tribute } from '$lib/stores/unified-store.svelte';
 
 /**
  * Type for common form action response
@@ -39,95 +38,119 @@ export function validateRequiredFields(
 }
 
 /**
- * Process a form action response to update the master store
+ * Process a form action response to update the unified store
  * This should be used in page components when handling form action results
  *
  * @param form The form result from the action
- * @param masterStore The master store instance
+ * @param store The unified store instance
  * @param nextPage Optional URL to navigate to on success (not needed if using server redirects)
  */
 export function processFormActionResult(
   form: FormActionResult | null | undefined,
-  masterStore: MasterStore,
+  store: UnifiedStore,
   nextPage?: string
 ): void {
   // If form is not successful or has no data, don't proceed
   if (!form?.success || !form?.data) return;
 
-  // Update different sections of the master store based on the data
-  if (form.data.directorInfo) {
-    masterStore.updateDirectorInfo(form.data.directorInfo);
+  const data = form.data;
+  
+  // Update different sections of the unified store based on the data
+  if (data.directorInfo) {
+    store.updateDirectorInfo(data.directorInfo);
   }
 
-  if (form.data.lovedOneInfo) {
-    masterStore.updateLovedOneInfo(form.data.lovedOneInfo);
+  if (data.lovedOneInfo) {
+    store.updateLovedOneInfo(data.lovedOneInfo);
   }
 
-  if (form.data.userInfo) {
-    masterStore.updateUserInfo(form.data.userInfo);
+  if (data.userInfo) {
+    store.updateUserInfo(data.userInfo);
   }
 
-  if (form.data.memorialInfo) {
-    masterStore.updateMemorialInfo(form.data.memorialInfo);
+  if (data.memorialInfo) {
+    store.updateMemorialInfo(data.memorialInfo);
   }
 
-  if (form.data.liveStreamInfo) {
-    masterStore.updateLiveStreamInfo(form.data.liveStreamInfo);
+  if (data.liveStreamInfo) {
+    store.updateLiveStreamInfo(data.liveStreamInfo);
   }
 
-  if (form.data.packageInfo) {
-    masterStore.updatePackageInfo(form.data.packageInfo);
+  if (data.packageInfo) {
+    store.updatePackageInfo(data.packageInfo);
   }
 
-  if (form.data.billingInfo) {
-    masterStore.updateBillingInfo(form.data.billingInfo);
+  if (data.billingInfo) {
+    store.updateBillingInfo(data.billingInfo);
   }
   
-  if (form.data.scheduleDays) {
-    masterStore.updateScheduleDays(form.data.scheduleDays);
+  if (data.scheduleDays) {
+    store.updateScheduleDays(data.scheduleDays);
+  }
+
+  // Handle tribute-specific data
+  if (data.tribute) {
+    store.updateCurrentTribute(data.tribute);
+    
+    // If a new tribute was created, add it to recent tributes
+    if (data.tribute.id && !store.recentTributes.some(t => t.id === data.tribute.id)) {
+      store.recentTributes = [...store.recentTributes, data.tribute as Tribute];
+    }
   }
 
   // No longer persisting here - let the layout's coordinated persistence handle it
-  // masterStore.saveToLocalStorage();
-
-  // Note: We don't need to handle redirects here anymore
-  // When using SvelteKit's redirect() function, the browser
-  // will automatically follow the HTTP redirect from the server
+  // store.saveToLocalStorage();
 }
 
 /**
- * Process a form action response to update both master store and tribute page store
- * This combines the functionality of processFormActionResult with tribute-specific updates
- *
- * @param form The form result from the action
- * @param masterStore The master store instance
- * @param tributeStore The tribute page store instance
- * @param nextPage Optional URL to navigate to on success
+ * @deprecated Use processFormActionResult instead - this function is maintained for backward compatibility
  */
 export function processFormActionForBothStores(
   form: FormActionResult | null | undefined,
-  masterStore: MasterStore,
-  tributeStore: TributePageStore,
+  masterStore: any,
+  tributeStore: any,
   nextPage?: string
 ): void {
-  // If form is not successful or has no data, don't proceed
-  if (!form?.success || !form?.data) return;
-
-  // First, update the master store using the existing function
-  processFormActionResult(form, masterStore);
+  console.warn('processFormActionForBothStores is deprecated. Please use processFormActionResult with UnifiedStore instead.');
   
-  // Then, handle tribute-specific data
-  const data = form.data; // Reassign to a constant to help TypeScript understand it's defined
-  
-  if (data && data.tribute) {
-    tributeStore.updateCurrentTribute(data.tribute);
-    
-    // If a new tribute was created, add it to recent tributes
-    if (data.tribute.id && !tributeStore.recentTributes.some(t => t.id === data.tribute.id)) {
-      tributeStore.recentTributes = [...tributeStore.recentTributes, data.tribute as Tribute];
+  // If running in a browser, get the unified store and use it
+  if (typeof window !== 'undefined') {
+    try {
+      // Try to dynamically import the unified store
+      import('$lib/stores/unified-store.svelte').then(({ getUnifiedStoreContext }) => {
+        const unifiedStore = getUnifiedStoreContext();
+        processFormActionResult(form, unifiedStore, nextPage);
+      }).catch(() => {
+        console.error('Failed to load UnifiedStore, falling back to legacy behavior');
+        // Legacy behavior (will be removed in a future update)
+        if (!form?.success || !form?.data) return;
+        
+        // Update the master store directly
+        if (masterStore) {
+          const data = form.data;
+          
+          if (data.directorInfo) masterStore.updateDirectorInfo(data.directorInfo);
+          if (data.lovedOneInfo) masterStore.updateLovedOneInfo(data.lovedOneInfo);
+          if (data.userInfo) masterStore.updateUserInfo(data.userInfo);
+          if (data.memorialInfo) masterStore.updateMemorialInfo(data.memorialInfo);
+          if (data.liveStreamInfo) masterStore.updateLiveStreamInfo(data.liveStreamInfo);
+          if (data.packageInfo) masterStore.updatePackageInfo(data.packageInfo);
+          if (data.billingInfo) masterStore.updateBillingInfo(data.billingInfo);
+          if (data.scheduleDays) masterStore.updateScheduleDays(data.scheduleDays);
+        }
+        
+        // Update the tribute store
+        if (tributeStore && form.data.tribute) {
+          tributeStore.updateCurrentTribute(form.data.tribute);
+          // If a new tribute was created, add it to recent tributes
+          if (form.data?.tribute?.id && !tributeStore.recentTributes.some((t: Tribute) => t.id === form.data?.tribute.id)) {
+            tributeStore.recentTributes = [...tributeStore.recentTributes, form.data.tribute];
+            tributeStore.recentTributes = [...tributeStore.recentTributes, form.data.tribute];
+          }
+        }
+      });
+    } catch (e) {
+      console.error('Error in processFormActionForBothStores:', e);
     }
   }
-  
-  // No longer persisting here - let the layout's coordinated persistence handle it
-  // tributeStore.saveToLocalStorage();
 }
