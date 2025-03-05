@@ -9,7 +9,7 @@ import {
     storeMasterDataInUserMeta,
     convertMasterStoreToUserMeta
 } from '$lib/utils/auth-helpers';
-import type { Tribute } from '$lib/stores/tribute-page-store.svelte';
+import type { Tribute } from '$lib/stores/unified-store.svelte';
 
 export const actions = {
     createTribute: async ({ request, fetch, cookies }) => {
@@ -25,7 +25,7 @@ export const actions = {
                 console.log(`   ${key}: ${value}`);
             }
             
-            // Extract MasterStore data
+            // Extract form data
             const lovedOneFullName = formData.get('lovedOneInfo.fullName') as string;
             const userFullName = formData.get('userInfo.fullName') as string;
             const userEmail = formData.get('userInfo.emailAddress') as string;
@@ -153,7 +153,7 @@ export const actions = {
             setAuthCookies(cookies, authResult);
             
             // Store data in user metadata
-            const masterData = {
+            const unifiedData = {
                 lovedOneInfo: { fullName: lovedOneFullName },
                 userInfo: {
                     fullName: userFullName,
@@ -163,15 +163,15 @@ export const actions = {
             };
             
             // Use the conversion function to ensure all required fields are present
-            const completeUserMetaData = convertMasterStoreToUserMeta(masterData);
+            const completeUserMetaData = convertMasterStoreToUserMeta(unifiedData);
             console.log('🔄 Complete user meta data structure:', JSON.stringify(completeUserMetaData, null, 2));
             
             await storeMasterDataInUserMeta(userId, completeUserMetaData, authResult.token, fetch);
-            console.log('✅ Master data stored in user meta.');
+            console.log('✅ User data stored in user meta.');
             
-            // Enhanced tribute data for better integration with TributePageStore
+            // Enhanced tribute data for better integration with Unified Store
             const tributeData = {
-                title: lovedOneFullName,
+                title: lovedOneFullName,  // Will be synchronized with lovedOneInfo.fullName in the store
                 slug: tributeSlug,
                 user_name: userFullName,
                 user_email: userEmail,
@@ -194,26 +194,28 @@ export const actions = {
             
             console.log('✅ Tribute created successfully:', tributeResponse);
             
-            // Include tribute data in form result to update TributePageStore
+            // Include tribute data in form result to update UnifiedStore
             // This would be caught by use:enhance in the component and used to update the store
             const tribute: Partial<Tribute> = {
                 ...tributeData,
                 id: tributeResponse.tribute?.id
             };
             
-            // Structure result to include data for both stores
+            // Structure result to include data for unified store
             const result = {
                 success: true,
                 data: {
-                    // MasterStore data
+                    // User and loved one info
                     lovedOneInfo: { fullName: lovedOneFullName },
                     userInfo: {
                         fullName: userFullName,
                         emailAddress: userEmail,
                         phoneNumber: userPhone
                     },
-                    // TributePageStore data
-                    tribute: tribute
+                    // Tribute data
+                    tribute: tribute,
+                    // Auth token
+                    authToken: authResult.token
                 }
             };
             
@@ -223,8 +225,6 @@ export const actions = {
             
         } catch (error) {
             console.error('💥 Error in createTribute action:', error);
-            
-          
         }
     }
 } as Actions;

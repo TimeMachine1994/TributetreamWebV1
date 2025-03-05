@@ -1,16 +1,14 @@
 <script lang="ts">
     import { error } from '@sveltejs/kit';
     import { goto } from '$app/navigation';
-    import type { Tribute } from '$lib/stores/tribute-page-store.svelte';
-    import { getMasterStoreContext } from '$lib/stores/master-store.svelte';
-    import { getTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
+    import type { Tribute } from '$lib/stores/unified-store.svelte';
+    import { getUnifiedStoreContext } from '$lib/stores/unified-store.svelte';
     import { createTributeSlug, createTributeUrl } from '$lib/utils/string-helper';
     import { enhance } from '$app/forms';
-    import { processFormActionForBothStores } from '$lib/utils/form-action-helper';
+    import { processFormActionResult } from '$lib/utils/unified-form-helper';
 
-    // Get store contexts
-    const masterStore = getMasterStoreContext();
-    const tributeStore = getTributePageStoreContext();
+    // Get store context
+    const store = getUnifiedStoreContext();
 
     // Error and UI state
     let userError = $state('');
@@ -27,7 +25,7 @@
     let formSubmitting = $state(false);
     
     // Derived value for display purposes only
-    let currentSlug = $derived(tributeStore.currentTribute.slug || '');
+    let currentSlug = $derived(store.currentTribute.slug || '');
     
     // Update only when needed to avoid infinite loops
     function setSlugFromName(name: string): void {
@@ -36,8 +34,7 @@
         
         console.log('Setting slug from name:', name);
         const slug = createTributeSlug(name, false);
-        tributeStore.updateCurrentTribute({
-            title: name,
+        store.updateCurrentTribute({
             slug: slug
         });
         
@@ -45,32 +42,21 @@
         slugSet = true;
     }
     
-    // Initialize from master store and synchronize with tribute store
+    // Initialize from store
     $effect(() => {
         // Only update the slug if it hasn't been set and we have a name
-        if (masterStore.lovedOneInfo.fullName && !slugSet) {
-            // Set the title in tribute store to match master store
-            tributeStore.updateCurrentTribute({
-                title: masterStore.lovedOneInfo.fullName
-            });
-            setSlugFromName(masterStore.lovedOneInfo.fullName);
-        }
-    });
-
-    // Keep both stores synchronized
-    $effect(() => {
-        if (tributeStore.currentTribute.title && tributeStore.currentTribute.title !== masterStore.lovedOneInfo.fullName) {
-            masterStore.updateLovedOneInfo({ fullName: tributeStore.currentTribute.title });
+        if (store.lovedOneInfo.fullName && !slugSet) {
+            setSlugFromName(store.lovedOneInfo.fullName);
         }
     });
 
     // Handle next page button click
     function handleNextPage() {
-        if (!masterStore.lovedOneInfo.fullName?.trim()) {
+        if (!store.lovedOneInfo.fullName?.trim()) {
             userError = 'Please enter a valid name';
             return;
         }
-        setSlugFromName(masterStore.lovedOneInfo.fullName);
+        setSlugFromName(store.lovedOneInfo.fullName);
         showSecondForm = true;
     }
 
@@ -84,8 +70,8 @@
         // Name is changing, so we need to reset the slug flag
         slugSet = false;
         
-        // Update the master store
-        masterStore.updateLovedOneInfo({ fullName: tempNameChange });
+        // Update the store
+        store.updateLovedOneInfo({ fullName: tempNameChange });
         
         // Generate a new slug
         setSlugFromName(tempNameChange);
@@ -103,7 +89,7 @@
 
     // Edit name (toggle to editing mode)
     function editName() {
-        tempNameChange = masterStore.lovedOneInfo.fullName || '';
+        tempNameChange = store.lovedOneInfo.fullName || '';
         isEditing = true;
     }
 
@@ -114,7 +100,7 @@
 
     // Handle search
     async function handleSearch() {
-        if (!masterStore.lovedOneInfo.fullName?.trim()) {
+        if (!store.lovedOneInfo.fullName?.trim()) {
             searchResults = [];
             return;
         }
@@ -122,8 +108,8 @@
         showResults = true;
         
         try {
-            await tributeStore.searchTributes(masterStore.lovedOneInfo.fullName, 1, 10);
-            searchResults = tributeStore.searchResults.tributes;
+            await store.searchTributes(store.lovedOneInfo.fullName, 1, 10);
+            searchResults = store.searchResults.tributes;
         } catch (err) {
             console.error('Search error:', err);
             searchResults = [];
@@ -244,10 +230,10 @@
                         }
                         
                         // Validate form data before submission
-                        const lovedOneFullName = masterStore.lovedOneInfo.fullName;
-                        const userFullName = masterStore.userInfo.fullName;
-                        const userEmail = masterStore.userInfo.emailAddress;
-                        const userPhone = masterStore.userInfo.phoneNumber;
+                        const lovedOneFullName = store.lovedOneInfo.fullName;
+                        const userFullName = store.userInfo.fullName;
+                        const userEmail = store.userInfo.emailAddress;
+                        const userPhone = store.userInfo.phoneNumber;
                         
                         console.log('Form submission validation:', {
                             lovedOneFullName,
@@ -264,7 +250,7 @@
                         }
                         
                         // Ensure the slug is set before submission
-                        if (!tributeStore.currentTribute.slug) {
+                        if (!store.currentTribute.slug) {
                             console.log('Setting slug before submission');
                             setSlugFromName(lovedOneFullName);
                         }
@@ -291,7 +277,7 @@
                         }
                         
                         // If the request was successful, reset the slug flag for new submissions
-                        // and update both stores
+                        // and update the unified store
                         if (result.type === 'success') {
                             slugSet = false;
                             
@@ -301,11 +287,10 @@
                                 data: result.data || {}
                             };
                             
-                            // Process the form action result for both stores
-                            processFormActionForBothStores(
+                            // Process the form action result for the unified store
+                            processFormActionResult(
                                 formActionResult,
-                                masterStore,
-                                tributeStore
+                                store
                             );
                         }
                         
@@ -321,7 +306,7 @@
                         name="lovedOneInfo.fullName"
                         placeholder="Enter name to create or search tributes..."
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4 text-center"
-                        bind:value={masterStore.lovedOneInfo.fullName}
+                        bind:value={store.lovedOneInfo.fullName}
                     />
   
                     <!-- Buttons for creating tribute or searching -->
@@ -379,21 +364,21 @@
                         name="userInfo.fullName"
                         placeholder="Your Name"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={masterStore.userInfo.fullName}
+                        bind:value={store.userInfo.fullName}
                     />
                     <input
                         type="email"
                         name="userInfo.emailAddress"
                         placeholder="Email Address"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={masterStore.userInfo.emailAddress}
+                        bind:value={store.userInfo.emailAddress}
                     />
                     <input
                         type="tel"
                         name="userInfo.phoneNumber"
                         placeholder="Phone Number"
                         class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={masterStore.userInfo.phoneNumber}
+                        bind:value={store.userInfo.phoneNumber}
                     />
   
                     <!-- Error message display -->
@@ -416,22 +401,22 @@
                         <input
                             type="hidden"
                             name="lovedOneInfo.fullName"
-                            value={masterStore.lovedOneInfo.fullName || ''}
+                            value={store.lovedOneInfo.fullName || ''}
                         />
                         <input
                             type="hidden"
                             name="userInfo.fullName"
-                            value={masterStore.userInfo.fullName || ''}
+                            value={store.userInfo.fullName || ''}
                         />
                         <input
                             type="hidden"
                             name="userInfo.emailAddress"
-                            value={masterStore.userInfo.emailAddress || ''}
+                            value={store.userInfo.emailAddress || ''}
                         />
                         <input
                             type="hidden"
                             name="userInfo.phoneNumber"
-                            value={masterStore.userInfo.phoneNumber || ''}
+                            value={store.userInfo.phoneNumber || ''}
                         />
                         <button
                             type="submit"
@@ -453,7 +438,7 @@
                                 type="button"
                                 onclick={() => {
                                     showResults = false;
-                                    tributeStore.searchResults.tributes = [];
+                                    store.searchResults.tributes = [];
                                 }}
                                 class="text-white hover:text-gray-300"
                             >
@@ -461,42 +446,42 @@
                             </button>
                         </div>
                         <div class="space-y-2">
-                            {#if tributeStore.searchResults.isLoading}
+                            {#if store.searchResults.isLoading}
                                 <div class="text-center text-white">Searching...</div>
-                            {:else if tributeStore.searchResults.tributes.length > 0}
-                                {#each tributeStore.searchResults.tributes as result}
+                            {:else if store.searchResults.tributes.length > 0}
+                                {#each store.searchResults.tributes as result}
                                     <a href={`/celebration-of-life-for-${result.slug}`}
                                        class="block bg-white bg-opacity-10 p-3 rounded-md hover:bg-opacity-20 transition-all cursor-pointer">
-                                        <div class="text-lg text-white">{result.title}</div>
+                                        <div class="text-lg text-white">{store.tributeTitle}</div>
                                         <div class="text-sm text-gray-300">
                                             Created {result.created_at ? new Date(result.created_at).toLocaleDateString() : 'Recently'}
                                         </div>
                                     </a>
                                 {/each}
                                 
-                                {#if tributeStore.searchResults.total_pages > 1}
+                                {#if store.searchResults.total_pages > 1}
                                     <div class="flex justify-center mt-4 space-x-2">
                                         <button
                                             class="px-3 py-1 bg-gray-700 text-white rounded-md disabled:opacity-50"
-                                            disabled={tributeStore.searchResults.currentPage === 1}
-                                            onclick={() => tributeStore.searchTributes(masterStore.lovedOneInfo.fullName || '', tributeStore.searchResults.currentPage - 1)}
+                                            disabled={store.searchResults.currentPage === 1}
+                                            onclick={() => store.searchTributes(store.lovedOneInfo.fullName || '', store.searchResults.currentPage - 1)}
                                         >
                                             Previous
                                         </button>
                                         <span class="px-3 py-1 text-white">
-                                            Page {tributeStore.searchResults.currentPage} of {tributeStore.searchResults.total_pages}
+                                            Page {store.searchResults.currentPage} of {store.searchResults.total_pages}
                                         </span>
                                         <button
                                             class="px-3 py-1 bg-gray-700 text-white rounded-md disabled:opacity-50"
-                                            disabled={tributeStore.searchResults.currentPage === tributeStore.searchResults.total_pages}
-                                            onclick={() => tributeStore.searchTributes(masterStore.lovedOneInfo.fullName || '', tributeStore.searchResults.currentPage + 1)}
+                                            disabled={store.searchResults.currentPage === store.searchResults.total_pages}
+                                            onclick={() => store.searchTributes(store.lovedOneInfo.fullName || '', store.searchResults.currentPage + 1)}
                                         >
                                             Next
                                         </button>
                                     </div>
                                 {/if}
-                            {:else if tributeStore.searchResults.error}
-                                <div class="text-center text-red-400">{tributeStore.searchResults.error}</div>
+                            {:else if store.searchResults.error}
+                                <div class="text-center text-red-400">{store.searchResults.error}</div>
                             {:else}
                                 <div class="text-center text-white">No tributes found</div>
                             {/if}

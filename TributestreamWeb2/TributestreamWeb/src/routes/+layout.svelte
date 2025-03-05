@@ -1,34 +1,33 @@
 <script lang="ts">
 import Navbar from '$lib/Navbar.svelte';
 import Footer from '$lib/Footer.svelte';
-import { setMasterStoreContext } from '$lib/stores/master-store.svelte';
-import { setTributePageStoreContext } from '$lib/stores/tribute-page-store.svelte';
+import { setUnifiedStoreContext } from '$lib/stores/unified-store.svelte';
 import { onMount } from 'svelte';
 
 let { data, children } = $props();
 
-// Initialize stores
-const masterStore = setMasterStoreContext();
-const tributeStore = setTributePageStoreContext();
+// Initialize unified store
+const store = setUnifiedStoreContext();
 
 // State flags to prevent reactivity loops
-let storesInitialized = $state(false);
+let storeInitialized = $state(false);
 let saveInProgress = $state(false);
 
 // Load data from localStorage on mount (client-side only)
 onMount(() => {
     // Only initialize once to prevent reactivity loops
-    if (!storesInitialized) {
-        console.log('Initializing stores from localStorage');
-        // Load data from localStorage for both stores
-        masterStore.loadFromLocalStorage();
+    if (!storeInitialized) {
+        console.log('Initializing unified store from localStorage');
+        
+        // Load data from localStorage (will handle migration from legacy stores)
+        store.loadFromLocalStorage();
         
         // Set up auth token from cookies if available
         if (data.user && data.token) {
-            tributeStore.setAuthToken(data.token);
+            store.setAuthToken(data.token);
         }
         
-        storesInitialized = true;
+        storeInitialized = true;
     }
 });
 
@@ -36,8 +35,7 @@ onMount(() => {
 let lastPersistenceCheck = $state(Date.now());
 
 // Track the last saved values to prevent persistence loops
-let lastMasterStoreSnapshot = $state('');
-let lastTributeStoreSnapshot = $state('');
+let lastStoreSnapshot = $state('');
 
 // Helper function to manually trigger a persistence check
 function schedulePersistence() {
@@ -48,23 +46,19 @@ function schedulePersistence() {
 }
 
 // Helper function to create content snapshot for comparison
-function createStoreSnapshot(store: any): string {
+function createStoreSnapshot(): string {
     // Select relevant properties for comparison
     const snapshotObj = {
-        masterStore: store === masterStore ? {
-            directorInfo: masterStore.directorInfo,
-            lovedOneInfo: masterStore.lovedOneInfo,
-            userInfo: masterStore.userInfo,
-            memorialInfo: masterStore.memorialInfo,
-            liveStreamInfo: masterStore.liveStreamInfo,
-            packageInfo: masterStore.packageInfo,
-            billingInfo: masterStore.billingInfo,
-            scheduleDays: masterStore.scheduleDays
-        } : null,
-        tributeStore: store === tributeStore ? {
-            currentTribute: tributeStore.currentTribute,
-            recentTributes: tributeStore.recentTributes
-        } : null
+        directorInfo: store.directorInfo,
+        lovedOneInfo: store.lovedOneInfo,
+        userInfo: store.userInfo,
+        memorialInfo: store.memorialInfo,
+        liveStreamInfo: store.liveStreamInfo,
+        packageInfo: store.packageInfo,
+        billingInfo: store.billingInfo,
+        scheduleDays: store.scheduleDays,
+        currentTribute: store.currentTribute,
+        recentTributes: store.recentTributes
     };
     
     // Create a hash/string representation for comparison
@@ -78,30 +72,19 @@ $effect(() => {
     
     // Skip if a save is already in progress to prevent circular updates
     if (typeof window !== 'undefined' && !saveInProgress) {
-        // Create snapshots to check if stores have changed
-        const masterSnapshot = createStoreSnapshot(masterStore);
-        const tributeSnapshot = createStoreSnapshot(tributeStore);
+        // Create snapshot to check if store has changed
+        const storeSnapshot = createStoreSnapshot();
         
         // Only save if something has actually changed
-        const masterChanged = masterSnapshot !== lastMasterStoreSnapshot;
-        const tributeChanged = tributeSnapshot !== lastTributeStoreSnapshot;
-        
-        if (masterChanged || tributeChanged) {
+        if (storeSnapshot !== lastStoreSnapshot) {
             saveInProgress = true;
-            console.log('Coordinated store persistence - detected changes');
+            console.log('Unified store persistence - detected changes');
             
-            // Serial persistence to avoid conflicts
-            if (masterChanged) {
-                masterStore.saveToLocalStorage();
-                lastMasterStoreSnapshot = masterSnapshot;
-            }
+            // Save to localStorage
+            store.saveToLocalStorage();
+            lastStoreSnapshot = storeSnapshot;
             
-            if (tributeChanged) {
-                tributeStore.saveToLocalStorage();
-                lastTributeStoreSnapshot = tributeSnapshot;
-            }
-            
-            // Reset the flag after a longer delay to avoid re-triggering
+            // Reset the flag after a delay to avoid re-triggering
             setTimeout(() => {
                 saveInProgress = false;
                 console.log('Persistence complete');
@@ -110,11 +93,10 @@ $effect(() => {
     }
 });
 
-// Initialize the snapshots after loading from localStorage
+// Initialize the snapshot after loading from localStorage
 $effect(() => {
-    if (storesInitialized) {
-        lastMasterStoreSnapshot = createStoreSnapshot(masterStore);
-        lastTributeStoreSnapshot = createStoreSnapshot(tributeStore);
+    if (storeInitialized) {
+        lastStoreSnapshot = createStoreSnapshot();
     }
 });
 
@@ -151,4 +133,3 @@ onMount(() => {
 {@render children()}
 
 <Footer />
-
