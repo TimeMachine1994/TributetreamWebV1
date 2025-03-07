@@ -13,6 +13,7 @@ import type { Tribute } from '$lib/stores/unified-store.svelte';
 
 export const actions = {
     createTribute: async ({ request, fetch, cookies }) => {
+        let tributeUrl = '';
         try {
             console.log('🔄 Starting createTribute action...');
             
@@ -54,7 +55,7 @@ export const actions = {
             
             // Generate tribute slug
             const tributeSlug = createTributeSlug(lovedOneFullName);
-            const tributeUrl = createTributeUrl(tributeSlug);
+            tributeUrl = createTributeUrl(tributeSlug);
             
             console.log('✅ Generated tribute slug:', tributeSlug);
             console.log('✅ Generated tribute URL:', tributeUrl);
@@ -221,7 +222,7 @@ export const actions = {
             
             console.log('🔀 Redirecting to tribute page...');
             // Redirect to the tribute page
-            throw redirect(303, tributeUrl);
+           
         } catch (error) {
             console.error('❌ Unexpected error in createTribute action:', error);
             return fail(500, {
@@ -229,5 +230,6 @@ export const actions = {
                 message: 'An unexpected error occurred'
             });
         }
+        throw redirect(303, tributeUrl);
     }
 } as Actions;

@@ -9,28 +9,28 @@ interface TributeResponse {
     updated_at: string;
 }
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
     try {
-        console.log('Loading tribute for slug:', params.slug);
-        const apiUrl = `https://wp.tributestream.com/wp-json/tributestream/v1/tribute/${params.slug}`;
-        console.log('Fetching from:', apiUrl);
+        console.log('[CUSTOM-LINK SERVER] Loading tribute for slug:', params.slug);
+        const apiUrl = `api/tributes/by-slug/${params.slug}`;
+        console.log('[CUSTOM-LINK SERVER] Fetching from:', apiUrl);
         
         const response = await fetch(apiUrl);
-        console.log('Response status:', response.status);
+        console.log('[CUSTOM-LINK SERVER] Response status:', response.status);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Error response:', errorText);
+            console.error('[CUSTOM-LINK SERVER] Error response:', errorText);
             throw error(404, {
                 message: 'Tribute not found'
             });
         }
 
         const tributeData = await response.json() as TributeResponse;
-        console.log('Loaded tribute:', tributeData);
+        console.log('[CUSTOM-LINK SERVER] Loaded tribute:', tributeData);
         
         if (!tributeData || !tributeData.loved_one_name) {
-            console.error('Invalid tribute data:', tributeData);
+            console.error('[CUSTOM-LINK SERVER] Invalid tribute data:', tributeData);
             throw error(500, {
                 message: 'Invalid tribute data received'
             });
@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ params }) => {
             }
         };
     } catch (err) {
-        console.error('Error loading tribute:', err);
+        console.error('[CUSTOM-LINK SERVER] Error loading tribute:', err);
         throw error(500, {
             message: 'Error loading tribute'
         });
