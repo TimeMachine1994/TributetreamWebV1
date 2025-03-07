@@ -10,6 +10,12 @@ export interface TributeData {
     user_phone: string;
     memorial_date?: string;
     memorial_location?: string;
+    description?: string;
+    created_at?: string;
+    // Fields needed by the WordPress API
+    user_id?: number;
+    loved_one_name?: string;
+    phone_number?: string;
   }
   
   /**
@@ -17,27 +23,80 @@ export interface TributeData {
    *
    * @param tributeData - The tribute data to save
    * @param token - Authentication token
+   * @param fetchFn - Fetch function to use (must be event.fetch in server context)
    * @returns Promise with the API response
    */
-  export async function saveTribute(tributeData: TributeData, token?: string): Promise<any> {
-    // In a real application, this would make an actual API call
-    // For now, we'll simulate a successful API response
+  export async function saveTribute(
+    tributeData: TributeData,
+    token?: string,
+    fetchFn?: typeof fetch
+  ): Promise<any> {
+    console.log('🔄 Saving tribute via API endpoint:', tributeData);
     
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Log the tribute data for debugging
-    console.log('Saving tribute:', tributeData);
-    
-    // Return a simulated successful response
-    return {
-      success: true,
-      data: {
-        id: `tribute-${Date.now()}`,
-        ...tributeData,
-        created_at: new Date().toISOString()
+    try {
+      if (!token) {
+        throw new Error('Authentication token is required to create a tribute');
       }
-    };
+      
+      // Use provided fetch or fall back to global fetch (only works for absolute URLs)
+      const fetchFunction = fetchFn || fetch;
+      
+      // Send the tribute data to the API endpoint
+      console.log('⏱️ Sending tribute data to API endpoint at:', new Date().toISOString());
+      
+      const response = await fetchFunction('/api/tributes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // The JWT will be extracted from cookies in the API route handler,
+          // but we include it in the Authorization header as a fallback
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(tributeData)
+      });
+      
+      console.log('⏱️ Received response from API endpoint at:', new Date().toISOString());
+      console.log('📊 Response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          console.error('❌ API call failed:', errorData);
+          return {
+            success: false,
+            error: errorData.error || response.statusText
+          };
+        } catch (parseError) {
+          console.error('❌ API call failed with unparseable response:', await response.text());
+          return {
+            success: false,
+            error: `Failed to parse error response: ${response.statusText}`
+          };
+        }
+      }
+      
+      try {
+        const result = await response.json();
+        console.log('✅ Tribute successfully created via API:', result);
+        
+        return {
+          success: true,
+          tribute: result.tribute || result // Handle both formats: {tribute: {...}} and directly {...}
+        };
+      } catch (parseError) {
+        console.error('❌ Failed to parse API success response:', parseError);
+        return {
+          success: false,
+          error: 'Failed to parse API response'
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error saving tribute:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save tribute'
+      };
+    }
   }
   
   /**

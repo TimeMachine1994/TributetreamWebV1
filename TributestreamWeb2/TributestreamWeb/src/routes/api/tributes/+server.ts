@@ -67,32 +67,74 @@ export const POST: RequestHandler = async ({ request, fetch, locals }) => {
 
         // Parse incoming request JSON
         console.log('📝 Parsing tribute data from request...');
-        const tribute = await request.json();
-        console.log('📦 Parsed tribute data:', tribute);
+        const tributeData = await request.json();
+        console.log('📦 Parsed tribute data fields:', Object.keys(tributeData));
+        console.log('🔍 Required fields check:');
+        console.log('   - title:', Boolean(tributeData.title));
+        console.log('   - slug:', Boolean(tributeData.slug));
+        console.log('   - user_name:', Boolean(tributeData.user_name));
+        console.log('   - user_email:', Boolean(tributeData.user_email));
+        console.log('   - user_id:', Boolean(tributeData.user_id));
+
+        if (!tributeData.title || !tributeData.slug || !tributeData.user_name || !tributeData.user_email) {
+            console.error('❌ Missing required tribute fields');
+            return json({
+                tribute: null,
+                success: false,
+                error: 'Missing required tribute fields'
+            }, { status: 400 });
+        }
 
         // Send the data to WordPress API
         console.log(`🚀 Sending tribute to WordPress API: ${WP_API_BASE}/tributes`);
         console.time('⏳ API Request Time');
+        
+        // Ensure we're sending the right content type
         const response = await fetch(`${WP_API_BASE}/tributes`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${locals.jwt}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(tribute)
+            body: JSON.stringify(tributeData)
         });
         console.timeEnd('⏳ API Request Time');
 
         if (!response.ok) {
-            const errorResponse = await response.json();
-            console.error('❌ Tribute creation failed:', errorResponse);
-            throw new Error(errorResponse.message || 'Failed to create tribute');
+            let errorMessage = 'Failed to create tribute';
+            let errorDetails = {};
+            try {
+                const errorResponse = await response.json();
+                console.error('❌ Tribute creation failed:', errorResponse);
+                errorMessage = errorResponse.message || errorMessage;
+                errorDetails = errorResponse;
+            } catch (parseError) {
+                console.error('❌ Failed to parse error response:', await response.text());
+            }
+            
+            return json({
+                tribute: null,
+                success: false,
+                error: errorMessage,
+                details: errorDetails
+            }, { status: response.status });
         }
 
         // Parse response from WordPress
         console.log('✅ Tribute created successfully. Parsing response...');
-        const data = await response.json();
-        console.log('🎉 Received response data:', data);
+        let data;
+        try {
+            data = await response.json();
+            console.log('🎉 Received response data:', data);
+        } catch (parseError) {
+            console.error('❌ Failed to parse API response:', parseError);
+            return json({
+                tribute: { id: null },
+                success: true,
+                warning: 'Tribute was created but response could not be parsed'
+            });
+        }
 
         console.timeEnd('⏳ Tribute Creation Time');
         return json({

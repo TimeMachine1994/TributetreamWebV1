@@ -1,8 +1,7 @@
 <script>
     export let isPaid = false; // Pass this from the parent component or page
     let showBanner = false;
-    let Calc; // Placeholder for the dynamically loaded module
-    let calcLoaded = false; // Tracks if the Calc module is loaded
+     let calcLoaded = false; // Tracks if the Calc module is loaded
   
     import { onMount } from 'svelte';
   
@@ -14,12 +13,7 @@
       }, 2000); // Delay for 2 seconds
     });
   
-    const completeBooking = async () => {
-      if (!calcLoaded) {
-        Calc = (await import('./Calc.svelte')).default; // Dynamically import the Calc module
-        calcLoaded = true;
-      }
-    };
+ 
   
     const saveAndContinueLater = () => {
       if (!isPaid) {

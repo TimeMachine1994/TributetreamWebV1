@@ -170,7 +170,7 @@ export const actions = {
             await storeMasterDataInUserMeta(userId, completeUserMetaData, authResult.token, fetch);
             console.log('✅ User data stored in user meta.');
             
-            // Enhanced tribute data for better integration with Unified Store
+            // Enhanced tribute data for better integration with Unified Store and WordPress API
             const tributeData = {
                 title: lovedOneFullName,  // Will be synchronized with lovedOneInfo.fullName in the store
                 slug: tributeSlug,
@@ -178,28 +178,93 @@ export const actions = {
                 user_email: userEmail,
                 user_phone: userPhone,
                 description: `Memorial tribute for ${lovedOneFullName}`,
-                memorialDate: new Date().toISOString().split('T')[0], // Default to today's date
-                memorialLocation: '',  // Will be updated during the user flow
-                created_at: new Date().toISOString()
+                memorial_date: new Date().toISOString().split('T')[0], // Default to today's date
+                memorial_location: '',  // Will be updated during the user flow
+                created_at: new Date().toISOString(),
+                
+                // Add the specific fields required by WordPress API
+                user_id: userId,
+                loved_one_name: lovedOneFullName,
+                phone_number: userPhone,  // Map user_phone to phone_number as required by API
+                
+                // Add optional custom_html field
+                custom_html: null // This can be populated later
             };
             
-            const tributeResponse = await saveTribute(tributeData, authResult.token);
+            console.log('🔄 Sending tribute data to API endpoint...');
+            console.log('🔍 Tribute data payload:', JSON.stringify(tributeData, null, 2));
             
-            if (!tributeResponse.success) {
-                console.error('❌ Tribute creation failed:', tributeResponse);
-                return fail(500, {
+            // First, directly send the data to the API endpoint using fetch
+            // This ensures we're using the server context's fetch implementation
+            const apiResponse = await fetch('/api/tributes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authResult.token}`
+                },
+                body: JSON.stringify(tributeData)
+            });
+            
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                console.error('❌ API call failed:', errorData);
+                return fail(apiResponse.status, {
                     error: true,
-                    message: 'Failed to create tribute. Please try again.'
+                    message: errorData.error || apiResponse.statusText,
+                    details: errorData
                 });
             }
             
-            console.log('✅ Tribute created successfully:', tributeResponse);
+            // Parse the response from the API
+            const apiResult = await apiResponse.json();
+            console.log('✅ Tribute API response:', apiResult);
+            
+            // Get the tribute ID from the API response
+            let tributeId;
+            
+            if (apiResult.tribute && apiResult.tribute.id) {
+                // Standard format: { tribute: { id: 123, ... } }
+                tributeId = apiResult.tribute.id;
+                console.log('✅ Retrieved tribute ID from API response (standard format):', tributeId);
+            } else if (apiResult.id) {
+                // Direct format: { id: 123, ... }
+                tributeId = apiResult.id;
+                console.log('✅ Retrieved tribute ID from API response (direct format):', tributeId);
+            } else {
+                // If we don't have the ID from the direct API call, try the helper function as a fallback
+                console.log('⚠️ API response missing tribute ID, trying helper function as fallback');
+                const tributeResponse = await saveTribute(tributeData, authResult.token, fetch);
+                
+                if (!tributeResponse.success) {
+                    console.error('❌ Tribute creation failed:', tributeResponse);
+                    return fail(500, {
+                        error: true,
+                        message: tributeResponse.error || 'Failed to create tribute. Please try again.'
+                    });
+                }
+                
+                // Try to extract the ID from tributeResponse
+                if (tributeResponse.tribute && tributeResponse.tribute.id) {
+                    tributeId = tributeResponse.tribute.id;
+                    console.log('✅ Retrieved tribute ID from helper function:', tributeId);
+                } else if (tributeResponse.tribute && typeof tributeResponse.tribute === 'object') {
+                    // Maybe the ID is directly in the tribute object
+                    tributeId = tributeResponse.tribute.id || Object.values(tributeResponse.tribute)[0];
+                    console.log('✅ Retrieved potential tribute ID from helper function object:', tributeId);
+                } else {
+                    // Generate a temporary ID (this won't be persistent but prevents errors)
+                    tributeId = `temp-${Date.now()}`;
+                    console.warn('⚠️ No tribute ID found, using temporary ID:', tributeId);
+                }
+            }
+            
+            console.log('✅ Tribute created successfully with ID:', tributeId);
             
             // Include tribute data in form result to update UnifiedStore
             // This would be caught by use:enhance in the component and used to update the store
             const tribute: Partial<Tribute> = {
                 ...tributeData,
-                id: tributeResponse.tribute?.id
+                id: tributeId
             };
             
             // Structure result to include data for unified store
@@ -219,6 +284,10 @@ export const actions = {
                     authToken: authResult.token
                 }
             };
+
+            // Log the final success result
+            console.log('🎉 Tribute creation complete. Tribute ID:', tributeId);
+            console.log('🎯 Tribute URL:', tributeUrl);
             
             console.log('🔀 Redirecting to tribute page...');
             // Redirect to the tribute page

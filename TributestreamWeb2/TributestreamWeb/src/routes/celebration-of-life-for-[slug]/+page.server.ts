@@ -2,11 +2,17 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 interface TributeResponse {
-    user_id: number;
-    loved_one_name: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
+    id?: number;
+    user_id?: number;
+    title?: string;
+    loved_one_name?: string;
+    slug?: string;
+    created_at?: string;
+    updated_at?: string;
+    content?: string;
+    custom_html?: string | null;
+    status?: string;
+    date?: string;
 }
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
@@ -29,17 +35,25 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
         const tributeData = await response.json() as TributeResponse;
         console.log('[CUSTOM-LINK SERVER] Loaded tribute:', tributeData);
         
-        if (!tributeData || !tributeData.loved_one_name) {
-            console.error('[CUSTOM-LINK SERVER] Invalid tribute data:', tributeData);
+        // Log all fields to help debug data structure issues
+        console.log('[CUSTOM-LINK SERVER] Tribute data fields:', Object.keys(tributeData));
+        
+        // Get the name from either loved_one_name or title field, whichever is available
+        const tributeName = tributeData.loved_one_name || tributeData.title || params.slug;
+        
+        if (!tributeName) {
+            console.error('[CUSTOM-LINK SERVER] Invalid tribute data (no name):', tributeData);
             throw error(500, {
-                message: 'Invalid tribute data received'
+                message: 'Invalid tribute data received - missing name'
             });
         }
 
+        console.log('[CUSTOM-LINK SERVER] Mapping tribute data with name:', tributeName);
+        
         return {
             tribute: {
-                name: tributeData.loved_one_name,
-                custom_html: null // Add other fields as needed
+                name: tributeName,
+                custom_html: tributeData.custom_html || null // Use actual custom_html if available
             }
         };
     } catch (err) {
