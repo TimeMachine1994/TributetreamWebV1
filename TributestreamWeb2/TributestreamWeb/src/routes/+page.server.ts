@@ -15,7 +15,7 @@ export const actions = {
     createTribute: async ({ request, fetch, cookies }) => {
         let tributeUrl = '';
         try {
-            console.log('🔄 Starting createTribute action...');
+            console.log('🔄 Starting createTribute action with unified store...');
             
             // Parse form data
             const formData = await request.formData();
@@ -32,12 +32,21 @@ export const actions = {
             const userEmail = formData.get('userInfo.emailAddress') as string;
             const userPhone = formData.get('userInfo.phoneNumber') as string;
             
+            // Additional fields from the unified store
+            const memorialDate = formData.get('memorialInfo.date') as string || new Date().toISOString().split('T')[0];
+            const memorialLocation = formData.get('memorialInfo.locations[0].name') as string || '';
+            const memorialAddress = formData.get('memorialInfo.locations[0].address') as string || '';
+            const memorialStartTime = formData.get('memorialInfo.startTime') as string || '';
+            const notes = formData.get('tribute.notes') as string || '';
+            
             // Debug: Log extracted values
             console.log('🔍 Extracted form values:');
             console.log(`   lovedOneFullName: "${lovedOneFullName}"`);
             console.log(`   userFullName: "${userFullName}"`);
             console.log(`   userEmail: "${userEmail}"`);
             console.log(`   userPhone: "${userPhone}"`);
+            console.log(`   memorialDate: "${memorialDate}"`);
+            console.log(`   memorialLocation: "${memorialLocation}"`);
             
             // Validate required fields
             if (!lovedOneFullName || !userFullName || !userEmail || !userPhone) {
@@ -47,9 +56,9 @@ export const actions = {
                     userEmail: !userEmail ? 'MISSING' : 'ok',
                     userPhone: !userPhone ? 'MISSING' : 'ok'
                 });
-                return fail(400, { 
-                    error: true, 
-                    message: 'All fields are required to create a tribute.' 
+                return fail(400, {
+                    error: true,
+                    message: 'All fields are required to create a tribute.'
                 });
             }
             
@@ -81,7 +90,6 @@ export const actions = {
             
             // Debug the exact JSON being sent - with additional tracking
             console.log('📦 Registration payload:', JSON.stringify(registrationData, null, 2));
-            console.log('🧩 Type assertion fix applied, using "as Actions" instead of "satisfies Actions"');
             
             // Register the user
             const registerResponse = await fetch('/api/register', {
@@ -141,9 +149,9 @@ export const actions = {
             
             if (!authResponse.ok) {
                 console.error('❌ Authentication failed with status:', authResponse.status);
-                return fail(authResponse.status, { 
-                    error: true, 
-                    message: 'Authentication failed' 
+                return fail(authResponse.status, {
+                    error: true,
+                    message: 'Authentication failed'
                 });
             }
             
@@ -153,13 +161,21 @@ export const actions = {
             // Set authentication cookies
             setAuthCookies(cookies, authResult);
             
-            // Store data in user metadata
+            // Store data in user metadata - now using the unified store structure
             const unifiedData = {
                 lovedOneInfo: { fullName: lovedOneFullName },
                 userInfo: {
                     fullName: userFullName,
                     emailAddress: userEmail,
                     phoneNumber: userPhone
+                },
+                memorialInfo: {
+                    date: memorialDate,
+                    startTime: memorialStartTime,
+                    locations: [{
+                        name: memorialLocation,
+                        address: memorialAddress
+                    }]
                 }
             };
             
@@ -178,8 +194,11 @@ export const actions = {
                 user_email: userEmail,
                 user_phone: userPhone,
                 description: `Memorial tribute for ${lovedOneFullName}`,
-                memorial_date: new Date().toISOString().split('T')[0], // Default to today's date
-                memorial_location: '',  // Will be updated during the user flow
+                memorial_date: memorialDate,
+                memorial_location: memorialLocation,
+                memorial_address: memorialAddress,
+                memorial_time: memorialStartTime,
+                notes: notes,
                 created_at: new Date().toISOString(),
                 
                 // Add the specific fields required by WordPress API
@@ -277,6 +296,15 @@ export const actions = {
                         fullName: userFullName,
                         emailAddress: userEmail,
                         phoneNumber: userPhone
+                    },
+                    // Memorial info
+                    memorialInfo: {
+                        date: memorialDate,
+                        startTime: memorialStartTime,
+                        locations: [{
+                            name: memorialLocation,
+                            address: memorialAddress
+                        }]
                     },
                     // Tribute data
                     tribute: tribute,

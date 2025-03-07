@@ -8,7 +8,7 @@ const SQUARE_SANDBOX_ACCESS_TOKEN = 'sandbox-access-token';
 const SQUARE_LOCATION_ID = 'location-id';
 
 export const load: PageServerLoad = async ({ fetch, cookies }) => {
-    console.log('🚀 Loading user meta data.');
+    console.log('🚀 Loading family dashboard data');
 
     const user_id = cookies.get('user_id');
     if (!user_id) {
@@ -23,12 +23,11 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
     }
 
     try {
-        // Fetch user metadata
-        const metaApiUrl = `https://wp.tributestream.com/wp-json/tributestream/v1/user-meta/${user_id}`;
-        console.log('🔗 Fetching user meta data from:', metaApiUrl);
-
+        // Fetch user metadata from API
+        console.log('🔗 Fetching user meta data from API');
+        const metaApiUrl = `/api/user-meta?user_id=${user_id}`;
+        
         const metaResponse = await fetch(metaApiUrl, {
-            method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -41,22 +40,22 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
             throw error(metaResponse.status, errorData.message || 'Failed to fetch user meta.');
         }
 
-        const { meta } = await metaResponse.json();
+        const metaData = await metaResponse.json();
+        const { meta } = metaData;
         console.log('✅ User meta data retrieved');
 
         // Create an object with keys as meta_key and values as meta_value
-        const metaObject = meta.reduce((acc: Record<string, any>, 
-                                       { meta_key, meta_value }: { meta_key: string, meta_value: any }) => {
+        const metaObject = meta ? meta.reduce((acc: Record<string, any>,
+                                      { meta_key, meta_value }: { meta_key: string, meta_value: any }) => {
             acc[meta_key] = meta_value;
             return acc;
-        }, {});
+        }, {}) : {};
 
-        // Also fetch tributes created by this user
-        const tributesApiUrl = `https://wp.tributestream.com/wp-json/tributestream/v1/user-tributes/${user_id}`;
-        console.log('🔗 Fetching user tributes from:', tributesApiUrl);
-
+        // Fetch tributes created by this user
+        console.log('🔗 Fetching user tributes from API');
+        const tributesApiUrl = `/api/tributes/${user_id}`;
+        
         const tributesResponse = await fetch(tributesApiUrl, {
-            method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -76,7 +75,7 @@ export const load: PageServerLoad = async ({ fetch, cookies }) => {
         const locationId = SQUARE_LOCATION_ID;
         
         return {
-            appId, 
+            appId,
             locationId,
             userMeta: metaObject,
             tributes,
@@ -139,8 +138,8 @@ export const actions: Actions = {
             if (title) updateData.title = title;
             if (notes) updateData.notes = notes;
             
-            // Update the tribute
-            const updateResponse = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tributes/${tributeId}`, {
+            // Update the tribute via our API endpoint
+            const updateResponse = await fetch(`/api/tributes/${tributeId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -150,9 +149,11 @@ export const actions: Actions = {
             });
             
             if (!updateResponse.ok) {
+                const errorData = await updateResponse.json();
+                console.error('❌ Error updating tribute:', errorData);
                 return fail(updateResponse.status, {
                     error: true,
-                    message: 'Failed to update tribute'
+                    message: errorData.message || 'Failed to update tribute'
                 });
             }
             

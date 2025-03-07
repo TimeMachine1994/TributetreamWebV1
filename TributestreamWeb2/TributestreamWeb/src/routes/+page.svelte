@@ -235,17 +235,30 @@
                         const userEmail = store.userInfo.emailAddress;
                         const userPhone = store.userInfo.phoneNumber;
                         
+                        // Memorial information fields
+                        const memorialDate = store.memorialInfo.date;
+                        const memorialLocation = store.memorialInfo.locations?.[0]?.name;
+                        
                         console.log('Form submission validation:', {
                             lovedOneFullName,
                             userFullName,
                             userEmail,
-                            userPhone
+                            userPhone,
+                            memorialDate,
+                            memorialLocation
                         });
                         
                         // Client-side validation
                         if (!lovedOneFullName || !userFullName || !userEmail || !userPhone) {
-                            console.error('Missing required fields in client validation');
-                            userError = 'Please fill in all required fields';
+                            console.error('Missing required user fields in client validation');
+                            userError = 'Please fill in all required personal information fields';
+                            return false;
+                        }
+                        
+                        // Memorial information validation (date and location are required)
+                        if (!memorialDate || !memorialLocation) {
+                            console.error('Missing required memorial fields in client validation');
+                            userError = 'Please provide memorial date and location information';
                             return false;
                         }
                         
@@ -357,28 +370,91 @@
                         {/if}
                     </div>
 
-                    <!-- Additional input fields -->
-                    <input
-                        type="text"
-                        name="userInfo.fullName"
-                        placeholder="Your Name"
-                        class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={store.userInfo.fullName}
-                    />
-                    <input
-                        type="email"
-                        name="userInfo.emailAddress"
-                        placeholder="Email Address"
-                        class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={store.userInfo.emailAddress}
-                    />
-                    <input
-                        type="tel"
-                        name="userInfo.phoneNumber"
-                        placeholder="Phone Number"
-                        class="w-full px-4 py-2 text-gray-900 rounded-md mb-4"
-                        bind:value={store.userInfo.phoneNumber}
-                    />
+                    <!-- Contact information fields -->
+                    <div class="space-y-4 mb-6">
+                        <h3 class="text-xl font-semibold">Your Information</h3>
+                        <input
+                            type="text"
+                            name="userInfo.fullName"
+                            placeholder="Your Name"
+                            class="w-full px-4 py-2 text-gray-900 rounded-md"
+                            bind:value={store.userInfo.fullName}
+                        />
+                        <input
+                            type="email"
+                            name="userInfo.emailAddress"
+                            placeholder="Email Address"
+                            class="w-full px-4 py-2 text-gray-900 rounded-md"
+                            bind:value={store.userInfo.emailAddress}
+                        />
+                        <input
+                            type="tel"
+                            name="userInfo.phoneNumber"
+                            placeholder="Phone Number"
+                            class="w-full px-4 py-2 text-gray-900 rounded-md"
+                            bind:value={store.userInfo.phoneNumber}
+                        />
+                    </div>
+
+                    <!-- Memorial information fields -->
+                    <div class="space-y-4 mb-6">
+                        <h3 class="text-xl font-semibold">Memorial Details</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="memorial-date" class="block text-sm font-medium mb-1">Date</label>
+                                <input
+                                    id="memorial-date"
+                                    type="date"
+                                    name="memorialInfo.date"
+                                    class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                    bind:value={store.memorialInfo.date}
+                                />
+                            </div>
+                            <div>
+                                <label for="memorial-time" class="block text-sm font-medium mb-1">Start Time</label>
+                                <input
+                                    id="memorial-time"
+                                    type="time"
+                                    name="memorialInfo.startTime"
+                                    class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                    bind:value={store.memorialInfo.startTime}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label for="memorial-location" class="block text-sm font-medium mb-1">Location Name</label>
+                            <input
+                                id="memorial-location"
+                                type="text"
+                                name="memorialInfo.locations[0].name"
+                                placeholder="Funeral Home or Venue Name"
+                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                bind:value={store.memorialInfo.locations[0].name}
+                            />
+                        </div>
+                        <div>
+                            <label for="memorial-address" class="block text-sm font-medium mb-1">Location Address</label>
+                            <input
+                                id="memorial-address"
+                                type="text"
+                                name="memorialInfo.locations[0].address"
+                                placeholder="Full address of venue"
+                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                bind:value={store.memorialInfo.locations[0].address}
+                            />
+                        </div>
+                        <div>
+                            <label for="tribute-notes" class="block text-sm font-medium mb-1">Additional Notes</label>
+                            <textarea
+                                id="tribute-notes"
+                                name="tribute.notes"
+                                placeholder="Any additional information about the memorial service"
+                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                rows="3"
+                                bind:value={store.currentTribute.notes}
+                            ></textarea>
+                        </div>
+                    </div>
   
                     <!-- Error message display -->
                     {#if userError}
@@ -416,6 +492,33 @@
                             type="hidden"
                             name="userInfo.phoneNumber"
                             value={store.userInfo.phoneNumber || ''}
+                        />
+                        
+                        <!-- Memorial information hidden fields -->
+                        <input
+                            type="hidden"
+                            name="memorialInfo.date"
+                            value={store.memorialInfo.date || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="memorialInfo.startTime"
+                            value={store.memorialInfo.startTime || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="memorialInfo.locations[0].name"
+                            value={store.memorialInfo.locations?.[0]?.name || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="memorialInfo.locations[0].address"
+                            value={store.memorialInfo.locations?.[0]?.address || ''}
+                        />
+                        <input
+                            type="hidden"
+                            name="tribute.notes"
+                            value={store.currentTribute.notes || ''}
                         />
                         <button
                             type="submit"
