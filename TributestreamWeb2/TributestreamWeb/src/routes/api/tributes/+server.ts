@@ -76,8 +76,28 @@ export const POST: RequestHandler = async ({ request, fetch, locals }) => {
         console.log('   - user_email:', Boolean(tributeData.user_email));
         console.log('   - user_id:', Boolean(tributeData.user_id));
 
-        if (!tributeData.title || !tributeData.slug || !tributeData.user_name || !tributeData.user_email) {
-            console.error('❌ Missing required tribute fields');
+        // More flexible validation that accepts both original field names and fd-form field names
+        const hasTitle = Boolean(tributeData.title || tributeData.loved_one_name);
+        const hasSlug = Boolean(tributeData.slug);
+        const hasUserName = Boolean(tributeData.user_name);
+        const hasUserEmail = Boolean(tributeData.user_email);
+        const hasUserId = Boolean(tributeData.user_id);
+        const hasPhone = Boolean(tributeData.phone_number || tributeData.user_phone);
+        
+        console.log('🔍 Enhanced fields validation:');
+        console.log('   - title/loved_one_name:', hasTitle);
+        console.log('   - slug:', hasSlug);
+        console.log('   - user_name:', hasUserName);
+        console.log('   - user_email:', hasUserEmail);
+        console.log('   - user_id:', hasUserId);
+        console.log('   - phone_number/user_phone:', hasPhone);
+        
+        // Accept either traditional fields OR the fd-form combination
+        const hasTraditionalFields = hasTitle && hasSlug && hasUserName && hasUserEmail;
+        const hasFdFormFields = hasTitle && hasSlug && hasUserId && hasPhone;
+        
+        if (!hasTraditionalFields && !hasFdFormFields) {
+            console.error('❌ Missing required tribute fields (needs either traditional or fd-form fields)');
             return json({
                 tribute: null,
                 success: false,

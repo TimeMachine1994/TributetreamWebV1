@@ -173,14 +173,52 @@ export const actions = {
             console.log('🚀 Creating tribute...');
             console.time('⏳ Tribute Creation');
             const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
+            
+            // Log details about user data
+            console.log('📊 User info details:');
+            console.log('   - email:', data.email);
+            console.log('   - name:', `${data.familyMemberFirstName} ${data.familyMemberLastName}`);
+            console.log('   - phone:', data.phone);
+            
+            const lovedOneName = `${data.deceasedFirstName} ${data.deceasedLastName}`;
+            const familyMemberName = `${data.familyMemberFirstName} ${data.familyMemberLastName}`;
+            const cleanedPhone = data.phone.replace(/[^0-9]/g, ''); // Strip non-numeric characters
+            
             const tributePayload = {
-                loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                // Traditional fields required by TributeData interface
+                title: lovedOneName,
                 slug,
+                user_name: familyMemberName,
+                user_email: data.email,
+                user_phone: cleanedPhone,
+                
+                // FD-form fields required by WordPress API
+                loved_one_name: lovedOneName,
                 user_id: parseInt(userId, 10), // Ensure it's an integer
-                phone_number: data.phone.replace(/[^0-9]/g, ''), // Strip non-numeric characters
-                custom_html: '', // Include optional fields with appropriate defaults
+                phone_number: cleanedPhone,
+                
+                // WordPress database expected fields (based on Tribute interface)
+                content: `Memorial service for ${lovedOneName}`, // Default content
+                status: 'publish', // Assuming we want the tribute to be published immediately
+                date: new Date().toISOString(), // Current date in ISO format
+                
+                // Optional fields
+                custom_html: '',
                 number_of_streams: 1,
             };
+            
+            console.log('📦 Tribute payload to be sent:', tributePayload);
+            console.log('🔍 Checking required fields:');
+            console.log('   - title:', Boolean(tributePayload.title));
+            console.log('   - slug:', Boolean(tributePayload.slug));
+            console.log('   - user_name:', Boolean(tributePayload.user_name));
+            console.log('   - user_email:', Boolean(tributePayload.user_email));
+            console.log('   - user_id:', Boolean(tributePayload.user_id));
+            console.log('   - phone_number:', Boolean(tributePayload.phone_number));
+            console.log('🔍 WordPress DB fields:');
+            console.log('   - content:', Boolean(tributePayload.content));
+            console.log('   - status:', Boolean(tributePayload.status));
+            console.log('   - date:', Boolean(tributePayload.date));
 
             const tributeResponse = await fetch('/api/tributes', {
                 method: 'POST',

@@ -186,13 +186,24 @@ export const actions = {
             await storeMasterDataInUserMeta(userId, completeUserMetaData, authResult.token, fetch);
             console.log('✅ User data stored in user meta.');
             
-            // Enhanced tribute data for better integration with Unified Store and WordPress API
+            // Enhanced tribute data that satisfies both:
+            // 1. The TypeScript TributeData interface (which requires user_phone)
+            // 2. The API requirements (which needs loved_one_name, slug, user_id, phone_number)
+            console.log('🔄 Preparing tribute data with format matching API requirements...');
             const tributeData = {
-                title: lovedOneFullName,  // Will be synchronized with lovedOneInfo.fullName in the store
+                // Fields required by TributeData interface
+                title: lovedOneFullName,
                 slug: tributeSlug,
                 user_name: userFullName,
                 user_email: userEmail,
-                user_phone: userPhone,
+                user_phone: userPhone, // Keep this for TypeScript compatibility
+                
+                // Fields required by the WordPress API
+                loved_one_name: lovedOneFullName,
+                user_id: userId,
+                phone_number: userPhone.replace(/[^0-9]/g, ''), // Strip non-numeric characters
+                
+                // Optional fields that our unified store uses
                 description: `Memorial tribute for ${lovedOneFullName}`,
                 memorial_date: memorialDate,
                 memorial_location: memorialLocation,
@@ -201,17 +212,22 @@ export const actions = {
                 notes: notes,
                 created_at: new Date().toISOString(),
                 
-                // Add the specific fields required by WordPress API
-                user_id: userId,
-                loved_one_name: lovedOneFullName,
-                phone_number: userPhone,  // Map user_phone to phone_number as required by API
-                
-                // Add optional custom_html field
-                custom_html: null // This can be populated later
+                // Add optional custom_html field and streams count
+                custom_html: null, // This can be populated later
+                number_of_streams: 1
             };
             
             console.log('🔄 Sending tribute data to API endpoint...');
             console.log('🔍 Tribute data payload:', JSON.stringify(tributeData, null, 2));
+            console.log('🔍 Required fields check:');
+            console.log('   - loved_one_name:', Boolean(tributeData.loved_one_name));
+            console.log('   - slug:', Boolean(tributeData.slug));
+            console.log('   - user_id:', Boolean(tributeData.user_id));
+            console.log('   - phone_number:', Boolean(tributeData.phone_number));
+            console.log('   - title:', Boolean(tributeData.title));
+            console.log('   - user_name:', Boolean(tributeData.user_name));
+            console.log('   - user_email:', Boolean(tributeData.user_email));
+            console.log('   - user_phone:', Boolean(tributeData.user_phone));
             
             // First, directly send the data to the API endpoint using fetch
             // This ensures we're using the server context's fetch implementation
