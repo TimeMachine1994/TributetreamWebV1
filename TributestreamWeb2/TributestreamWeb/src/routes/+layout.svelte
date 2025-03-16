@@ -238,6 +238,13 @@
         <p class="text-sm mt-4">
           Tributestream is a premier, affordable, and reliable livestreaming service to transport your families and friends to a celebration of life. We don't make videos, we make documentaries.
         </p>
+        <!-- Funeral Director Form Link -->
+        <a 
+        href="/fd-form"
+        class="text-[#D5BA7F] hover:text-white mt-4 text-sm underline transition-colors duration-200"
+    >
+        Funeral Director Form
+    </a>
       </div>
   
       <!-- Coverage Locations List -->
