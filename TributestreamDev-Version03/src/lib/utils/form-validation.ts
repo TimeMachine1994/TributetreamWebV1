@@ -82,51 +82,27 @@ function isValidDate(date: string): boolean {
 }
 
 /**
- * Validates quick memorial creation form data
+ * Validates simplified memorial creation form data
  * @param data - The memorial form data to validate
  * @returns ValidationResult with validation status and any errors
  */
-export function validateQuickMemorialForm(data: any): ValidationResult {
+export function validateSimplifiedMemorialForm(data: any): ValidationResult {
     const errors: string[] = [];
     
     // Required fields
-    if (!data.deceasedName) errors.push('Loved one\'s name is required');
-    if (!data.deceasedDOD) errors.push('Date of passing is required');
+    if (!data.lovedOneName) errors.push('Loved one\'s name is required');
+    if (!data.creatorFullName) errors.push('Your full name is required');
+    if (!data.creatorPhone) errors.push('Phone number is required');
     if (!data.creatorEmail) errors.push('Email address is required');
-    if (!data.tributeMessage) errors.push('Tribute message is required');
     
     // Email validation
     if (data.creatorEmail && !isValidEmail(data.creatorEmail)) {
         errors.push('Invalid email format');
     }
     
-    // Message length validation
-    if (data.tributeMessage && data.tributeMessage.length < 10) {
-        errors.push('Tribute message must be at least 10 characters');
-    }
-    
-    if (data.tributeMessage && data.tributeMessage.length > 1000) {
-        errors.push('Tribute message must be less than 1000 characters');
-    }
-    
-    // Date validations (if provided)
-    if (data.deceasedDOB && !isValidDate(data.deceasedDOB)) {
-        errors.push('Invalid date of birth');
-    }
-    
-    if (data.deceasedDOD && !isValidDate(data.deceasedDOD)) {
-        errors.push('Invalid date of passing');
-    }
-    
-    // Ensure date of passing is after date of birth if both are provided
-    if (data.deceasedDOB && data.deceasedDOD &&
-        isValidDate(data.deceasedDOB) && isValidDate(data.deceasedDOD)) {
-        const dob = new Date(data.deceasedDOB);
-        const dod = new Date(data.deceasedDOD);
-        
-        if (dod < dob) {
-            errors.push('Date of passing cannot be before date of birth');
-        }
+    // Phone validation
+    if (data.creatorPhone && !isValidPhone(data.creatorPhone)) {
+        errors.push('Invalid phone number format');
     }
     
     return {

@@ -1,7 +1,7 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { generateSecurePassword } from '$lib/utils/auth-helpers';
-import { validateQuickMemorialForm } from '$lib/utils/form-validation';
+import { validateSimplifiedMemorialForm } from '$lib/utils/form-validation';
 
 /**
  * Generates a slug from the deceased's name
@@ -81,17 +81,16 @@ export const actions = {
             
             // Parse form data
             const data = {
-                deceasedName: formData.get('deceasedName')?.toString() || '',
-                deceasedDOB: formData.get('deceasedDOB')?.toString() || '',
-                deceasedDOD: formData.get('deceasedDOD')?.toString() || '',
-                tributeMessage: formData.get('tributeMessage')?.toString() || '',
+                lovedOneName: formData.get('lovedOneName')?.toString() || '',
+                creatorFullName: formData.get('creatorFullName')?.toString() || '',
+                creatorPhone: formData.get('creatorPhone')?.toString() || '',
                 creatorEmail: formData.get('creatorEmail')?.toString() || ''
             };
             
-            console.log('📝 Parsed form data:', { ...data, tributeMessage: '(truncated)' });
+            console.log('📝 Parsed form data:', data);
             
             // Validate form data
-            const validation = validateQuickMemorialForm(data);
+            const validation = validateSimplifiedMemorialForm(data);
             if (!validation.isValid) {
                 console.error('❌ Validation errors:', validation.errors);
                 return fail(400, { 
@@ -196,7 +195,7 @@ export const actions = {
             console.log('📝 Writing user metadata');
             
             // Parse name parts (simple approach)
-            const nameParts = data.deceasedName.trim().split(' ');
+            const nameParts = data.lovedOneName.trim().split(' ');
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
             
@@ -207,15 +206,12 @@ export const actions = {
                     deceased: {
                         firstName,
                         lastName,
-                        fullName: data.deceasedName,
-                        dob: data.deceasedDOB,
-                        dop: data.deceasedDOD
+                        fullName: data.lovedOneName
                     },
                     contact: {
-                        email: data.creatorEmail
-                    },
-                    tribute: {
-                        message: data.tributeMessage
+                        fullName: data.creatorFullName,
+                        email: data.creatorEmail,
+                        phone: data.creatorPhone
                     }
                 })
             };
@@ -247,15 +243,15 @@ export const actions = {
             console.log('🚀 Creating tribute');
             
             // Generate the slug
-            slug = generateSlug(data.deceasedName);
+            slug = generateSlug(data.lovedOneName);
             
             // Prepare the tribute payload
             const tributePayload = {
-                loved_one_name: data.deceasedName,
+                loved_one_name: data.lovedOneName,
                 slug,
                 user_id: userId,
-                phone_number: '000-000-0000', // Default value as we don't collect it in quick form
-                custom_html: `<div class="tribute-message">${data.tributeMessage}</div>`
+                phone_number: data.creatorPhone || '000-000-0000',
+                custom_html: `<div class="tribute-message">In loving memory of ${data.lovedOneName}.</div>`
             };
             
             console.log('📦 Sending tribute payload:', { ...tributePayload, custom_html: '(truncated)' });
@@ -295,7 +291,7 @@ export const actions = {
                         to: data.creatorEmail,
                         subject: 'Your Tributestream Memorial',
                         html: `
-                            <h2>Your Memorial for ${data.deceasedName} Has Been Created</h2>
+                            <h2>Your Memorial for ${data.lovedOneName} Has Been Created</h2>
                             <p>Thank you for using Tributestream to honor your loved one.</p>
                             <p>Your account has been created with the following credentials:</p>
                             <p><strong>Username:</strong> ${data.creatorEmail}</p>

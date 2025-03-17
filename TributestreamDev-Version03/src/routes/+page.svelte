@@ -15,10 +15,8 @@
     let searchTerm = $state('');
     
     // Form fields - Memorial creation
-    let deceasedName = $state('');
-    let deceasedDOB = $state('');
-    let deceasedDOD = $state('');
-    let tributeMessage = $state('');
+    let creatorFullName = $state('');
+    let creatorPhone = $state('');
     let creatorEmail = $state('');
     
     // UI state
@@ -32,7 +30,7 @@
     
     // Derived values using Svelte 5's $derived rune
     let slugifiedName = $derived(
-        deceasedName
+        searchTerm
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
@@ -43,16 +41,16 @@
     );
     
     // Form validation using $derived for reactive validation
-    let isNameValid = $derived(!!deceasedName.trim());
-    let isDODValid = $derived(!!deceasedDOD.trim());
-    let isMessageValid = $derived(!!tributeMessage.trim() && tributeMessage.length >= 10);
+    let isNameValid = $derived(!!searchTerm.trim());
+    let isCreatorNameValid = $derived(!!creatorFullName.trim());
+    let isPhoneValid = $derived(!!creatorPhone.trim() && creatorPhone.length >= 7);
     let isEmailValid = $derived(
-        !!creatorEmail.trim() && 
+        !!creatorEmail.trim() &&
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(creatorEmail)
     );
     
     let isQuickFormValid = $derived(
-        isNameValid && isDODValid && isMessageValid && isEmailValid
+        isNameValid && isCreatorNameValid && isPhoneValid && isEmailValid
     );
     
     let isSearchValid = $derived(!!searchTerm.trim());
@@ -67,10 +65,10 @@
         
         // Pre-populate form data if returning from failed submission
         if (form?.create && form.error && form.data) {
-            deceasedName = form.data.deceasedName || '';
-            deceasedDOB = form.data.deceasedDOB || '';
-            deceasedDOD = form.data.deceasedDOD || '';
-            tributeMessage = form.data.tributeMessage || '';
+            // Pre-populate the search field as the loved one's name
+            searchTerm = form.data.lovedOneName || '';
+            creatorFullName = form.data.creatorFullName || '';
+            creatorPhone = form.data.creatorPhone || '';
             creatorEmail = form.data.creatorEmail || '';
             
             // Show the create form and any error message
@@ -119,9 +117,9 @@
         if (!isQuickFormValid) {
             let errors = [];
             if (!isNameValid) errors.push('Loved one\'s name is required');
-            if (!isDODValid) errors.push('Date of passing is required');
-            if (!isMessageValid) errors.push('Tribute message is required (at least 10 characters)');
-            if (!isEmailValid) errors.push('Valid email address is required');
+            if (!isCreatorNameValid) errors.push('Your full name is required');
+            if (!isPhoneValid) errors.push('A valid phone number is required');
+            if (!isEmailValid) errors.push('A valid email address is required');
             
             formError = errors.join('. ');
             return;
@@ -299,65 +297,43 @@
                         }}
                         class="space-y-4"
                     >
-                        <!-- Memorial Information -->
+                        <!-- Hidden field for loved one's name - using the search term -->
+                        <input type="hidden" name="lovedOneName" value={searchTerm} />
+                        
+                        <!-- Display the loved one's name from the search field -->
+                        <div class="bg-gray-800 p-4 rounded-md mb-4">
+                            <p class="text-gray-400 mb-1 text-sm">Creating memorial for:</p>
+                            <p class="text-[#D5BA7F] text-lg font-semibold">{searchTerm}</p>
+                        </div>
+                        
                         <div>
-                            <label for="deceasedName" class="block text-sm font-medium text-gray-300 mb-1">
-                                Full Name of Loved One *
+                            <label for="creatorFullName" class="block text-sm font-medium text-gray-300 mb-1">
+                                Your Full Name *
                             </label>
                             <input
                                 type="text"
-                                id="deceasedName"
-                                name="deceasedName"
-                                placeholder="John Doe"
+                                id="creatorFullName"
+                                name="creatorFullName"
+                                placeholder="Your full name"
                                 class="w-full px-4 py-2 text-gray-900 rounded-md"
-                                bind:value={deceasedName}
+                                bind:value={creatorFullName}
                                 required
                             />
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="deceasedDOB" class="block text-sm font-medium text-gray-300 mb-1">
-                                    Date of Birth
-                                </label>
-                                <input
-                                    type="date"
-                                    id="deceasedDOB"
-                                    name="deceasedDOB"
-                                    class="w-full px-4 py-2 text-gray-900 rounded-md"
-                                    bind:value={deceasedDOB}
-                                />
-                            </div>
-                            
-                            <div>
-                                <label for="deceasedDOD" class="block text-sm font-medium text-gray-300 mb-1">
-                                    Date of Passing *
-                                </label>
-                                <input
-                                    type="date"
-                                    id="deceasedDOD"
-                                    name="deceasedDOD"
-                                    class="w-full px-4 py-2 text-gray-900 rounded-md"
-                                    bind:value={deceasedDOD}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        
                         <div>
-                            <label for="tributeMessage" class="block text-sm font-medium text-gray-300 mb-1">
-                                Tribute Message *
+                            <label for="creatorPhone" class="block text-sm font-medium text-gray-300 mb-1">
+                                Your Phone Number *
                             </label>
-                            <textarea
-                                id="tributeMessage"
-                                name="tributeMessage"
-                                rows="4"
-                                placeholder="Share a memory or tribute message (minimum 10 characters)"
+                            <input
+                                type="tel"
+                                id="creatorPhone"
+                                name="creatorPhone"
+                                placeholder="(555) 123-4567"
                                 class="w-full px-4 py-2 text-gray-900 rounded-md"
-                                bind:value={tributeMessage}
+                                bind:value={creatorPhone}
                                 required
-                                minlength="10"
-                            ></textarea>
+                            />
                         </div>
                         
                         <div>
@@ -379,7 +355,7 @@
                         </div>
                         
                         <!-- Preview of memorial page URL -->
-                        {#if deceasedName}
+                        {#if searchTerm}
                             <div class="bg-gray-800 p-2 rounded-md text-xs overflow-hidden">
                                 <p class="text-gray-400 mb-1">Memorial page URL:</p>
                                 <p class="text-[#D5BA7F] truncate">{customLink}</p>
