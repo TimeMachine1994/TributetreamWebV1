@@ -41,7 +41,7 @@ function parseFormData(formData: FormData) {
 export const actions = {
     default: async ({ request, fetch, cookies }) => {
         console.log('🚀 Starting fd-form action.');
-
+        let slug = '';
         try {
             // Step 1: Parse form data
             console.log('📝 Parsing form data...');
@@ -203,7 +203,7 @@ export const actions = {
             console.log('🚀 Creating tribute...');
             
             // Generate the slug
-            const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
+             slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
 
             // Prepare the tribute payload
             const tributePayload = {
@@ -262,17 +262,20 @@ export const actions = {
             
             // Step 9: Redirect to the newly created tribute page
             console.log('🔀 Redirecting to created tribute page...');
-            throw redirect(303, `/celebration-of-life-for-${slug}`);
             
         } catch (error) {
-            // Only handle errors that aren't already handled (like redirect)
-            if (error instanceof Response) throw error;
+            // Check for SvelteKit redirect objects
+            if (error instanceof Error && 'status' in error && 'location' in error) {
+                throw error; // Re-throw redirects
+            }
             
             console.error('💥 Unexpected error:', error);
-            return fail(500, { 
-                error: true, 
-                message: 'An unexpected error occurred. Please try again.' 
+            return fail(500, {
+                error: true,
+                message: 'An unexpected error occurred. Please try again.'
             });
         }
+        throw redirect(303, `/celebration-of-life-for-${slug}`);
+
     }
 } satisfies Actions;
