@@ -1,61 +1,72 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
+import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
+import { validateFuneralDirectorForm } from '$lib/utils/form-validation';
 
-// Function to generate a slug from the deceased's first and last name
+/**
+ * Generates a slug from the deceased's name
+ * @param firstName - First name of the deceased
+ * @param lastName - Last name of the deceased
+ * @returns Formatted slug
+ */
 function generateSlug(firstName: string, lastName: string): string {
     return `${firstName.trim().toLowerCase()}_${lastName.trim().toLowerCase()}`.replace(/\s+/g, '_');
 }
 
+/**
+ * Parse form data from FormData object
+ * @param formData - FormData object from request
+ * @returns Parsed form data object
+ */
+function parseFormData(formData: FormData) {
+    return {
+        directorFirstName: formData.get('director-first-name') as string,
+        directorLastName: formData.get('director-last-name') as string,
+        familyMemberFirstName: formData.get('family-member-first-name') as string,
+        familyMemberLastName: formData.get('family-member-last-name') as string,
+        familyMemberDOB: formData.get('family-member-dob') as string,
+        deceasedFirstName: formData.get('deceased-first-name') as string,
+        deceasedLastName: formData.get('deceased-last-name') as string,
+        deceasedDOB: formData.get('deceased-dob') as string,
+        deceasedDOP: formData.get('deceased-dop') as string,
+        email: formData.get('email-address') as string,
+        phone: formData.get('phone-number') as string,
+        locationName: formData.get('location-name') as string,
+        locationAddress: formData.get('location-address') as string,
+        memorialTime: formData.get('memorial-time') as string,
+        memorialDate: formData.get('memorial-date') as string,
+    };
+}
+
 export const actions = {
-    default: async ({ request, fetch, locals, cookies }) => {
+    default: async ({ request, fetch, cookies }) => {
         console.log('🚀 Starting fd-form action.');
 
-        const generatePassword = (): string => {
-            console.log('🔐 Generating a secure password.');
-            const length = 16;
-            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
-            const array = new Uint8Array(length);
-            crypto.getRandomValues(array);
-            const password = Array.from(array)
-                .map((x) => charset[x % charset.length])
-                .join('');
-            console.log('✅ Password generated:', password);
-            return password;
-        };
-
-        let password = '';
         try {
-            console.log('🔄 Generating password...');
-            password = generatePassword();
-
+            // Step 1: Parse form data
             console.log('📝 Parsing form data...');
             const formData = await request.formData();
-            const data = {
-                directorFirstName: formData.get('director-first-name'),
-                directorLastName: formData.get('director-last-name'),
-                familyMemberFirstName: formData.get('family-member-first-name'),
-                familyMemberLastName: formData.get('family-member-last-name'),
-                familyMemberDOB: formData.get('family-member-dob'),
-                deceasedFirstName: formData.get('deceased-first-name'),
-                deceasedLastName: formData.get('deceased-last-name'),
-                deceasedDOB: formData.get('deceased-dob'),
-                deceasedDOP: formData.get('deceased-dop'),
-                email: formData.get('email-address'),
-                phone: formData.get('phone-number'),
-                locationName: formData.get('location-name'),
-                locationAddress: formData.get('location-address'),
-                memorialTime: formData.get('memorial-time'),
-                memorialDate: formData.get('memorial-date'),
-            };
-            console.log('✅ Form data parsed:', data);
-
-            if (!data.email || !data.directorFirstName || !data.directorLastName || !data.locationName) {
-                console.error('❌ Missing required fields:', data);
-                return fail(400, { error: true, message: 'Required fields are missing.' });
+            const data = parseFormData(formData);
+            
+            // Step 2: Validate form data
+            console.log('🔍 Validating form data...');
+            const validation = validateFuneralDirectorForm(data);
+            if (!validation.isValid) {
+                console.error('❌ Validation errors:', validation.errors);
+                return fail(400, { 
+                    error: true, 
+                    message: validation.errors.join('. ') 
+                });
             }
-
+            
+            // Step 3: Generate a secure random password
+            console.log('🔐 Generating a secure password.');
+            const password = generateSecurePassword(16);
+            console.log('✅ Password generated successfully');
+            
+            // Step 4: Register the user
             console.log('🔄 Registering user...');
-            const registerResponse = await fetch('/api/register', {
+            const registerResponse = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -65,15 +76,30 @@ export const actions = {
                 })
             });
 
+            // Handle registration errors
             if (!registerResponse.ok) {
-                console.error('❌ Registration failed:', registerResponse.status);
-                return fail(registerResponse.status, { error: true, message: 'Registration failed' });
+                const registerError = await registerResponse.json();
+                console.error('❌ Registration failed:', registerError);
+                
+                // Handle specific error scenarios
+                if (registerError.message?.includes('email already exists')) {
+                    return fail(400, { 
+                        error: true, 
+                        message: 'An account with this email already exists. Please use a different email address.' 
+                    });
+                }
+                
+                return fail(registerResponse.status, { 
+                    error: true, 
+                    message: registerError.message || 'Registration failed' 
+                });
             }
-
+            
             const registerResult = await registerResponse.json();
             const userId = registerResult.user_id;
             console.log('✅ User registered with ID:', userId);
 
+            // Step 5: Authenticate the user
             console.log('🔄 Authenticating user...');
             const authResponse = await fetch('/api/auth', {
                 method: 'POST',
@@ -84,22 +110,41 @@ export const actions = {
                 })
             });
 
+            // Handle authentication errors
             if (!authResponse.ok) {
-                console.error('❌ Authentication failed:', authResponse.status);
-                return fail(authResponse.status, { error: true, message: 'Authentication failed' });
+                const authError = await authResponse.json();
+                console.error('❌ Authentication failed:', authError);
+                return fail(authResponse.status, { 
+                    error: true, 
+                    message: authError.message || 'Authentication failed after registration' 
+                });
             }
 
             const authResult = await authResponse.json();
-            console.log('✅ User authenticated. JWT token received:', authResult.token);
+            console.log('✅ User authenticated. JWT token received');
 
-            cookies.set('jwt', authResult.token, { httpOnly: true, secure: true, path: '/' });
-            cookies.set('user_id', userId, {
-                httpOnly: true,
+            // Step 6: Store the JWT token in cookies
+            console.log('🔐 Storing authentication tokens...');
+            cookies.set('jwt_token', authResult.token, { // Using jwt_token to match hooks.server.ts
+                httpOnly: true, 
+                secure: true, 
+                path: '/',
+                maxAge: 60 * 60 * 24 * 7 // 7 days 
+            });
+            
+            // Also store user data in cookie for client-side access
+            cookies.set('user', JSON.stringify({
+                id: userId,
+                name: authResult.user_display_name || data.email,
+                email: data.email
+            }), {
+                httpOnly: false, // Client accessible
                 secure: true,
                 path: '/',
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
 
+            // Step 7: Store user metadata
             console.log('📝 Writing user metadata...');
             const metaPayload = {
                 user_id: userId,
@@ -132,8 +177,8 @@ export const actions = {
                     }
                 })
             };
-
-            const metaResponse = await fetch('/api/user-meta', {
+            
+            const metaResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/user-meta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -142,66 +187,92 @@ export const actions = {
                 body: JSON.stringify(metaPayload)
             });
 
+            // Handle metadata errors
             if (!metaResponse.ok) {
                 const metaError = await metaResponse.json();
                 console.error('❌ Metadata write failed:', metaError);
-                return fail(metaResponse.status, { error: true, message: metaError.message });
+                return fail(metaResponse.status, { 
+                    error: true, 
+                    message: metaError.message || 'Failed to save user metadata' 
+                });
             }
 
             console.log('✅ Metadata written successfully.');
 
-            // Add the tribute-table API call here
-            try {
-                console.log('🚀 Starting tribute-table API call...');
-                
-                // Generate the slug
-                const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
+            // Step 8: Create the tribute record
+            console.log('🚀 Creating tribute...');
+            
+            // Generate the slug
+            const slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
 
-                // Prepare the payload
-                const tributePayload = {
-                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`, // Match expected field name
-                    slug, // Ensure it's slugified
-                    user_id: userId // Ensure it's the correct user ID
-                };
-                
-                console.log('📦 Sending tribute payload:', tributePayload);
-                
-                const tributeResponse = await fetch('/api/tribute-table', {
+            // Prepare the tribute payload
+            const tributePayload = {
+                loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                slug,
+                user_id: userId,
+                phone_number: data.phone || '000-000-0000' // Ensure we have a phone number
+            };
+            
+            console.log('📦 Sending tribute payload:', tributePayload);
+            
+            const tributeResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authResult.token}`
+                },
+                body: JSON.stringify(tributePayload)
+            });
+            
+            // Handle tribute creation errors
+            if (!tributeResponse.ok) {
+                const tributeError = await tributeResponse.json();
+                console.error('❌ Tribute creation failed:', tributeError);
+                return fail(tributeResponse.status, { 
+                    error: true, 
+                    message: tributeError.message || 'Failed to create tribute' 
+                });
+            }
+            
+            const tributeResult = await tributeResponse.json();
+            console.log('✅ Tribute created successfully:', tributeResult);
+            
+            // Optional: Send welcome email with credentials
+            try {
+                await fetch('/api/send-email', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authResult.token}`
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(tributePayload)
+                    body: JSON.stringify({
+                        to: data.email,
+                        subject: 'Your Tributestream Account',
+                        html: `
+                            <h2>Welcome to Tributestream</h2>
+                            <p>Your account has been created with the following credentials:</p>
+                            <p><strong>Username:</strong> ${data.email}</p>
+                            <p><strong>Password:</strong> ${password}</p>
+                            <p>Your tribute page is now available at: https://tributestream.com/celebration-of-life-for-${slug}</p>
+                        `
+                    })
                 });
-                
-                if (!tributeResponse.ok) {
-                    const tributeError = await tributeResponse.json();
-                    console.error('❌ Tribute API call failed:', tributeError);
-                    throw fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
-                }
-                
-                console.log('✅ Tribute data saved successfully.');
-                
-
-                if (!tributeResponse.ok) {
-                    const tributeError = await tributeResponse.json();
-                    console.error('❌ Tribute API call failed:', tributeError);
-                    return fail(tributeResponse.status, { error: true, message: 'Failed to save tribute data.' });
-                }
-
-                console.log('✅ Tribute data saved successfully.');
-
-            } catch (error) {
-                console.error('💥 Error during tribute-table API call:', error);
-                throw fail(500, { error: true, message: 'An unexpected error occurred while saving tribute data.' });
+            } catch (emailError) {
+                console.warn('⚠️ Email notification failed, but process continues:', emailError);
             }
-
-            console.log('🔀 Redirecting to success page...');
-         } catch (error) {
+            
+            // Step 9: Redirect to the newly created tribute page
+            console.log('🔀 Redirecting to created tribute page...');
+            throw redirect(303, `/celebration-of-life-for-${slug}`);
+            
+        } catch (error) {
+            // Only handle errors that aren't already handled (like redirect)
+            if (error instanceof Response) throw error;
+            
             console.error('💥 Unexpected error:', error);
-            throw fail(500, { error: true, message: 'An unexpected error occurred.' });
+            return fail(500, { 
+                error: true, 
+                message: 'An unexpected error occurred. Please try again.' 
+            });
         }
-        throw redirect(303, '/fd-form/confirmation');
     }
 } satisfies Actions;

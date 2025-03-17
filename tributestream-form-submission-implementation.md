@@ -652,3 +652,240 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
     "user_id": "123",
     "phone_number": "555-123-4567"
   }
+
+  Understanding our data strucutre: 
+  
+
+1. Data Structure and JSON Format
+Your tribute entries include:
+id: Unique identifier for the tribute.
+user_id: References the user who created the tribute.
+loved_one_name: The name of the loved one being honored.
+slug: A unique, URL-friendly identifier.
+created_at & updated_at: Timestamps for tracking creation and updates.
+custom_html: Custom HTML content for the tribute.
+phone_number: Contact or related phone number.
+number_of_streams: Likely used for tracking views or streams.
+A sample JSON for a tribute might look like this:
+{
+  "id": 123,
+  "user_id": 45,
+  "loved_one_name": "John Doe",
+  "slug": "john-doe",
+  "created_at": "2023-03-15T12:00:00Z",
+  "updated_at": "2023-03-16T15:30:00Z",
+  "custom_html": "<p>Celebrating John’s life...</p>",
+  "phone_number": "+1234567890",
+  "number_of_streams": 10
+}
+
+
+2. CRUD Operations
+Create Tribute Link
+Endpoint: POST /api/tributes
+Flow:
+Receive form data from the home page.
+Sanitize and validate inputs (e.g., ensure the slug is unique, the HTML is safe, and the phone number is properly formatted).
+Insert a new record into the tributes table.
+Return the newly created tribute as JSON.
+Convert this Json tribute into an object for our app. 
+Read Tribute(s)
+By Slug (Public Access):
+Endpoint: GET /api/tributes/{slug}
+Retrieve the tribute matching the given slug.
+By User (Family Dashboard):
+Endpoint: GET /api/users/{user_id}/tributes
+Retrieve all tributes for the logged-in user by filtering on user_id.
+ 
+
+3. Implementation Considerations
+Authentication & Authorization
+User Authentication:
+ Use WordPress nonces and/or authentication mechanisms to ensure only authorized users can create or update tributes.
+Role-based Permissions:
+ Ensure that users can only update or delete tributes that they own. For instance, on the family dashboard, queries should filter by the authenticated user's user_id.
+Input Validation and Sanitization
+Sanitize Input Data:
+ Clean data for custom_html, loved_one_name, and phone_number to prevent security issues.
+Validate Uniqueness:
+ Make sure the slug is unique for each tribute. Consider using WordPress functions to check and generate a unique slug if necessary. If we have a duplicate slug, lets just append an number at the end.
+RESTful API Endpoints
+Mapping HTTP Methods:
+GET: For reading data (all tributes, single tribute by slug/user).
+POST: For creating new tributes.
+PUT/PATCH: For updating existing tributes.
+DELETE: (Optional) If you plan to allow deletion, add an endpoint like DELETE /api/tributes/{id}.
+Endpoint Naming Conventions:
+ Use clear and RESTful naming (e.g., /api/tributes, /api/tributes/{slug}, /api/users/{user_id}/tributes).
+
+4. Example Pseudocode for a WordPress Plugin Endpoint
+Below is a simplified pseudocode example for creating a new tribute link:
+// Register a custom REST API route in your plugin
+add_action('rest_api_init', function () {
+    register_rest_route('api/v1', '/tributes', array(
+        'methods' => 'POST',
+        'callback' => 'create_tribute',
+        'permission_callback' => function () {
+            return is_user_logged_in();
+        }
+    ));
+});
+
+function create_tribute(WP_REST_Request $request) {
+    // Verify nonce if needed for additional security
+    $params = $request->get_json_params();
+    $user_id = get_current_user_id();
+    
+    // Sanitize and validate input fields
+    $loved_one_name = sanitize_text_field($params['loved_one_name']);
+    $slug = sanitize_title($params['slug']);
+    $custom_html = wp_kses_post($params['custom_html']);
+    $phone_number = sanitize_text_field($params['phone_number']);
+    
+    // Generate timestamps
+    $created_at = current_time('mysql');
+    $updated_at = current_time('mysql');
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'tributes';
+    
+    // Insert new tribute into the database
+    $result = $wpdb->insert(
+        $table_name,
+        array(
+            'user_id' => $user_id,
+            'loved_one_name' => $loved_one_name,
+            'slug' => $slug,
+            'custom_html' => $custom_html,
+            'phone_number' => $phone_number,
+            'created_at' => $created_at,
+            'updated_at' => $updated_at,
+            'number_of_streams' => 0  // default value
+        ),
+        array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d')
+    );
+    
+    if ($result === false) {
+        return new WP_Error('db_insert_error', 'Failed to insert tribute', array('status' => 500));
+    }
+    
+    $inserted_id = $wpdb->insert_id;
+    $tribute = array(
+        'id' => $inserted_id,
+        'user_id' => $user_id,
+        'loved_one_name' => $loved_one_name,
+        'slug' => $slug,
+        'custom_html' => $custom_html,
+        'phone_number' => $phone_number,
+        'created_at' => $created_at,
+        'updated_at' => $updated_at,
+        'number_of_streams' => 0
+    );
+    
+    return rest_ensure_response($tribute);
+}
+
+
+5. Summary
+Data Model:
+ Your tribute link (or slug) is part of a broader tribute record with fields like loved_one_name, timestamps, and content.
+
+
+CRUD Operations:
+ Implement endpoints for creating, reading (by slug or user), and updating tributes, mapping each action to the appropriate HTTP method.
+
+
+Security:
+ Validate and sanitize all inputs. Use authentication checks to ensure users can only modify their own data.
+
+
+RESTful Design:
+ Stick to RESTful conventions for endpoint naming and method usage, and document these endpoints clearly for maintainability.
+
+
+By following these guidelines, you’ll create a well-structured, secure, and efficient CRUD system for your tributes table that meets both public and user-specific needs.
+Below is an example of a consolidated JSON structure that merges data from both the Funeral Director form and the Calculator page. In this design, we assume that tribute‐specific fields (like loved one’s full name) remain in the tribute table, and only additional, order/scheduling–related details are stored as a JSON string in usermeta. We’ve organized the data into clear, snake_case sections and removed duplicate entries (for instance, using a single set of funeral home details under funeral_details).
+{
+  "tribute_reference": 123,
+  "user_details": {
+    "full_name": "Jane Doe",
+    "email_address": "jane@example.com",
+    "phone_number": "+1234567890",
+    "dob": "1990-01-01"
+  },
+  "funeral_details": {
+    "director_first_name": "John",
+    "director_last_name": "Doe",
+    "funeral_home_name": "XYZ Funeral Home",
+    "funeral_home_address": "123 Main St"
+  },
+  "loved_one_details": {
+    "dob": "1945-06-15",
+    "date_of_passing": "2023-03-16"
+  },
+  "memorial_details": {
+    "location_name": "XYZ Memorial Hall",
+    "location_address": "456 Memorial Dr",
+    "date": "2023-03-16",
+    "start_time": "15:30:00"
+  },
+  "livestream_details": {
+    "duration": 60,
+    "date": "2023-03-16",
+    "start_time": "15:30:00"
+  },
+  "calculator_details": {
+    "package_option": "package_a",
+    "price_total": 99.99,
+    "number_of_locations": 1,
+    "locations": [
+      {
+        "location_name": "XYZ Memorial Hall",
+        "location_address": "456 Memorial Dr",
+        "start_time": "15:30:00",
+        "duration": 60
+      }
+    ]
+  },
+  "billing_details": {
+    "billing_first_name": "Jane",
+    "billing_last_name": "Doe",
+    "billing_address": "789 Billing Ave",
+    "is_payment_complete": false
+  }
+}
+
+Explanation
+tribute_reference:
+ Points to the unique tribute record (which holds the core tribute data).
+
+
+user_details:
+ Contains the registered user’s basic information. (Note that some of these values might be initially provided on the home page form.)
+
+
+funeral_details:
+ Consolidates data from the Funeral Director form. Here, we combine director information and funeral home details into one section to avoid duplicates.
+
+
+loved_one_details:
+ Captures additional details about the loved one (date of birth and date of passing) that aren’t duplicated in the tribute table.
+
+
+memorial_details:
+ Holds scheduling and location data for the memorial service. These values might be pre-populated or adjusted on the Calculator page.
+
+
+livestream_details:
+ Contains the livestream-specific scheduling details (duration, date, and start time).
+
+
+calculator_details:
+ Provides pricing and package information. If the user chooses multiple locations (beyond the default), the structure allows for an array of location objects with their own start times and durations.
+
+
+billing_details:
+ Stores checkout-related information.
+
+
+This structure ensures a single source of truth for tribute-specific data (stored in the tribute table) while the additional scheduling and order data are maintained in a structured JSON format. Adjust field names or nesting as needed based on your exact requirements.
