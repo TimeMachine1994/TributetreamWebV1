@@ -21,7 +21,7 @@
         <input
           name="director-last-name"
           type="text"
-          id="director-last-name"
+          id="directors-last-name"
           placeholder="Last Name"
           class="border rounded w-full py-2 px-3 text-gray-700"
         />
