@@ -237,25 +237,69 @@ export const actions = {
             const tributeResult = await tributeResponse.json();
             console.log('✅ Tribute created successfully:', tributeResult);
             
-            // Optional: Send welcome email with credentials
+            // Send both customer confirmation and internal notification emails
             try {
-                await fetch('/api/send-email', {
+                console.log('📧 Sending dual emails: customer confirmation and internal notification...');
+                
+                // Create a comprehensive formData object with all relevant information
+                const emailFormData = {
+                    // Director information
+                    directorFirstName: data.directorFirstName,
+                    directorLastName: data.directorLastName,
+                    
+                    // Family member information
+                    familyMemberFirstName: data.familyMemberFirstName,
+                    familyMemberLastName: data.familyMemberLastName,
+                    familyMemberDOB: data.familyMemberDOB,
+                    
+                    // Deceased information
+                    deceasedFirstName: data.deceasedFirstName,
+                    deceasedLastName: data.deceasedLastName,
+                    deceasedDOB: data.deceasedDOB,
+                    deceasedDOP: data.deceasedDOP,
+                    
+                    // Contact information
+                    email: data.email,
+                    phone: data.phone,
+                    
+                    // Memorial information
+                    locationName: data.locationName,
+                    locationAddress: data.locationAddress,
+                    memorialTime: data.memorialTime,
+                    memorialDate: data.memorialDate,
+                    
+                    // Account information (for internal use only)
+                    username: data.email,
+                    password: password,
+                    
+                    // Generated tribute information
+                    slug: slug,
+                    tributeLink: `https://tributestream.com/celebration-of-life-for-${slug}`,
+                    
+                    // Metadata
+                    submissionDate: new Date().toISOString(),
+                    ipAddress: request.headers.get('x-forwarded-for') || 'unknown'
+                };
+
+                // Send both emails using the new API endpoint with dual email functionality
+                const emailResponse = await fetch('/api/send-email', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        to: data.email,
-                        subject: 'Your Tributestream Account',
-                        html: `
-                            <h2>Welcome to Tributestream</h2>
-                            <p>Your account has been created with the following credentials:</p>
-                            <p><strong>Username:</strong> ${data.email}</p>
-                            <p><strong>Password:</strong> ${password}</p>
-                            <p>Your tribute page is now available at: https://tributestream.com/celebration-of-life-for-${slug}</p>
-                        `
+                        type: 'dual',
+                        formData: emailFormData
                     })
                 });
+                
+                const emailResult = await emailResponse.json();
+                
+                if (emailResult.success) {
+                    console.log('✅ Emails sent successfully');
+                } else {
+                    console.warn('⚠️ Email sending partial success or failure:', emailResult);
+                }
             } catch (emailError) {
                 console.warn('⚠️ Email notification failed, but process continues:', emailError);
             }
