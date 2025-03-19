@@ -42,10 +42,11 @@ interface FormData {
   [key: string]: any; // For any additional fields
 }
 
-// Need to import environment variables in SvelteKit in a special way
-// Initialize SendGrid with the API key
-// For now, let's use a placeholder. In production, this would come from $env/static/private
-const SENDGRID_API_KEY = 'SG.placeholder'; // Will be replaced with actual API key in production
+// Import environment variables in SvelteKit using the proper module
+import { SENDGRID_API_KEY } from '$env/static/private';
+
+// Initialize SendGrid with the API key from environment variables
+console.log('Initializing SendGrid with API key:', SENDGRID_API_KEY.substring(0, 10) + '...[REDACTED]');
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 /**
@@ -131,62 +132,100 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body {
-          font-family: Arial, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           line-height: 1.6;
           color: #333;
           max-width: 600px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 0;
+          background-color: #f9f9f9;
+        }
+        .email-container {
+          background-color: #ffffff;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          margin: 20px;
         }
         .header {
+          background: linear-gradient(135deg, #4a6cf7 0%, #2e4dd4 100%);
+          color: white;
+          padding: 30px;
           text-align: center;
-          margin-bottom: 20px;
+          font-weight: 600;
+          font-size: 24px;
+          letter-spacing: -0.5px;
         }
-        .header img {
-          max-width: 200px;
+        .content {
+          padding: 30px;
         }
         .footer {
           text-align: center;
-          margin-top: 30px;
+          margin-top: 20px;
+          padding: 20px;
           font-size: 12px;
           color: #666;
+          border-top: 1px solid #eaeaea;
         }
         .button {
           display: inline-block;
-          background-color: #4A90E2;
+          background-color: #4a6cf7;
           color: white;
           text-decoration: none;
-          padding: 10px 20px;
-          border-radius: 4px;
+          padding: 12px 24px;
+          border-radius: 6px;
           margin: 20px 0;
+          font-weight: 500;
+          box-shadow: 0 2px 4px rgba(74, 108, 247, 0.2);
+          transition: all 0.2s ease;
+        }
+        .button:hover {
+          background-color: #3a5cd7;
+        }
+        p {
+          margin-bottom: 16px;
+          color: #444;
+        }
+        .greeting {
+          font-size: 18px;
+          font-weight: 500;
+          color: #222;
+        }
+        .cta-container {
+          text-align: center;
+          margin: 30px 0;
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <img src="https://tributestream.com/logo.png" alt="Tributestream Logo">
-      </div>
-      
-      <p>Dear ${data.familyLastName} Family,</p>
-      
-      <p>Tributestream wishes you our deepest sympathy for the passing of your loved one.
-      We hope that our duty to share the coming memorial will bring greater comfort.</p>
-      
-      <p>Please follow the link below to finish the process. You will get a confirmation email and a shareable link to the website page that will broadcast the stream:</p>
-      
-      <p style="text-align: center;">
-        <a href="${data.tributeLink}" class="button">View Memorial Page</a>
-      </p>
-      
-      <p>You will be contacted within 24-48 hours to complete the process.</p>
-      
-      <p>We look forward to meeting you in the near term to offer our personal condolences.</p>
-      
-      <p>Respectfully,<br>
-      Tributestream</p>
-      
-      <div class="footer">
-        <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+      <div class="email-container">
+        <div class="header">
+          Tributestream
+        </div>
+        
+        <div class="content">
+          <p class="greeting">Dear ${data.familyLastName} Family,</p>
+          
+          <p>Tributestream wishes you our deepest sympathy for the passing of your loved one.
+          We hope that our duty to share the coming memorial will bring greater comfort.</p>
+          
+          <p>Please follow the link below to finish the process. You will get a confirmation email and a shareable link to the website page that will broadcast the stream:</p>
+          
+          <div class="cta-container">
+            <a href="${data.tributeLink}" class="button">View Memorial Page</a>
+          </div>
+          
+          <p>You will be contacted within 24-48 hours to complete the process.</p>
+          
+          <p>We look forward to meeting you in the near term to offer our personal condolences.</p>
+          
+          <p>Respectfully,<br>
+          <strong>Tributestream</strong></p>
+        </div>
+        
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+        </div>
       </div>
     </body>
     </html>
@@ -198,14 +237,18 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
  */
 function createCustomerEmailText(data: CustomerEmailData): string {
   return `
+TRIBUTESTREAM
+------------
+
 Dear ${data.familyLastName} Family,
 
 Tributestream wishes you our deepest sympathy for the passing of your loved one.
 We hope that our duty to share the coming memorial will bring greater comfort.
 
-Please follow the link below to finish the process. You will get a confirmation email and a shareable link to the website page that will broadcast the stream:
+Please follow the link below to finish the process. You will get a confirmation
+email and a shareable link to the website page that will broadcast the stream:
 
-${data.tributeLink}
+Memorial Page: ${data.tributeLink}
 
 You will be contacted within 24-48 hours to complete the process.
 
@@ -213,6 +256,9 @@ We look forward to meeting you in the near term to offer our personal condolence
 
 Respectfully,
 Tributestream
+
+------------
+© ${new Date().getFullYear()} Tributestream. All rights reserved.
   `;
 }
 
@@ -236,8 +282,8 @@ function createInternalNotificationTemplate(formData: FormData): string {
       
       return `
         <tr>
-          <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${formattedKey}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${value}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 500; color: #333;">${formattedKey}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eaeaea; color: #444;">${value}</td>
         </tr>
       `;
     })
@@ -252,54 +298,110 @@ function createInternalNotificationTemplate(formData: FormData): string {
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body {
-          font-family: Arial, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           line-height: 1.6;
           color: #333;
           max-width: 800px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 0;
+          background-color: #f9f9f9;
+        }
+        .email-container {
+          background-color: #ffffff;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          margin: 20px;
         }
         .header {
+          background: linear-gradient(135deg, #4a6cf7 0%, #2e4dd4 100%);
+          color: white;
+          padding: 30px;
           text-align: center;
-          margin-bottom: 20px;
-          background-color: #f5f5f5;
-          padding: 15px;
-          border-radius: 4px;
+        }
+        .header h2 {
+          margin: 0 0 10px 0;
+          font-weight: 600;
+          font-size: 24px;
+          letter-spacing: -0.5px;
+        }
+        .header p {
+          margin: 0;
+          opacity: 0.9;
+          font-size: 14px;
+        }
+        .content {
+          padding: 30px;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 20px;
+          padding: 20px;
+          font-size: 12px;
+          color: #666;
+          border-top: 1px solid #eaeaea;
         }
         table {
           width: 100%;
           border-collapse: collapse;
           margin: 20px 0;
+          border-radius: 6px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        th, td {
-          padding: 8px;
-          border: 1px solid #ddd;
+        table thead th {
+          background-color: #f5f7fd;
+          padding: 12px;
+          font-weight: 600;
           text-align: left;
+          color: #4a6cf7;
+          border-bottom: 1px solid #eaeaea;
         }
-        th {
-          background-color: #f2f2f2;
+        .note {
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f5f7fd;
+          border-left: 4px solid #4a6cf7;
+          border-radius: 4px;
         }
-        .section-header {
-          background-color: #e9e9e9;
-          font-weight: bold;
+        .intro {
+          font-size: 16px;
+          margin-bottom: 20px;
+          color: #444;
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <h2>New Memorial Service Form Submission</h2>
-        <p>Received on: ${new Date().toLocaleString()}</p>
+      <div class="email-container">
+        <div class="header">
+          <h2>New Memorial Service Form Submission</h2>
+          <p>Received on: ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div class="content">
+          <p class="intro">A new memorial service form has been submitted with the following information:</p>
+          
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 35%;">Field</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${formDataRows}
+            </tbody>
+          </table>
+          
+          <div class="note">
+            <strong>Note:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+        </div>
       </div>
-      
-      <p>A new memorial service form has been submitted with the following information:</p>
-      
-      <table>
-        <tbody>
-          ${formDataRows}
-        </tbody>
-      </table>
-      
-      <p><strong>Note:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.</p>
     </body>
     </html>
   `;

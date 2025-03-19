@@ -53,9 +53,57 @@ export const actions = {
             const validation = validateFuneralDirectorForm(data);
             if (!validation.isValid) {
                 console.error('❌ Validation errors:', validation.errors);
-                return fail(400, { 
-                    error: true, 
-                    message: validation.errors.join('. ') 
+                
+                // Map validation errors to form field names for client-side processing
+                const fieldErrors: Record<string, string> = {};
+                
+                validation.errors.forEach(error => {
+                    // Map backend field names to form field names
+                    if (error.includes("Director's first name")) {
+                        fieldErrors["director-first-name"] = error;
+                    } else if (error.includes("Director's last name")) {
+                        fieldErrors["director-last-name"] = error;
+                    } else if (error.includes("Deceased's first name")) {
+                        fieldErrors["deceased-first-name"] = error;
+                    } else if (error.includes("Deceased's last name")) {
+                        fieldErrors["deceased-last-name"] = error;
+                    } else if (error.includes("Email address")) {
+                        fieldErrors["email-address"] = error;
+                    } else if (error.includes("phone number")) {
+                        fieldErrors["phone-number"] = error;
+                    } else if (error.includes("Memorial location name")) {
+                        fieldErrors["location-name"] = error;
+                    } else if (error.includes("deceased date of birth")) {
+                        fieldErrors["deceased-dob"] = error;
+                    } else if (error.includes("deceased date of passing")) {
+                        fieldErrors["deceased-dop"] = error;
+                    } else if (error.includes("memorial date")) {
+                        fieldErrors["memorial-date"] = error;
+                    }
+                });
+                
+                return fail(400, {
+                    error: true,
+                    message: validation.errors.join('. '),
+                    errors: fieldErrors,
+                    // Return the submitted form data to preserve all values
+                    formData: {
+                        "director-first-name": data.directorFirstName || "",
+                        "director-last-name": data.directorLastName || "",
+                        "family-member-first-name": data.familyMemberFirstName || "",
+                        "family-member-last-name": data.familyMemberLastName || "",
+                        "family-member-dob": data.familyMemberDOB || "",
+                        "deceased-first-name": data.deceasedFirstName || "",
+                        "deceased-last-name": data.deceasedLastName || "",
+                        "deceased-dob": data.deceasedDOB || "",
+                        "deceased-dop": data.deceasedDOP || "",
+                        "email-address": data.email || "",
+                        "phone-number": data.phone || "",
+                        "location-name": data.locationName || "",
+                        "location-address": data.locationAddress || "",
+                        "memorial-time": data.memorialTime || "",
+                        "memorial-date": data.memorialDate || ""
+                    }
                 });
             }
             
@@ -83,15 +131,52 @@ export const actions = {
                 
                 // Handle specific error scenarios
                 if (registerError.message?.includes('email already exists')) {
-                    return fail(400, { 
-                        error: true, 
-                        message: 'An account with this email already exists. Please use a different email address.' 
+                    return fail(400, {
+                        error: true,
+                        message: 'An account with this email already exists. Please use a different email address.',
+                        errors: {
+                            "email-address": 'An account with this email already exists. Please use a different email address.'
+                        },
+                        formData: {
+                            "director-first-name": data.directorFirstName || "",
+                            "director-last-name": data.directorLastName || "",
+                            "family-member-first-name": data.familyMemberFirstName || "",
+                            "family-member-last-name": data.familyMemberLastName || "",
+                            "family-member-dob": data.familyMemberDOB || "",
+                            "deceased-first-name": data.deceasedFirstName || "",
+                            "deceased-last-name": data.deceasedLastName || "",
+                            "deceased-dob": data.deceasedDOB || "",
+                            "deceased-dop": data.deceasedDOP || "",
+                            "email-address": data.email || "",
+                            "phone-number": data.phone || "",
+                            "location-name": data.locationName || "",
+                            "location-address": data.locationAddress || "",
+                            "memorial-time": data.memorialTime || "",
+                            "memorial-date": data.memorialDate || ""
+                        }
                     });
                 }
                 
-                return fail(registerResponse.status, { 
-                    error: true, 
-                    message: registerError.message || 'Registration failed' 
+                return fail(registerResponse.status, {
+                    error: true,
+                    message: registerError.message || 'Registration failed',
+                    formData: {
+                        "director-first-name": data.directorFirstName || "",
+                        "director-last-name": data.directorLastName || "",
+                        "family-member-first-name": data.familyMemberFirstName || "",
+                        "family-member-last-name": data.familyMemberLastName || "",
+                        "family-member-dob": data.familyMemberDOB || "",
+                        "deceased-first-name": data.deceasedFirstName || "",
+                        "deceased-last-name": data.deceasedLastName || "",
+                        "deceased-dob": data.deceasedDOB || "",
+                        "deceased-dop": data.deceasedDOP || "",
+                        "email-address": data.email || "",
+                        "phone-number": data.phone || "",
+                        "location-name": data.locationName || "",
+                        "location-address": data.locationAddress || "",
+                        "memorial-time": data.memorialTime || "",
+                        "memorial-date": data.memorialDate || ""
+                    }
                 });
             }
             
@@ -116,7 +201,24 @@ export const actions = {
                 console.error('❌ Authentication failed:', authError);
                 return fail(authResponse.status, { 
                     error: true, 
-                    message: authError.message || 'Authentication failed after registration' 
+                    message: authError.message || 'Authentication failed after registration',
+                    formData: {
+                        "director-first-name": data.directorFirstName || "",
+                        "director-last-name": data.directorLastName || "",
+                        "family-member-first-name": data.familyMemberFirstName || "",
+                        "family-member-last-name": data.familyMemberLastName || "",
+                        "family-member-dob": data.familyMemberDOB || "",
+                        "deceased-first-name": data.deceasedFirstName || "",
+                        "deceased-last-name": data.deceasedLastName || "",
+                        "deceased-dob": data.deceasedDOB || "",
+                        "deceased-dop": data.deceasedDOP || "",
+                        "email-address": data.email || "",
+                        "phone-number": data.phone || "",
+                        "location-name": data.locationName || "",
+                        "location-address": data.locationAddress || "",
+                        "memorial-time": data.memorialTime || "",
+                        "memorial-date": data.memorialDate || ""
+                    }
                 });
             }
 
@@ -193,7 +295,24 @@ export const actions = {
                 console.error('❌ Metadata write failed:', metaError);
                 return fail(metaResponse.status, { 
                     error: true, 
-                    message: metaError.message || 'Failed to save user metadata' 
+                    message: metaError.message || 'Failed to save user metadata',
+                    formData: {
+                        "director-first-name": data.directorFirstName || "",
+                        "director-last-name": data.directorLastName || "",
+                        "family-member-first-name": data.familyMemberFirstName || "",
+                        "family-member-last-name": data.familyMemberLastName || "",
+                        "family-member-dob": data.familyMemberDOB || "",
+                        "deceased-first-name": data.deceasedFirstName || "",
+                        "deceased-last-name": data.deceasedLastName || "",
+                        "deceased-dob": data.deceasedDOB || "",
+                        "deceased-dop": data.deceasedDOP || "",
+                        "email-address": data.email || "",
+                        "phone-number": data.phone || "",
+                        "location-name": data.locationName || "",
+                        "location-address": data.locationAddress || "",
+                        "memorial-time": data.memorialTime || "",
+                        "memorial-date": data.memorialDate || ""
+                    }
                 });
             }
 
@@ -230,7 +349,24 @@ export const actions = {
                 console.error('❌ Tribute creation failed:', tributeError);
                 return fail(tributeResponse.status, { 
                     error: true, 
-                    message: tributeError.message || 'Failed to create tribute' 
+                    message: tributeError.message || 'Failed to create tribute',
+                    formData: {
+                        "director-first-name": data.directorFirstName || "",
+                        "director-last-name": data.directorLastName || "",
+                        "family-member-first-name": data.familyMemberFirstName || "",
+                        "family-member-last-name": data.familyMemberLastName || "",
+                        "family-member-dob": data.familyMemberDOB || "",
+                        "deceased-first-name": data.deceasedFirstName || "",
+                        "deceased-last-name": data.deceasedLastName || "",
+                        "deceased-dob": data.deceasedDOB || "",
+                        "deceased-dop": data.deceasedDOP || "",
+                        "email-address": data.email || "",
+                        "phone-number": data.phone || "",
+                        "location-name": data.locationName || "",
+                        "location-address": data.locationAddress || "",
+                        "memorial-time": data.memorialTime || "",
+                        "memorial-date": data.memorialDate || ""
+                    }
                 });
             }
             
@@ -315,9 +451,28 @@ export const actions = {
             
             console.error('💥 Unexpected error:', error);
             return fail(500, {
-                error: true,
-                message: 'An unexpected error occurred. Please try again.'
-            });
+                            error: true,
+                            message: 'An unexpected error occurred. Please try again.',
+                            // For generic errors, we just return a message without form data
+                            // since we can't guarantee data is available in the catch block
+                            formData: {
+                                "director-first-name": "",
+                                "director-last-name": "",
+                                "family-member-first-name": "",
+                                "family-member-last-name": "",
+                                "family-member-dob": "",
+                                "deceased-first-name": "",
+                                "deceased-last-name": "",
+                                "deceased-dob": "",
+                                "deceased-dop": "",
+                                "email-address": "",
+                                "phone-number": "",
+                                "location-name": "",
+                                "location-address": "",
+                                "memorial-time": "",
+                                "memorial-date": ""
+                            }
+                        });
         }
         throw redirect(303, `/celebration-of-life-for-${slug}`);
 
