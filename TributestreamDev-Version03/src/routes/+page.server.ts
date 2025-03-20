@@ -1,19 +1,8 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { generateSecurePassword } from '$lib/utils/auth-helpers';
+import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
 import { validateSimplifiedMemorialForm } from '$lib/utils/form-validation';
-
-/**
- * Generates a slug from the deceased's name
- * @param deceasedName - Full name of the deceased
- * @returns Formatted slug
- */
-function generateSlug(deceasedName: string): string {
-    return deceasedName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '');
-}
+import { createTributeSlug } from '$lib/utils/string-helpers';
 
 export const actions = {
     /**
@@ -70,10 +59,11 @@ export const actions = {
     },
 
     /**
-     * Create Memorial action - processes the quick memorial creation form
+     * Enhanced Create Memorial action - processes the quick memorial creation form
+     * with integration to fd-form functionality
      */
     createMemorial: async ({ request, fetch, cookies }) => {
-        console.log('🚀 Processing quick memorial creation');
+        console.log('🚀 Processing enhanced memorial creation');
         let slug = '';
         
         try {
@@ -191,27 +181,48 @@ export const actions = {
                 maxAge: 60 * 60 * 24 * 7 // 7 days
             });
             
-            // Step 5: Store user metadata
-            console.log('📝 Writing user metadata');
+            // Step 5: Store user metadata (enhanced format matching fd-form)
+            console.log('📝 Writing enhanced user metadata');
             
-            // Parse name parts (simple approach)
+            // Parse name parts (better approach matching fd-form)
             const nameParts = data.lovedOneName.trim().split(' ');
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
             
+            // Parse creator name parts for better metadata
+            const creatorNameParts = data.creatorFullName.trim().split(' ');
+            const creatorFirstName = creatorNameParts[0] || '';
+            const creatorLastName = creatorNameParts.length > 1
+                ? creatorNameParts[creatorNameParts.length - 1]
+                : '';
+            
+            // Create enhanced metadata matching fd-form format
             const metaPayload = {
                 user_id: userId,
                 meta_key: 'memorial_form_data',
                 meta_value: JSON.stringify({
+                    director: {
+                        firstName: creatorFirstName,
+                        lastName: creatorLastName
+                    },
                     deceased: {
                         firstName,
                         lastName,
-                        fullName: data.lovedOneName
+                        fullName: data.lovedOneName,
+                        // Include fd-form compatible fields
+                        dob: '',
+                        dop: ''
                     },
                     contact: {
-                        fullName: data.creatorFullName,
                         email: data.creatorEmail,
                         phone: data.creatorPhone
+                    },
+                    // Include minimal memorial info for fd-form compatibility
+                    memorial: {
+                        locationName: '',
+                        locationAddress: '',
+                        time: '',
+                        date: ''
                     }
                 })
             };
@@ -243,18 +254,27 @@ export const actions = {
             console.log('🚀 Creating tribute');
             
             // Generate the slug
-            slug = generateSlug(data.lovedOneName);
+            slug = createTributeSlug(data.lovedOneName);
             
-            // Prepare the tribute payload
+            // Prepare the tribute payload with enhanced HTML
             const tributePayload = {
                 loved_one_name: data.lovedOneName,
                 slug,
                 user_id: userId,
                 phone_number: data.creatorPhone || '000-000-0000',
-                custom_html: `<div class="tribute-message">In loving memory of ${data.lovedOneName}.</div>`
+                // Enhanced HTML for better display
+                custom_html: `
+                    <div class="tribute-header">
+                        <h1 class="tribute-title">In Loving Memory of ${data.lovedOneName}</h1>
+                        <p class="tribute-creator">Created by ${data.creatorFullName}</p>
+                    </div>
+                    <div class="tribute-message">
+                        <p>This memorial page has been created to honor and celebrate the life of ${data.lovedOneName}.</p>
+                    </div>
+                `
             };
             
-            console.log('📦 Sending tribute payload:', { ...tributePayload, custom_html: '(truncated)' });
+            console.log('📦 Sending enhanced tribute payload');
             
             const tributeResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
                 method: 'POST',
@@ -280,28 +300,79 @@ export const actions = {
             const tributeResult = await tributeResponse.json();
             console.log('✅ Tribute created successfully:', tributeResult);
             
-            // Optional: Send welcome email with credentials
+            // Step 7: Send welcome email with enhanced template
             try {
-                await fetch('/api/send-email', {
+                console.log('📧 Sending welcome email with credentials');
+                
+                // Create comprehensive emailFormData for enhanced email
+                const emailFormData = {
+                    // Deceased information
+                    deceasedFirstName: firstName,
+                    deceasedLastName: lastName,
+                    deceasedFullName: data.lovedOneName,
+                    
+                    // Creator information
+                    directorFirstName: creatorFirstName,
+                    directorLastName: creatorLastName,
+                    directorFullName: data.creatorFullName,
+                    
+                    // Contact information
+                    email: data.creatorEmail,
+                    phone: data.creatorPhone,
+                    
+                    // Account information
+                    username: data.creatorEmail,
+                    password: password,
+                    
+                    // Generated tribute information
+                    slug: slug,
+                    tributeLink: `https://tributestream.com/celebration-of-life-for-${slug}`
+                };
+                
+                // Send enhanced dual email using the more comprehensive endpoint
+                const emailResponse = await fetch('/api/send-email', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        to: data.creatorEmail,
-                        subject: 'Your Tributestream Memorial',
-                        html: `
-                            <h2>Your Memorial for ${data.lovedOneName} Has Been Created</h2>
-                            <p>Thank you for using Tributestream to honor your loved one.</p>
-                            <p>Your account has been created with the following credentials:</p>
-                            <p><strong>Username:</strong> ${data.creatorEmail}</p>
-                            <p><strong>Password:</strong> ${password}</p>
-                            <p>Your memorial page is now available at: https://tributestream.com/celebration-of-life-for-${slug}</p>
-                        `
+                        type: 'memorial_creation',
+                        formData: emailFormData
                     })
                 });
+                
+                const emailResult = await emailResponse.json();
+                if (emailResult.success) {
+                    console.log('✅ Emails sent successfully');
+                } else {
+                    console.warn('⚠️ Email sending partial success or failure:', emailResult);
+                }
             } catch (emailError) {
                 console.warn('⚠️ Email notification failed, but process continues:', emailError);
+                
+                // Fallback to simple email if enhanced email fails
+                try {
+                    await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            to: data.creatorEmail,
+                            subject: 'Your Tributestream Memorial',
+                            html: `
+                                <h2>Your Memorial for ${data.lovedOneName} Has Been Created</h2>
+                                <p>Thank you for using Tributestream to honor your loved one.</p>
+                                <p>Your account has been created with the following credentials:</p>
+                                <p><strong>Username:</strong> ${data.creatorEmail}</p>
+                                <p><strong>Password:</strong> ${password}</p>
+                                <p>Your memorial page is now available at: https://tributestream.com/celebration-of-life-for-${slug}</p>
+                            `
+                        })
+                    });
+                } catch (fallbackError) {
+                    console.warn('⚠️ Fallback email also failed:', fallbackError);
+                }
             }
             
         } catch (error) {

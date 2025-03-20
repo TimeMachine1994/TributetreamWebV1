@@ -1,6 +1,8 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
     import { goto } from '$app/navigation';
+    import { slide } from 'svelte/transition';
+    import { quintOut } from 'svelte/easing';
     
     // Define props using Svelte 5 runes syntax
     const { form, data } = $props();
@@ -14,7 +16,7 @@
     // Form fields - Search
     let searchTerm = $state('');
     
-    // Form fields - Memorial creation
+    // Form fields - Memorial creation (using fd-form simplified fields)
     let creatorFullName = $state('');
     let creatorPhone = $state('');
     let creatorEmail = $state('');
@@ -24,6 +26,7 @@
     let isSearching = $state(false);
     let showQuickCreateForm = $state(false);
     let formError = $state<string | null>(null);
+    let errors = $state<Record<string, string>>({});
     
     // Video background state
     let isBlurred = $state(false);
@@ -57,8 +60,9 @@
     
     // Side effects using $effect
     $effect(() => {
-        // Reset form error when form state changes
+        // Reset form error and field-specific errors when form state changes
         formError = null;
+        errors = {};
         
         // Apply blur effect when not in initial state
         isBlurred = formState !== 'initial';
@@ -74,6 +78,31 @@
             // Show the create form and any error message
             showQuickCreateForm = true;
             formError = form.message;
+            
+            // Handle field-specific errors from server response
+            // Map field errors from form.data if available
+            // The server returns field values in data rather than dedicated errors object
+            if (form?.data) {
+                // Create field-specific errors if needed based on validation failure
+                const fieldErrors: Record<string, string> = {};
+                
+                // Add validation error indicators for each field based on server response
+                if (!form.data.lovedOneName?.trim()) {
+                    fieldErrors.lovedOneName = "Loved one's name is required";
+                }
+                if (!form.data.creatorFullName?.trim()) {
+                    fieldErrors.creatorFullName = "Your full name is required";
+                }
+                if (!form.data.creatorPhone?.trim()) {
+                    fieldErrors.creatorPhone = "Your phone number is required";
+                }
+                if (!form.data.creatorEmail?.trim()) {
+                    fieldErrors.creatorEmail = "Your email address is required";
+                }
+                
+                // Update local errors state with field-specific errors
+                errors = fieldErrors;
+            }
         }
         
         // Handle search results
@@ -106,25 +135,66 @@
         isSearching = false;
     }
     
-    // Handle create memorial button click
-    function handleCreateMemorial() {
-        showQuickCreateForm = true;
-        formState = 'creating';
+    // Handle create memorial button click with an event parameter to fix TypeScript error
+    function handleCreateMemorial(event: MouseEvent | null = null, nameToUse?: string) {
+        // Prevent default if event is provided
+        if (event) event.preventDefault();
+        
+        // If a name was provided via search, use it
+        if (nameToUse) {
+            searchTerm = nameToUse;
+        }
+        
+        // Only show form if there's a name to use
+        if (searchTerm.trim()) {
+            showQuickCreateForm = true;
+            formState = 'creating';
+        } else {
+            // If no name, set a temporary one for UX purposes
+            searchTerm = 'Your Loved One';
+            showQuickCreateForm = true;
+            formState = 'creating';
+        }
     }
     
-    // Handle form submission
+    // Handle form submission with field-specific error handling
     function handleMemorialSubmit() {
-        if (!isQuickFormValid) {
-            let errors = [];
-            if (!isNameValid) errors.push('Loved one\'s name is required');
-            if (!isCreatorNameValid) errors.push('Your full name is required');
-            if (!isPhoneValid) errors.push('A valid phone number is required');
-            if (!isEmailValid) errors.push('A valid email address is required');
-            
-            formError = errors.join('. ');
+        // Reset errors before validation
+        errors = {};
+        let errorMessages = [];
+        
+        // Field-specific validation with proper error messages
+        if (!isNameValid) {
+            errors['lovedOneName'] = 'Loved one\'s name is required';
+            errorMessages.push('Loved one\'s name is required');
+        }
+        
+        if (!isCreatorNameValid) {
+            errors['creatorFullName'] = 'Your full name is required';
+            errorMessages.push('Your full name is required');
+        }
+        
+        if (!isPhoneValid) {
+            errors['creatorPhone'] = 'A valid phone number is required';
+            errorMessages.push('A valid phone number is required');
+        }
+        
+        if (!isEmailValid) {
+            errors['creatorEmail'] = 'A valid email address is required';
+            errorMessages.push('A valid email address is required');
+        }
+        
+        // If any validation errors occurred, stop submission and show errors
+        if (errorMessages.length > 0) {
+            formError = errorMessages.join('. ');
             return;
         }
         
+        // Clear errors if validation passed
+        formError = null;
+        errors = {};
+        
+        // Update form state and show loading indicator
         formState = 'submitting';
         isSubmitting = true;
     }
@@ -133,6 +203,14 @@
     function handleGoBack() {
         formState = 'initial';
         showQuickCreateForm = false;
+    }
+
+    // Input styling helpers
+    function getInputClass(hasError: boolean): string {
+        const baseClass = "w-full px-4 py-2 bg-gray-800 text-white rounded-md mb-2";
+        return hasError
+            ? `${baseClass} border border-red-500 focus:ring-red-500`
+            : `${baseClass} border border-gray-700`;
     }
 </script>
 
@@ -263,18 +341,21 @@
                                 on:click={handleCreateMemorial}
                                 class={button}
                             >
-                                Create a Memorial
+                               Create Tribute
                             </button>
                         </div>
                     {/if}
                 </div>
                 
             {:else if formState === 'creating' || showQuickCreateForm}
-                <!-- Create memorial state - Quick creation form -->
-                <div class="bg-black bg-opacity-30 p-6 rounded-lg shadow-lg">
+                <!-- Enhanced Create Memorial Form with transitions -->
+                <div
+                    class="bg-black bg-opacity-30 p-6 rounded-lg shadow-lg"
+                    transition:slide={{ duration: 300, easing: quintOut }}
+                >
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold">Create a Memorial</h2>
-                        <button 
+                        <button
                             on:click={handleGoBack}
                             class="text-white hover:text-gray-300 focus:outline-none"
                             aria-label="Close form"
@@ -285,9 +366,9 @@
                         </button>
                     </div>
                     
-                    <form 
-                        method="POST" 
-                        action="?/createMemorial" 
+                    <form
+                        method="POST"
+                        action="?/createMemorial"
                         use:enhance={() => {
                             handleMemorialSubmit();
                             return ({ update }) => {
@@ -300,10 +381,10 @@
                         <!-- Hidden field for loved one's name - using the search term -->
                         <input type="hidden" name="lovedOneName" value={searchTerm} />
                         
-                        <!-- Display the loved one's name from the search field -->
-                        <div class="bg-gray-800 p-4 rounded-md mb-4">
-                            <p class="text-gray-400 mb-1 text-sm">Creating memorial for:</p>
-                            <p class="text-[#D5BA7F] text-lg font-semibold">{searchTerm}</p>
+                        <!-- Prominently display the loved one's name from the search field -->
+                        <div class="bg-gray-800 p-4 rounded-md mb-6 border-l-4 border-[#D5BA7F]">
+                            <h3 class="text-2xl font-semibold text-white mb-1">In Memory of</h3>
+                            <p class="text-[#D5BA7F] text-2xl font-bold">{searchTerm}</p>
                         </div>
                         
                         <div>
@@ -315,10 +396,13 @@
                                 id="creatorFullName"
                                 name="creatorFullName"
                                 placeholder="Your full name"
-                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                class={getInputClass(!!errors?.creatorFullName)}
                                 bind:value={creatorFullName}
                                 required
                             />
+                            {#if !isCreatorNameValid && creatorFullName !== ''}
+                                <p class="text-red-500 text-xs mt-1">Full name is required</p>
+                            {/if}
                         </div>
                         
                         <div>
@@ -330,10 +414,13 @@
                                 id="creatorPhone"
                                 name="creatorPhone"
                                 placeholder="(555) 123-4567"
-                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                class={getInputClass(!!errors?.creatorPhone)}
                                 bind:value={creatorPhone}
                                 required
                             />
+                            {#if !isPhoneValid && creatorPhone !== ''}
+                                <p class="text-red-500 text-xs mt-1">Valid phone number is required</p>
+                            {/if}
                         </div>
                         
                         <div>
@@ -345,10 +432,13 @@
                                 id="creatorEmail"
                                 name="creatorEmail"
                                 placeholder="your.email@example.com"
-                                class="w-full px-4 py-2 text-gray-900 rounded-md"
+                                class={getInputClass(!!errors?.creatorEmail)}
                                 bind:value={creatorEmail}
                                 required
                             />
+                            {#if !isEmailValid && creatorEmail !== ''}
+                                <p class="text-red-500 text-xs mt-1">Valid email address is required</p>
+                            {/if}
                             <p class="text-xs text-gray-400 mt-1">
                                 Used to create your account and manage the memorial page.
                             </p>
@@ -356,16 +446,16 @@
                         
                         <!-- Preview of memorial page URL -->
                         {#if searchTerm}
-                            <div class="bg-gray-800 p-2 rounded-md text-xs overflow-hidden">
+                            <div class="bg-gray-800 p-3 rounded-md text-sm overflow-hidden border border-gray-700">
                                 <p class="text-gray-400 mb-1">Memorial page URL:</p>
-                                <p class="text-[#D5BA7F] truncate">{customLink}</p>
+                                <p class="text-[#D5BA7F] truncate font-mono">{customLink}</p>
                             </div>
                         {/if}
                         
                         <!-- Submit button -->
-                        <button 
-                            type="submit" 
-                            class={`${button} w-full`}
+                        <button
+                            type="submit"
+                            class={`${button} w-full mt-4`}
                             disabled={isSubmitting || !isQuickFormValid}
                         >
                             {isSubmitting ? 'Creating Memorial...' : 'Create Memorial'}
