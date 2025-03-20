@@ -472,18 +472,6 @@
       </div>
     </div>
 
-    <!-- Viewing and Service Section -->
-    <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2">Viewing and Service Video</label>
-      <div style="position: relative; padding: 20px; background-color: black; border: 1px solid #000; max-width: 800px; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-        <h2 style="font-family: 'Fanwood', serif; font-style: italic; font-size: 24px; margin-bottom: 20px; color: white;">Viewing and Service</h2>
-        <div style="padding:56.25% 0 0 0; position:relative;">
-          <!-- Placeholder for video content -->
-        </div>
-      </div>
-      <p class="text-gray-600 text-xs mt-2 text-center">A video will be displayed here during the memorial service</p>
-    </div>
-
     <!-- Submit Button -->
     <div class="flex justify-end">
       <button
