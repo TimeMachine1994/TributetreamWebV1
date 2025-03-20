@@ -441,11 +441,17 @@ export const actions = {
             }
             
             // Step 9: Redirect to the newly created tribute page
+            // Redirect to the tribute page
             console.log('🔀 Redirecting to created tribute page...');
+            console.log('🔍 DEBUG: Slug value at redirect:', slug);
+            
+            // Use redirect in the success path inside the try block
+            throw redirect(303, `/celebration-of-life-for-${slug}`);
             
         } catch (error) {
-            // Check for SvelteKit redirect objects
-            if (error instanceof Error && 'status' in error && 'location' in error) {
+            // Check for SvelteKit redirect objects - improved detection
+            if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+                console.log('🚀 Detected redirect, re-throwing:', error);
                 throw error; // Re-throw redirects
             }
             
@@ -474,7 +480,6 @@ export const actions = {
                             }
                         });
         }
-        throw redirect(303, `/celebration-of-life-for-${slug}`);
 
     }
 } satisfies Actions;

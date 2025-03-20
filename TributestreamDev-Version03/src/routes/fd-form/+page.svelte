@@ -164,6 +164,50 @@
     }
     isSubmitting = false;
   }
+
+  // Fill form with test data for development purposes
+  function fillTestData(): void {
+    // Generate dates that make logical sense
+    const today = new Date();
+    const pastYear = today.getFullYear() - 85; // deceased birth year
+    const recentYear = today.getFullYear() - 1; // deceased passing year
+    const familyBirthYear = today.getFullYear() - 55; // family member birth year
+    const memorialDate = new Date(today);
+    memorialDate.setDate(today.getDate() + 7); // Memorial 7 days from today
+    
+    // Format dates to YYYY-MM-DD for date inputs
+    const formatDate = (date: Date): string => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    // Fill form with realistic test data
+    formData = {
+      "director-first-name": "John",
+      "director-last-name": "Smith",
+      "family-member-first-name": "Mary",
+      "family-member-last-name": "Johnson",
+      "family-member-dob": formatDate(new Date(familyBirthYear, 5, 15)), // June 15
+      "deceased-first-name": "Robert",
+      "deceased-last-name": "Williams",
+      "deceased-dob": formatDate(new Date(pastYear, 3, 10)), // April 10
+      "deceased-dop": formatDate(new Date(recentYear, 11, 25)), // December 25
+      "email-address": "contact@example.com",
+      "phone-number": "(555) 123-4567",
+      "location-name": "Peaceful Gardens Funeral Home",
+      "location-address": "123 Memorial Lane, Anytown, ST 12345",
+      "memorial-time": "14:30", // 2:30 PM
+      "memorial-date": formatDate(memorialDate)
+    };
+    
+    // Mark all fields as touched to avoid validation errors
+    Object.keys(formData).forEach(key => {
+      touched[key as FormField] = true;
+    });
+    
+    // Clear any previous errors
+    errors = {};
+    formError = "";
+  }
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -172,11 +216,22 @@
     class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4"
     on:submit={handleSubmit}
     use:enhance={() => {
-      return async ({ result }) => {
+      return async ({ result, update }) => {
         if (result.type === 'failure') {
           processServerErrors(result.data);
+          isSubmitting = false;
+        } else if (result.type === 'redirect') {
+          // First, make sure the DOM is updated before the navigation happens
+          await update();
+          
+          // Reset the submitting state to avoid the UI being stuck if navigation is delayed
+          isSubmitting = false;
+          
+          // We don't need to manually handle the redirect as SvelteKit will do it automatically
+        } else {
+          // Success but no redirect
+          isSubmitting = false;
         }
-        isSubmitting = false;
       };
     }}
   >
@@ -472,8 +527,18 @@
       </div>
     </div>
 
-    <!-- Submit Button -->
-    <div class="flex justify-end">
+    <!-- Action Buttons -->
+    <div class="flex justify-between">
+      <!-- Test Data Button -->
+      <button
+        type="button"
+        class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+        on:click={fillTestData}
+      >
+        Fill Test Data
+      </button>
+      
+      <!-- Submit Button -->
       <button
         type="submit"
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
