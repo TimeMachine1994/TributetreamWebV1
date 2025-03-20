@@ -131,69 +131,104 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+        
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           line-height: 1.6;
           color: #333;
-          max-width: 600px;
+          max-width: 650px;
           margin: 0 auto;
           padding: 0;
-          background-color: #f9f9f9;
+          background-color: #f7f7f7;
         }
         .email-container {
           background-color: #ffffff;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-          margin: 20px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+          margin: 25px;
         }
         .header {
-          background: linear-gradient(135deg, #4a6cf7 0%, #2e4dd4 100%);
-          color: white;
-          padding: 30px;
+          background: #1A1A1A;
+          color: #D4AF37;
+          padding: 35px 30px;
           text-align: center;
+          font-family: 'Cormorant Garamond', serif;
           font-weight: 600;
-          font-size: 24px;
-          letter-spacing: -0.5px;
+          font-size: 28px;
+          letter-spacing: 1px;
+          border-bottom: 3px solid #D4AF37;
         }
         .content {
-          padding: 30px;
+          padding: 35px 30px;
+          color: #2A2A2A;
         }
         .footer {
           text-align: center;
-          margin-top: 20px;
-          padding: 20px;
+          margin-top: 25px;
+          padding: 25px;
           font-size: 12px;
-          color: #666;
+          color: #777;
           border-top: 1px solid #eaeaea;
+          background-color: #FCFAF5;
         }
         .button {
           display: inline-block;
-          background-color: #4a6cf7;
-          color: white;
+          background-color: #D4AF37;
+          color: #1A1A1A;
           text-decoration: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          margin: 20px 0;
+          padding: 14px 32px;
+          border-radius: 8px;
+          margin: 25px 0;
           font-weight: 500;
-          box-shadow: 0 2px 4px rgba(74, 108, 247, 0.2);
-          transition: all 0.2s ease;
+          font-size: 15px;
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
+          transition: all 0.3s ease;
+          border: 1px solid #D4AF37;
+          letter-spacing: 0.5px;
         }
         .button:hover {
-          background-color: #3a5cd7;
+          background-color: #E6C346;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
         }
         p {
-          margin-bottom: 16px;
-          color: #444;
+          margin-bottom: 18px;
+          color: #333;
+          font-size: 15px;
+          line-height: 1.7;
         }
         .greeting {
-          font-size: 18px;
-          font-weight: 500;
-          color: #222;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 22px;
+          font-weight: 600;
+          color: #1A1A1A;
+          margin-bottom: 24px;
         }
         .cta-container {
           text-align: center;
-          margin: 30px 0;
+          margin: 35px 0;
+          padding: 15px 0;
+          background-color: #FCFAF5;
+          border-radius: 8px;
+        }
+        .signature {
+          font-family: 'Cormorant Garamond', serif;
+          font-weight: 500;
+          font-size: 17px;
+          color: #1A1A1A;
+          margin-top: 30px;
+        }
+        .company-name {
+          font-weight: 600;
+          color: #D4AF37;
+        }
+        .divider {
+          height: 1px;
+          background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.3), transparent);
+          width: 60%;
+          margin: 30px auto;
         }
       </style>
     </head>
@@ -207,20 +242,24 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
           <p class="greeting">Dear ${data.familyLastName} Family,</p>
           
           <p>Tributestream wishes you our deepest sympathy for the passing of your loved one.
-          We hope that our duty to share the coming memorial will bring greater comfort.</p>
+          We hope that our service to share the coming memorial will bring greater comfort during this difficult time.</p>
           
-          <p>Please follow the link below to finish the process. You will get a confirmation email and a shareable link to the website page that will broadcast the stream:</p>
+          <div class="divider"></div>
+          
+          <p>Please follow the link below to complete the process. You will receive a confirmation and a shareable link to the website page that will broadcast the stream:</p>
           
           <div class="cta-container">
             <a href="${data.tributeLink}" class="button">View Memorial Page</a>
           </div>
           
-          <p>You will be contacted within 24-48 hours to complete the process.</p>
+          <p>A member of our team will be in touch within 24-48 hours to assist you with any questions or special arrangements.</p>
           
-          <p>We look forward to meeting you in the near term to offer our personal condolences.</p>
+          <p>We look forward to meeting you and offering our personal condolences.</p>
           
-          <p>Respectfully,<br>
-          <strong>Tributestream</strong></p>
+          <div class="signature">
+            Respectfully,<br>
+            <span class="company-name">Tributestream</span>
+          </div>
         </div>
         
         <div class="footer">
@@ -238,26 +277,28 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
 function createCustomerEmailText(data: CustomerEmailData): string {
   return `
 TRIBUTESTREAM
-------------
+============
 
 Dear ${data.familyLastName} Family,
 
 Tributestream wishes you our deepest sympathy for the passing of your loved one.
-We hope that our duty to share the coming memorial will bring greater comfort.
+We hope that our service to share the coming memorial will bring greater comfort during this difficult time.
 
-Please follow the link below to finish the process. You will get a confirmation
-email and a shareable link to the website page that will broadcast the stream:
+------------------------
+
+Please follow the link below to complete the process. You will receive a confirmation
+and a shareable link to the website page that will broadcast the stream:
 
 Memorial Page: ${data.tributeLink}
 
-You will be contacted within 24-48 hours to complete the process.
+A member of our team will be in touch within 24-48 hours to assist you with any questions or special arrangements.
 
-We look forward to meeting you in the near term to offer our personal condolences.
+We look forward to meeting you and offering our personal condolences.
 
 Respectfully,
 Tributestream
 
-------------
+============
 © ${new Date().getFullYear()} Tributestream. All rights reserved.
   `;
 }
@@ -282,8 +323,8 @@ function createInternalNotificationTemplate(formData: FormData): string {
       
       return `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #eaeaea; font-weight: 500; color: #333;">${formattedKey}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #eaeaea; color: #444;">${value}</td>
+          <td style="padding: 14px; border-bottom: 1px solid #eaeaea; font-weight: 500; color: #1A1A1A; font-family: 'Montserrat', sans-serif; background-color: #FCFAF5;">${formattedKey}</td>
+          <td style="padding: 14px; border-bottom: 1px solid #eaeaea; color: #333; font-family: 'Montserrat', sans-serif;">${value}</td>
         </tr>
       `;
     })
@@ -297,77 +338,93 @@ function createInternalNotificationTemplate(formData: FormData): string {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+        
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           line-height: 1.6;
           color: #333;
           max-width: 800px;
           margin: 0 auto;
           padding: 0;
-          background-color: #f9f9f9;
+          background-color: #f7f7f7;
         }
         .email-container {
           background-color: #ffffff;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-          margin: 20px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+          margin: 25px;
         }
         .header {
-          background: linear-gradient(135deg, #4a6cf7 0%, #2e4dd4 100%);
-          color: white;
-          padding: 30px;
+          background: #1A1A1A;
+          color: #D4AF37;
+          padding: 35px 30px;
           text-align: center;
+          border-bottom: 3px solid #D4AF37;
         }
         .header h2 {
+          font-family: 'Cormorant Garamond', serif;
           margin: 0 0 10px 0;
           font-weight: 600;
-          font-size: 24px;
-          letter-spacing: -0.5px;
+          font-size: 28px;
+          letter-spacing: 1px;
         }
         .header p {
           margin: 0;
           opacity: 0.9;
           font-size: 14px;
+          color: #ffffff;
         }
         .content {
-          padding: 30px;
+          padding: 35px 30px;
+          color: #2A2A2A;
         }
         .footer {
           text-align: center;
-          margin-top: 20px;
-          padding: 20px;
+          margin-top: 25px;
+          padding: 25px;
           font-size: 12px;
-          color: #666;
+          color: #777;
           border-top: 1px solid #eaeaea;
+          background-color: #FCFAF5;
         }
         table {
           width: 100%;
           border-collapse: collapse;
-          margin: 20px 0;
-          border-radius: 6px;
+          margin: 25px 0;
+          border-radius: 8px;
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
         table thead th {
-          background-color: #f5f7fd;
-          padding: 12px;
+          background-color: #1A1A1A;
+          padding: 14px;
           font-weight: 600;
           text-align: left;
-          color: #4a6cf7;
-          border-bottom: 1px solid #eaeaea;
+          color: #D4AF37;
+          border-bottom: 1px solid #D4AF37;
         }
         .note {
-          margin-top: 20px;
-          padding: 15px;
-          background-color: #f5f7fd;
-          border-left: 4px solid #4a6cf7;
-          border-radius: 4px;
+          margin-top: 30px;
+          padding: 20px;
+          background-color: #FCFAF5;
+          border-left: 4px solid #D4AF37;
+          border-radius: 8px;
+          font-size: 15px;
         }
         .intro {
-          font-size: 16px;
-          margin-bottom: 20px;
-          color: #444;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 19px;
+          margin-bottom: 24px;
+          color: #1A1A1A;
+          font-weight: 500;
+        }
+        .divider {
+          height: 1px;
+          background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.3), transparent);
+          width: 60%;
+          margin: 30px auto;
         }
       </style>
     </head>
@@ -380,6 +437,8 @@ function createInternalNotificationTemplate(formData: FormData): string {
         
         <div class="content">
           <p class="intro">A new memorial service form has been submitted with the following information:</p>
+          
+          <div class="divider"></div>
           
           <table>
             <thead>
@@ -394,12 +453,14 @@ function createInternalNotificationTemplate(formData: FormData): string {
           </table>
           
           <div class="note">
-            <strong>Note:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.
+            <strong style="color: #1A1A1A; font-family: 'Cormorant Garamond', serif;">Important:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.
           </div>
+          
+          <div class="divider"></div>
         </div>
         
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} <span style="color: #D4AF37; font-weight: 500;">Tributestream</span>. All rights reserved.</p>
         </div>
       </div>
     </body>
