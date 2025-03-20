@@ -169,9 +169,10 @@
     isSubmitting = false;
   }
 
-  // Create link to tribute page
-  let tributeUrl = $derived(() =>
-    data.tribute?.slug ? `/celebration-of-life-for-${data.tribute.slug}` : null
+  // Create link to tribute page - fix the derived value to be a string or undefined
+  // This fixes the TypeScript error when using it as an href attribute
+  let tributeUrl = $derived(
+    data.tribute?.slug ? `/celebration-of-life-for-${data.tribute.slug}` : undefined
   );
 </script>
 

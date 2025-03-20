@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import type { Tribute } from '$lib/types/tribute';
+  import UserDataWidget from '$lib/components/dashboard/UserDataWidget.svelte';
 
   let { data } = $props<{ data: PageData }>();
   
@@ -47,6 +48,12 @@
   function getDetailedTribute(tributeId: number): ApiTribute | null {
     if (!data.detailedTributes || data.detailedTributes.length === 0) return null;
     return data.detailedTributes.find((t: ApiTribute) => t.ID === tributeId) || null;
+  }
+  
+  // Get user ID as a number for the UserDataWidget
+  function getUserId(): number {
+    if (!data.user || !data.user.id) return 0;
+    return typeof data.user.id === 'string' ? parseInt(data.user.id, 10) : data.user.id;
   }
 </script>
 
@@ -143,69 +150,8 @@
         </div>
       </section>
 
-      <!-- Memorial Form Info -->
-      <section class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-800">Memorial Information</h2>
-        </div>
-        
-        <div class="p-6">
-          {#if data.hasMemorialData}
-            <div class="mb-4">
-              <h3 class="text-lg font-medium text-gray-900">Deceased Information</h3>
-              <p class="text-gray-600 mt-1">
-                {data.memorialData.deceased?.firstName || ''} {data.memorialData.deceased?.lastName || ''}
-              </p>
-              {#if data.memorialData.deceased?.dob}
-                <p class="text-sm text-gray-500">Birth Date: {formatDate(data.memorialData.deceased.dob)}</p>
-              {/if}
-              {#if data.memorialData.deceased?.dop}
-                <p class="text-sm text-gray-500">Passing Date: {formatDate(data.memorialData.deceased.dop)}</p>
-              {/if}
-            </div>
-            
-            <div class="mb-4">
-              <h3 class="text-lg font-medium text-gray-900">Memorial Information</h3>
-              {#if data.memorialData.memorial?.locationName || data.memorialData.memorial?.locationAddress}
-                <p class="text-gray-600 mt-1">
-                  {data.memorialData.memorial?.locationName || ''}
-                  {#if data.memorialData.memorial?.locationAddress}
-                    <span class="text-sm text-gray-500 block">{data.memorialData.memorial.locationAddress}</span>
-                  {/if}
-                </p>
-              {/if}
-              
-              {#if data.memorialData.memorial?.date}
-                <p class="text-sm text-gray-500">
-                  Date: {formatDate(data.memorialData.memorial.date)}
-                  {#if data.memorialData.memorial?.time}
-                    <span class="ml-2">at {data.memorialData.memorial.time}</span>
-                  {/if}
-                </p>
-              {/if}
-            </div>
-            
-            <div class="mt-6">
-              <a 
-                href="/my-portal/edit-form" 
-                class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-              >
-                Edit Memorial Information
-              </a>
-            </div>
-          {:else}
-            <div class="text-center py-6">
-              <p class="text-gray-500 mb-4">You haven't filled out memorial information yet.</p>
-              <a 
-                href="/my-portal/edit-form" 
-                class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-              >
-                Create Memorial Information
-              </a>
-            </div>
-          {/if}
-        </div>
-      </section>
+      <!-- Memorial Information using the new UserDataWidget component -->
+      <UserDataWidget userId={getUserId()} />
     </div>
 
     <!-- Account Settings -->

@@ -55,16 +55,18 @@ export const actions = {
       
       if (!emailResult.success) {
         console.error('❌ Email sending failed:', emailResult);
+        // Using numeric HTTP status code 400 for error
         return message(form, 'Failed to send your message. Please try again or contact us directly.', {
-          status: 'error'
+          status: 400 // Using a valid HTTP status code instead of 'error'
         });
       }
       
       console.log('✅ Emails sent successfully');
       
       // Return success response with a message
+      // Using numeric HTTP status code 200 for success
       return message(form, 'Your message has been sent, check your email.', {
-        status: 'success'
+        status: 200 // Using a valid HTTP status code instead of 'success'
       });
       
     } catch (error) {
