@@ -38,9 +38,9 @@
                </a>
              </li>
              <li>
-               <a href="/family-dashboard" class={button}>
-                 My Portal            
-                 </a>
+               <a href="/my-portal" class={button}>
+                 My Portal
+               </a>
              </li>
              <li>
     

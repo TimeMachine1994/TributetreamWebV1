@@ -1,19 +1,35 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import { portalSubscriptionSchema } from '$lib/utils/form-schemas';
+import { portalSubscriptionSchema, loginSchema } from '$lib/utils/form-schemas';
 import { sendEmail } from '$lib/utils/email-service';
+import { loginUser } from '$lib/utils/auth-helpers';
 
-export const load: PageServerLoad = async () => {
-  // Initialize the form with default values
-  const form = await superValidate(zod(portalSubscriptionSchema));
+export const load: PageServerLoad = async ({ locals, url }) => {
+  // Check if user is already authenticated
+  if (locals.authenticated && locals.user) {
+    // Redirect to dashboard if already logged in
+    throw redirect(302, '/my-portal/dashboard');
+  }
   
-  return { form };
+  // Initialize both forms with default values
+  const subscriptionForm = await superValidate(zod(portalSubscriptionSchema));
+  const loginForm = await superValidate(zod(loginSchema));
+  
+  // Get error message from query parameters (if any)
+  const errorMessage = url.searchParams.get('error');
+  
+  return {
+    subscriptionForm,
+    loginForm,
+    errorMessage
+  };
 };
 
 export const actions = {
-  default: async ({ request }) => {
+  // Action for portal subscription
+  subscribe: async ({ request }) => {
     console.log('🚀 Starting portal subscription form action.');
     
     try {
@@ -24,7 +40,7 @@ export const actions = {
       // Check if form is valid
       if (!form.valid) {
         console.error('❌ Validation errors:', form.errors);
-        return fail(400, { form });
+        return fail(400, { subscriptionForm: form });
       }
       
       // Prepare email data for admin notification
@@ -66,8 +82,56 @@ export const actions = {
       return fail(500, {
         error: true,
         message: 'An unexpected error occurred. Please try again later.',
-        form: await superValidate(zod(portalSubscriptionSchema))
+        subscriptionForm: await superValidate(zod(portalSubscriptionSchema))
       });
+    }
+  },
+  
+  // Action for user login
+  login: async ({ request, cookies, fetch }) => {
+    console.log('🔑 Starting user login action.');
+    
+    try {
+      // Validate the form data using superValidate
+      console.log('📝 Parsing and validating login form data...');
+      const form = await superValidate(request, zod(loginSchema));
+      
+      // Check if form is valid
+      if (!form.valid) {
+        console.error('❌ Validation errors:', form.errors);
+        return fail(400, { loginForm: form });
+      }
+      
+      // Attempt to log in the user
+      console.log('🔒 Attempting user login...');
+      const loginResult = await loginUser(form.data.username, form.data.password, cookies, fetch);
+      
+      // Handle login failure
+      if (!loginResult.success) {
+        console.error('❌ Login failed:', loginResult.message);
+        return fail(401, {
+          loginForm: form,
+          loginError: loginResult.message || 'Invalid username or password.'
+        });
+      }
+      
+      // Login successful, redirect to dashboard
+      console.log('✅ Login successful, redirecting to dashboard...');
+      throw redirect(302, '/my-portal/dashboard');
+      
+    } catch (error) {
+      // Only handle errors that are not redirects
+      if (error.status !== 302) {
+        console.error('💥 Unexpected login error:', error);
+        return fail(500, {
+          error: true,
+          message: 'An unexpected error occurred during login. Please try again later.',
+          loginForm: await superValidate(zod(loginSchema))
+        });
+      }
+      
+      // Re-throw redirect
+      throw error;
     }
   }
 } satisfies Actions;
