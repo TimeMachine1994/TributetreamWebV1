@@ -1,28 +1,21 @@
 <script lang="ts">
   import PageLayout from '$lib/components/page-templates/page-layout.svelte';
-  import { enhance } from '$app/forms';
-  import type { ActionData } from './$types';
+  import { superForm } from 'sveltekit-superforms';
+  import type { PageData } from './$types';
   
-  export let form: ActionData;
+  export let data: PageData;
   
-  let isSubmitting = false;
-  
-  // Default form data values
-  const defaultFormData = {
-    name: "",
-    email: "",
-    phone: "",
-    serviceDate: "",
-    serviceTime: "",
-    serviceLocation: "",
-    attendees: "",
-    additionalInfo: "",
-    serviceType: "funeral",
-    preferredContactMethod: "email"
-  };
-  
-  // Set form data from previous submission if available
-  let formData = form?.formData || defaultFormData;
+  // Initialize the superForm
+  const { form, errors, constraints, message, enhance, submitting } = superForm(data.form, {
+    // Form is valid but there was a server error
+    onError: ({ result }) => {
+      console.error('Error submitting form:', result);
+    },
+    // Form is valid and was successfully submitted
+    onUpdate: ({ form }) => {
+      console.log('Form updated:', form);
+    }
+  });
   
   const dateOptions = {
     min: new Date().toISOString().split('T')[0] // Today's date as minimum
@@ -45,22 +38,13 @@
       <div class="col-span-2 bg-zinc-900 p-8 rounded-lg border border-[#D4AF37]/20">
         <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Request a Consultation</h2>
         
-        {#if form?.success}
+        {#if $message}
           <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30">
-            <p class="text-emerald-300">Your message has been sent, check your email. We'll contact you within 24 hours to discuss your event.</p>
+            <p class="text-emerald-300">{$message}</p>
           </div>
         {/if}
         
-        {#if form?.error}
-          <div class="bg-red-900/30 p-4 rounded-md mb-6 border border-red-500/30">
-            <p class="text-red-300">{form.message || 'There was an error submitting your request. Please try again or contact us directly at +1 (407) 221-5922.'}</p>
-          </div>
-        {/if}
-        
-        <form method="POST" action="?/default" use:enhance={{ 
-    submitting: () => { isSubmitting = true; },
-    complete: () => { isSubmitting = false; }
-  }} class="space-y-6">
+        <form method="POST" action="?/default" use:enhance class="space-y-6">
           <!-- Contact Information -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -68,8 +52,9 @@
               <input 
                 type="text" 
                 id="name" 
-                bind:value={formData.name} 
-                required
+                bind:value={$form.name}
+                aria-invalid={$errors.name ? 'true' : undefined}
+                {...$constraints.name}
                 class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
               />
             </div>
@@ -79,8 +64,9 @@
               <input 
                 type="tel" 
                 id="phone" 
-                bind:value={formData.phone}
-                required
+                bind:value={$form.phone}
+                aria-invalid={$errors.phone ? 'true' : undefined}
+                {...$constraints.phone}
                 class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
               />
             </div>
@@ -91,8 +77,9 @@
             <input 
               type="email" 
               id="email" 
-              bind:value={formData.email} 
-              required
+              bind:value={$form.email}
+              aria-invalid={$errors.email ? 'true' : undefined}
+              {...$constraints.email}
               class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
             />
           </div>
@@ -103,7 +90,7 @@
               <label class="inline-flex items-center">
                 <input 
                   type="radio" 
-                  bind:group={formData.preferredContactMethod} 
+                  bind:group={$form.preferredContactMethod}
                   value="email"
                   class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
                 />
@@ -112,7 +99,7 @@
               <label class="inline-flex items-center">
                 <input 
                   type="radio" 
-                  bind:group={formData.preferredContactMethod} 
+                  bind:group={$form.preferredContactMethod}
                   value="phone"
                   class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
                 />
@@ -121,7 +108,7 @@
               <label class="inline-flex items-center">
                 <input 
                   type="radio" 
-                  bind:group={formData.preferredContactMethod} 
+                  bind:group={$form.preferredContactMethod}
                   value="text"
                   class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
                 />
@@ -142,7 +129,9 @@
                 <input 
                   type="date" 
                   id="serviceDate" 
-                  bind:value={formData.serviceDate}
+                  bind:value={$form.serviceDate}
+                  aria-invalid={$errors.serviceDate ? 'true' : undefined}
+                  {...$constraints.serviceDate}
                   min={dateOptions.min}
                   class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
                 />
@@ -153,7 +142,9 @@
                 <input 
                   type="time" 
                   id="serviceTime" 
-                  bind:value={formData.serviceTime}
+                  bind:value={$form.serviceTime}
+                  aria-invalid={$errors.serviceTime ? 'true' : undefined}
+                  {...$constraints.serviceTime}
                   class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
                 />
               </div>
@@ -165,7 +156,9 @@
                 type="text" 
                 id="serviceLocation" 
                 placeholder="Venue Name and Address"
-                bind:value={formData.serviceLocation}
+                bind:value={$form.serviceLocation}
+                aria-invalid={$errors.serviceLocation ? 'true' : undefined}
+                {...$constraints.serviceLocation}
                 class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
               />
             </div>
@@ -176,7 +169,9 @@
             <input 
               type="number" 
               id="attendees" 
-              bind:value={formData.attendees}
+              bind:value={$form.attendees}
+              aria-invalid={$errors.attendees ? 'true' : undefined}
+              {...$constraints.attendees}
               placeholder="Approximate number"
               min="0"
               class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
@@ -187,7 +182,9 @@
             <label for="serviceType" class="block text-sm font-medium mb-2">Type of Service</label>
             <select 
               id="serviceType" 
-              bind:value={formData.serviceType}
+              bind:value={$form.serviceType}
+              aria-invalid={$errors.serviceType ? 'true' : undefined}
+              {...$constraints.serviceType}
               class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
             >
               <option value="funeral">Funeral Service</option>
@@ -202,7 +199,9 @@
             <label for="additionalInfo" class="block text-sm font-medium mb-2">Additional Information</label>
             <textarea 
               id="additionalInfo" 
-              bind:value={formData.additionalInfo}
+              bind:value={$form.additionalInfo}
+              aria-invalid={$errors.additionalInfo ? 'true' : undefined}
+              {...$constraints.additionalInfo}
               rows="4"
               placeholder="Please share any special requests or questions you may have."
               class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
@@ -213,9 +212,9 @@
             <button 
               type="submit" 
               class="gold-btn w-full flex items-center justify-center"
-              disabled={isSubmitting}
+              disabled={$submitting}
             >
-              {#if isSubmitting}
+              {#if $submitting}
                 <span>Submitting Request...</span>
               {:else}
                 <span>Request Consultation</span>

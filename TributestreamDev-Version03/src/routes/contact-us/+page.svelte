@@ -1,22 +1,21 @@
 <script lang="ts">
   import PageLayout from '$lib/components/page-templates/page-layout.svelte';
-  import { enhance } from '$app/forms';
-  import type { ActionData } from './$types';
+  import { superForm } from 'sveltekit-superforms';
+  import type { PageData } from './$types';
   
-  export let form: ActionData;
+  export let data: PageData;
   
-  let isSubmitting = false;
-  
-  // Default form values
-  const defaultFormData = {
-    name: "",
-    email: "",
-    phone: "",
-    message: ""
-  };
-  
-  // Set form data from previous submission if available
-  let formData = form?.formData || defaultFormData;
+  // Initialize superForm with the data from load function
+  const { form, errors, constraints, message, enhance, submitting } = superForm(data.form, {
+    // Form is valid but there was a server error
+    onError: ({ result }) => {
+      console.error('Error submitting form:', result);
+    },
+    // Form is valid and was successfully submitted
+    onUpdate: ({ form }) => {
+      console.log('Form updated:', form);
+    }
+  });
 </script>
 
 <PageLayout 
@@ -28,29 +27,21 @@
     <div class="bg-zinc-900 p-8 rounded-lg border border-[#D4AF37]/20">
       <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Send Us a Message</h2>
       
-      {#if form?.success}
+      {#if $message}
         <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30">
-          <p class="text-emerald-300">Your message has been sent, check your email. We'll get back to you as soon as possible.</p>
+          <p class="text-emerald-300">{$message}</p>
         </div>
       {/if}
       
-      {#if form?.error}
-        <div class="bg-red-900/30 p-4 rounded-md mb-6 border border-red-500/30">
-          <p class="text-red-300">{form.message || 'There was an error submitting your message. Please try again or contact us directly.'}</p>
-        </div>
-      {/if}
-      
-      <form method="POST" action="?/default" use:enhance={{ 
-    submitting: () => { isSubmitting = true; },
-    complete: () => { isSubmitting = false; }
-  }} class="space-y-6">
+      <form method="POST" action="?/default" use:enhance class="space-y-6">
         <div>
           <label for="name" class="block text-sm font-medium mb-2">Your Name</label>
           <input 
             type="text" 
             id="name" 
-            bind:value={formData.name} name="name" 
-            required
+            bind:value={$form.name} name="name"
+            aria-invalid={$errors.name ? 'true' : undefined}
+            {...$constraints.name}
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
         </div>
@@ -60,8 +51,9 @@
           <input 
             type="email" 
             id="email" 
-            bind:value={formData.email} name="email" 
-            required
+            bind:value={$form.email} name="email"
+            aria-invalid={$errors.email ? 'true' : undefined}
+            {...$constraints.email}
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
         </div>
@@ -71,7 +63,9 @@
           <input 
             type="tel" 
             id="phone" 
-            bind:value={formData.phone} name="phone"
+            bind:value={$form.phone} name="phone"
+            aria-invalid={$errors.phone ? 'true' : undefined}
+            {...$constraints.phone}
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
         </div>
@@ -80,8 +74,9 @@
           <label for="message" class="block text-sm font-medium mb-2">Your Message</label>
           <textarea 
             id="message" 
-            bind:value={formData.message} name="message" 
-            required
+            bind:value={$form.message} name="message"
+            aria-invalid={$errors.message ? 'true' : undefined}
+            {...$constraints.message}
             rows="5"
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           ></textarea>
@@ -91,9 +86,9 @@
           <button 
             type="submit" 
             class="gold-btn w-full flex items-center justify-center"
-            disabled={isSubmitting}
+            disabled={$submitting}
           >
-            {#if isSubmitting}
+            {#if $submitting}
               <span>Sending...</span>
             {:else}
               <span>Send Message</span>

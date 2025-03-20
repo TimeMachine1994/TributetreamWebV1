@@ -1,141 +1,73 @@
-import { fail, redirect } from '@sveltejs/kit';
-import type { Actions, RequestEvent } from './$types';
-import { setAuthCookies } from '$lib/utils/auth-helpers';
+import { fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import { superValidate, message } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
+import { portalSubscriptionSchema } from '$lib/utils/form-schemas';
+import { sendEmail } from '$lib/utils/email-service';
 
-/**
- * Parse form data from FormData object
- * @param formData - FormData object from request
- * @returns Parsed form data object
- */
-function parseFormData(formData: FormData) {
-    return {
-        username: formData.get('username') as string,
-        password: formData.get('password') as string,
-        rememberMe: formData.get('remember-me') === 'on'
-    };
-}
-
-/**
- * Validate required form fields
- * @param data - Form data object
- * @returns Validation result with errors if any
- */
-function validateForm(data: ReturnType<typeof parseFormData>) {
-    const errors: string[] = [];
-    
-    if (!data.username || data.username.trim() === '') {
-        errors.push('Email address is required');
-    } else if (!data.username.includes('@')) {
-        errors.push('Please enter a valid email address');
-    }
-    
-    if (!data.password || data.password.trim() === '') {
-        errors.push('Password is required');
-    }
-    
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-}
+export const load: PageServerLoad = async () => {
+  // Initialize the form with default values
+  const form = await superValidate(zod(portalSubscriptionSchema));
+  
+  return { form };
+};
 
 export const actions = {
-    login: async ({ request, fetch, cookies }: RequestEvent) => {
-        console.log('🚀 Starting login action.');
-        
-        try {
-            // Step 1: Parse form data
-            console.log('📝 Parsing form data...');
-            const formData = await request.formData();
-            const data = parseFormData(formData);
-            
-            // Step 2: Validate form data
-            console.log('🔍 Validating form data...');
-            const validation = validateForm(data);
-            
-            if (!validation.isValid) {
-                console.error('❌ Validation errors:', validation.errors);
-                
-                // Map validation errors to form field names
-                const fieldErrors: Record<string, string> = {};
-                
-                validation.errors.forEach(error => {
-                    if (error.includes('Email')) {
-                        fieldErrors['username'] = error;
-                    } else if (error.includes('Password')) {
-                        fieldErrors['password'] = error;
-                    }
-                });
-                
-                return fail(400, {
-                    error: true,
-                    message: validation.errors.join('. '),
-                    errors: fieldErrors,
-                    formData: {
-                        username: data.username,
-                        password: '' // Never return passwords
-                    }
-                });
-            }
-            
-            // Step 3: Authenticate using the auth API
-            console.log('🔄 Authenticating user...');
-            const authResponse = await fetch('/api/auth', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: data.username,
-                    password: data.password
-                })
-            });
-            
-            // Step 4: Handle authentication errors
-            if (!authResponse.ok) {
-                const authError = await authResponse.json();
-                console.error('❌ Authentication failed:', authError);
-                
-                return fail(authResponse.status, { 
-                    error: true, 
-                    message: authError.message || 'Invalid email or password. Please try again.',
-                    formData: {
-                        username: data.username,
-                        password: '' // Never return passwords
-                    }
-                });
-            }
-            
-            // Step 5: Process successful authentication
-            const authResult = await authResponse.json();
-            console.log('✅ User authenticated successfully.');
-            
-            // Step 6: Store authentication tokens in cookies
-            console.log('🍪 Setting authentication cookies...');
-            setAuthCookies(cookies, authResult);
-            
-            // Step 7: Return success response
-            return {
-                success: true,
-                message: 'Login successful! Redirecting to dashboard...',
-                user: {
-                    id: authResult.user_id,
-                    name: authResult.user_display_name,
-                    email: authResult.user_email
-                }
-            };
-            
-        } catch (error) {
-            console.error('💥 Unexpected error during login:', error);
-            
-            return fail(500, {
-                error: true,
-                message: 'An unexpected error occurred. Please try again.',
-                formData: {
-                    username: '',
-                    password: ''
-                }
-            });
-        }
+  default: async ({ request }) => {
+    console.log('🚀 Starting portal subscription form action.');
+    
+    try {
+      // Validate the form data using superValidate
+      console.log('📝 Parsing and validating form data...');
+      const form = await superValidate(request, zod(portalSubscriptionSchema));
+      
+      // Check if form is valid
+      if (!form.valid) {
+        console.error('❌ Validation errors:', form.errors);
+        return fail(400, { form });
+      }
+      
+      // Prepare email data for admin notification
+      console.log('📧 Preparing admin notification email...');
+      const adminEmailOptions = {
+        to: 'contact@tributestream.com', // Change to the admin email
+        subject: 'New Portal Notification Request',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
+            <h2 style="color: #333;">New Portal Notification Request</h2>
+            <p>A user has requested to be notified when the portal becomes available.</p>
+            <p><strong>Email:</strong> ${form.data.email}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+        `,
+        text: `New Portal Notification Request\n\nA user has requested to be notified when the portal becomes available.\n\nEmail: ${form.data.email}\nDate: ${new Date().toLocaleString()}`
+      };
+      
+      // Send admin notification email
+      console.log('📤 Sending admin notification...');
+      const emailSuccess = await sendEmail(adminEmailOptions);
+      
+      if (!emailSuccess) {
+        console.error('❌ Failed to send admin notification');
+        return message(form, 'Failed to submit your request. Please try again later.', {
+          status: 'error'
+        });
+      }
+      
+      console.log('✅ Admin notification sent successfully');
+      
+      // Return success response with a message
+      return message(form, 'Thank you! We\'ll notify you when the portal becomes available.', {
+        status: 'success'
+      });
+      
+    } catch (error) {
+      console.error('💥 Unexpected error:', error);
+      return fail(500, {
+        error: true,
+        message: 'An unexpected error occurred. Please try again later.',
+        form: await superValidate(zod(portalSubscriptionSchema))
+      });
     }
+  }
 } satisfies Actions;
