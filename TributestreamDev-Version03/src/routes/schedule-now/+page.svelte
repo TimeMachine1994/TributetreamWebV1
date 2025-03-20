@@ -1,7 +1,14 @@
 <script lang="ts">
   import PageLayout from '$lib/components/page-templates/page-layout.svelte';
+  import { enhance } from '$app/forms';
+  import type { ActionData } from './$types';
   
-  let formData = {
+  export let form: ActionData;
+  
+  let isSubmitting = false;
+  
+  // Default form data values
+  const defaultFormData = {
     name: "",
     email: "",
     phone: "",
@@ -14,41 +21,11 @@
     preferredContactMethod: "email"
   };
   
-  let isSubmitting = false;
-  let formSubmitted = false;
-  let formError = false;
+  // Set form data from previous submission if available
+  let formData = form?.formData || defaultFormData;
   
   const dateOptions = {
     min: new Date().toISOString().split('T')[0] // Today's date as minimum
-  };
-  
-  const handleSubmit = async () => {
-    isSubmitting = true;
-    formError = false;
-    formSubmitted = false;
-    
-    try {
-      // Simulate a form submission with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      formSubmitted = true;
-      // Reset form
-      formData = {
-        name: "",
-        email: "",
-        phone: "",
-        serviceDate: "",
-        serviceTime: "",
-        serviceLocation: "",
-        attendees: "",
-        additionalInfo: "",
-        serviceType: "funeral",
-        preferredContactMethod: "email"
-      };
-    } catch (error) {
-      formError = true;
-    } finally {
-      isSubmitting = false;
-    }
   };
 </script>
 
@@ -68,19 +45,22 @@
       <div class="col-span-2 bg-zinc-900 p-8 rounded-lg border border-[#D4AF37]/20">
         <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Request a Consultation</h2>
         
-        {#if formSubmitted}
+        {#if form?.success}
           <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30">
-            <p class="text-emerald-300">Thank you for your request. We'll contact you within 24 hours to discuss your event.</p>
+            <p class="text-emerald-300">Your message has been sent, check your email. We'll contact you within 24 hours to discuss your event.</p>
           </div>
         {/if}
         
-        {#if formError}
+        {#if form?.error}
           <div class="bg-red-900/30 p-4 rounded-md mb-6 border border-red-500/30">
-            <p class="text-red-300">There was an error submitting your request. Please try again or contact us directly at +1 (407) 221-5922.</p>
+            <p class="text-red-300">{form.message || 'There was an error submitting your request. Please try again or contact us directly at +1 (407) 221-5922.'}</p>
           </div>
         {/if}
         
-        <form on:submit|preventDefault={handleSubmit} class="space-y-6">
+        <form method="POST" action="?/default" use:enhance={{ 
+    submitting: () => { isSubmitting = true; },
+    complete: () => { isSubmitting = false; }
+  }} class="space-y-6">
           <!-- Contact Information -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

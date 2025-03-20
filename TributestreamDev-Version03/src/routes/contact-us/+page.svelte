@@ -1,35 +1,22 @@
 <script lang="ts">
   import PageLayout from '$lib/components/page-templates/page-layout.svelte';
-  import { goto } from '$app/navigation';
-
-  let name = "";
-  let email = "";
-  let phone = "";
-  let message = "";
+  import { enhance } from '$app/forms';
+  import type { ActionData } from './$types';
+  
+  export let form: ActionData;
+  
   let isSubmitting = false;
-  let formSubmitted = false;
-  let formError = false;
-
-  const handleSubmit = async () => {
-    isSubmitting = true;
-    formError = false;
-    formSubmitted = false;
-    
-    // In a real implementation, this would send the form data to a server
-    try {
-      // Simulate a form submission with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      formSubmitted = true;
-      name = "";
-      email = "";
-      phone = "";
-      message = "";
-    } catch (error) {
-      formError = true;
-    } finally {
-      isSubmitting = false;
-    }
+  
+  // Default form values
+  const defaultFormData = {
+    name: "",
+    email: "",
+    phone: "",
+    message: ""
   };
+  
+  // Set form data from previous submission if available
+  let formData = form?.formData || defaultFormData;
 </script>
 
 <PageLayout 
@@ -41,25 +28,28 @@
     <div class="bg-zinc-900 p-8 rounded-lg border border-[#D4AF37]/20">
       <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Send Us a Message</h2>
       
-      {#if formSubmitted}
+      {#if form?.success}
         <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30">
-          <p class="text-emerald-300">Thank you for your message. We'll get back to you as soon as possible.</p>
+          <p class="text-emerald-300">Your message has been sent, check your email. We'll get back to you as soon as possible.</p>
         </div>
       {/if}
       
-      {#if formError}
+      {#if form?.error}
         <div class="bg-red-900/30 p-4 rounded-md mb-6 border border-red-500/30">
-          <p class="text-red-300">There was an error submitting your message. Please try again later or contact us directly.</p>
+          <p class="text-red-300">{form.message || 'There was an error submitting your message. Please try again or contact us directly.'}</p>
         </div>
       {/if}
       
-      <form on:submit|preventDefault={handleSubmit} class="space-y-6">
+      <form method="POST" action="?/default" use:enhance={{ 
+    submitting: () => { isSubmitting = true; },
+    complete: () => { isSubmitting = false; }
+  }} class="space-y-6">
         <div>
           <label for="name" class="block text-sm font-medium mb-2">Your Name</label>
           <input 
             type="text" 
             id="name" 
-            bind:value={name} 
+            bind:value={formData.name} name="name" 
             required
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
@@ -70,7 +60,7 @@
           <input 
             type="email" 
             id="email" 
-            bind:value={email} 
+            bind:value={formData.email} name="email" 
             required
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
@@ -81,7 +71,7 @@
           <input 
             type="tel" 
             id="phone" 
-            bind:value={phone}
+            bind:value={formData.phone} name="phone"
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
           />
         </div>
@@ -90,7 +80,7 @@
           <label for="message" class="block text-sm font-medium mb-2">Your Message</label>
           <textarea 
             id="message" 
-            bind:value={message} 
+            bind:value={formData.message} name="message" 
             required
             rows="5"
             class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
