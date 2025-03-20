@@ -2,16 +2,7 @@ import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
 import { validateFuneralDirectorForm } from '$lib/utils/form-validation';
-
-/**
- * Generates a slug from the deceased's name
- * @param firstName - First name of the deceased
- * @param lastName - Last name of the deceased
- * @returns Formatted slug
- */
-function generateSlug(firstName: string, lastName: string): string {
-    return `${firstName.trim().toLowerCase()}_${lastName.trim().toLowerCase()}`.replace(/\s+/g, '_');
-}
+import { createTributeSlug } from '$lib/utils/string-helpers';
 
 /**
  * Parse form data from FormData object
@@ -322,7 +313,7 @@ export const actions = {
             console.log('🚀 Creating tribute...');
             
             // Generate the slug
-             slug = generateSlug(data.deceasedFirstName, data.deceasedLastName);
+            slug = createTributeSlug(`${data.deceasedFirstName} ${data.deceasedLastName}`);
 
             // Prepare the tribute payload
             const tributePayload = {

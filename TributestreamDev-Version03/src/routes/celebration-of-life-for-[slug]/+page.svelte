@@ -44,8 +44,7 @@
     <!-- Viewing and Service Section -->
     <section class="py-10 px-4">
         <div class="container mx-auto max-w-4xl">
-            <label class="block text-gray-300 text-sm font-bold mb-2">Viewing and Service Video</label>
-            <div class="relative p-5 bg-black border border-gray-800 max-w-3xl mx-auto rounded-lg shadow-lg">
+             <div class="relative p-5 bg-black border border-gray-800 max-w-3xl mx-auto rounded-lg shadow-lg">
                 <h2 class="font-['Fanwood'] italic text-2xl mb-5 text-white">Viewing and Service</h2>
                 <div class="relative aspect-video bg-gray-900 rounded overflow-hidden">
                     <!-- Mock video player -->
@@ -59,8 +58,7 @@
                     </div>
                 </div>
             </div>
-            <p class="text-gray-500 text-xs mt-2 text-center">A video will be displayed here during the memorial service</p>
-        </div>
+         </div>
     </section>
 
     <!-- FAQ Cards -->
