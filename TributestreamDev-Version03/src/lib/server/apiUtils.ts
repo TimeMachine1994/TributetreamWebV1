@@ -312,4 +312,47 @@ export function buildQueryParams(params: Record<string, string | number | boolea
  */
 export function buildQueryString(params: Record<string, string | number | boolean | undefined>): string {
   return buildQueryParams(params).toString();
+}* @param defaultValue Default value if parameter is invalid
+ * @returns Number value
+ */
+export function getNumberParam(param: string | undefined, defaultValue: number): number {
+  if (!param) {
+    return defaultValue;
+  }
+  
+  const parsed = parseInt(param, 10);
+  
+  if (isNaN(parsed)) {
+    return defaultValue;
+  }
+  
+  return parsed;
+}
+
+/**
+ * Build query parameters for WordPress API requests
+ * 
+ * @param params Object containing parameter values
+ * @returns URLSearchParams object
+ */
+export function buildQueryParams(params: Record<string, string | number | boolean | undefined>): URLSearchParams {
+  const queryParams = new URLSearchParams();
+  
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) {
+      queryParams.append(key, String(value));
+    }
+  }
+  
+  return queryParams;
+}
+
+/**
+ * Build query string for WordPress API requests (alias for buildQueryParams)
+ *
+ * @param params Object containing parameter values
+ * @returns Query string
+ */
+export function buildQueryString(params: Record<string, string | number | boolean | undefined>): string {
+  return buildQueryParams(params).toString();
 }
