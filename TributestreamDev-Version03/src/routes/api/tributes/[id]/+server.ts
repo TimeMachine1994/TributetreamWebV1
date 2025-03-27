@@ -1,73 +1,269 @@
+/**
+ * Single Tribute Endpoint
+ * 
+ * Handles operations on a specific tribute by ID:
+ * - GET: Retrieve a specific tribute
+ * - PUT: Update a tribute
+ * - DELETE: Delete a tribute
+ */
+
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import type { ApiErrorResponse, Tribute } from '$lib/types/tribute';
+import type { RequestEvent } from '@sveltejs/kit';
+import { 
+  forwardRequestToWordPress, 
+  createErrorResponse,
+  TRIBUTESTREAM_API_PATH
+} from '$lib/server/apiUtils';
+import { 
+  getAuthenticatedUserId,
+  checkTributePermission
+} from '$lib/server/authUtils';
+import type { 
+  Tribute, 
+  UpdateTributeParams, 
+  UpdateTributeResponse,
+  DeleteTributeResponse
+} from '$lib/server/types';
 
 /**
- * GET /api/tributes/[id]
- * Retrieves a tribute by its ID
+ * Handle GET requests to retrieve a specific tribute
  */
-export const GET: RequestHandler = async ({ params, fetch, request }) => {
+export async function GET(event: RequestEvent) {
   try {
-    const id = params.id;
+    const { params } = event;
     
-    console.log(`🔍 [Tribute By ID API] Fetching tribute with ID: ${id}`);
-    
-    if (!id || isNaN(Number(id))) {
-      console.warn(`⚠️ [Tribute By ID API] Invalid tribute ID: ${id}`);
-      return json({
-        error: true,
-        message: 'Invalid tribute ID',
-        status: 400
-      } as ApiErrorResponse, { status: 400 });
+    if (!params.id) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID is required',
+          400
+        ),
+        { status: 400 }
+      );
     }
     
-    // Attempt to get authorization token (optional for this endpoint)
-    const authHeader = request.headers.get('Authorization');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
+    const tributeId = parseInt(params.id, 10);
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ [Tribute By ID API] Authorization token included in request');
-    } else {
-      console.log('ℹ️ [Tribute By ID API] No authorization token provided - accessing public data only');
+    // Validate the tribute ID
+    if (isNaN(tributeId) || tributeId <= 0) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID must be a positive integer',
+          400
+        ),
+        { status: 400 }
+      );
     }
     
-    // Forward request to WordPress API
-    const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tributes/${id}`, {
-      headers
-    });
-    
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      console.error('❌ [Tribute By ID API] WordPress API returned an error:', responseData);
-      
-      if (response.status === 404) {
-        return json({
-          error: true,
-          message: 'Tribute not found',
-          status: 404
-        } as ApiErrorResponse, { status: 404 });
-      }
-      
-      return json({
-        error: true,
-        message: responseData.message || 'Failed to fetch tribute',
-        status: response.status
-      } as ApiErrorResponse, { status: response.status });
+    // Try to authenticate the user
+    let isAuthenticated = false;
+    try {
+      await getAuthenticatedUserId(event);
+      isAuthenticated = true;
+    } catch {
+      // Silently ignore authentication failures,
+      // will limit response data accordingly
     }
     
-    console.log(`✅ [Tribute By ID API] Successfully fetched tribute: ${responseData.loved_one_name || 'Unknown'}`);
-    return json(responseData as Tribute);
+    // Forward to WordPress API
+    const response = await forwardRequestToWordPress<Tribute>(
+      event,
+      `${TRIBUTESTREAM_API_PATH}/tributes/${tributeId}`
+    );
+    
+    // If the request failed, return the error
+    if (!response.success) {
+      return json(response, { status: response.status });
+    }
+    
+    // If user is not authenticated, limit the data returned
+    if (!isAuthenticated && response.data) {
+      // Remove sensitive fields for unauthenticated users
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_id, phone_number, extended_data, ...publicData } = response.data;
+      response.data = publicData as Tribute;
+    }
+    
+    // Return the tribute data
+    return json(response, { status: 200 });
+    
   } catch (error) {
-    console.error('🚨 [Tribute By ID API] Unexpected error:', error);
-    return json({
-      error: true,
-      message: error instanceof Error ? error.message : 'An unexpected error occurred',
-      status: 500
-    } as ApiErrorResponse, { status: 500 });
+    // Handle any unexpected errors
+    console.error('Error retrieving tribute:', error);
+    
+    return json(
+      createErrorResponse(
+        'SERVER_ERROR',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+        500
+      ),
+      { status: 500 }
+    );
   }
-};
+}
+
+/**
+ * Handle PUT requests to update a tribute
+ */
+export async function PUT(event: RequestEvent) {
+  try {
+    const { params } = event;
+    
+    if (!params.id) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID is required',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    const tributeId = parseInt(params.id, 10);
+    
+    // Validate the tribute ID
+    if (isNaN(tributeId) || tributeId <= 0) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID must be a positive integer',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    // Authenticate the user
+    let userId: number;
+    try {
+      userId = await getAuthenticatedUserId(event);
+    } catch (error) {
+      // Return the error response from getAuthenticatedUserId
+      return error as Response;
+    }
+    
+    // Check permission to update this tribute
+    const hasPermission = await checkTributePermission(event, tributeId, userId);
+    if (!hasPermission) {
+      return json(
+        createErrorResponse(
+          'PERMISSION_ERROR',
+          'You do not have permission to update this tribute',
+          403
+        ),
+        { status: 403 }
+      );
+    }
+    
+    // Parse the request body
+    const body = await event.request.json() as UpdateTributeParams;
+    
+    // Forward to WordPress API
+    const response = await forwardRequestToWordPress<UpdateTributeResponse>(
+      event,
+      `${TRIBUTESTREAM_API_PATH}/tributes/${tributeId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(body)
+      }
+    );
+    
+    // Return the response
+    return json(response, { status: response.status });
+    
+  } catch (error) {
+    // Handle any unexpected errors
+    console.error('Error updating tribute:', error);
+    
+    return json(
+      createErrorResponse(
+        'SERVER_ERROR',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+        500
+      ),
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Handle DELETE requests to remove a tribute
+ */
+export async function DELETE(event: RequestEvent) {
+  try {
+    const { params } = event;
+    
+    if (!params.id) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID is required',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    const tributeId = parseInt(params.id, 10);
+    
+    // Validate the tribute ID
+    if (isNaN(tributeId) || tributeId <= 0) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Tribute ID must be a positive integer',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    // Authenticate the user
+    let userId: number;
+    try {
+      userId = await getAuthenticatedUserId(event);
+    } catch (error) {
+      // Return the error response from getAuthenticatedUserId
+      return error as Response;
+    }
+    
+    // Check permission to delete this tribute
+    const hasPermission = await checkTributePermission(event, tributeId, userId);
+    if (!hasPermission) {
+      return json(
+        createErrorResponse(
+          'PERMISSION_ERROR',
+          'You do not have permission to delete this tribute',
+          403
+        ),
+        { status: 403 }
+      );
+    }
+    
+    // Forward to WordPress API
+    const response = await forwardRequestToWordPress<DeleteTributeResponse>(
+      event,
+      `${TRIBUTESTREAM_API_PATH}/tributes/${tributeId}`,
+      { method: 'DELETE' }
+    );
+    
+    // Return the response
+    return json(response, { status: response.status });
+    
+  } catch (error) {
+    // Handle any unexpected errors
+    console.error('Error deleting tribute:', error);
+    
+    return json(
+      createErrorResponse(
+        'SERVER_ERROR',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+        500
+      ),
+      { status: 500 }
+    );
+  }
+}
