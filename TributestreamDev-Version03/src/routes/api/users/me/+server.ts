@@ -1,20 +1,18 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { forwardApiRequest, handleApiError } from '$lib/server/apiUtils';
-import { WP_TRIBUTE_PAGES_PATH } from '$lib/api/api-constants';
+import { WP_USERS_PATH } from '$lib/api/api-constants';
 
 /**
- * GET /api/tribute/[slug]
+ * GET /api/users/me
  * 
- * Get a tribute page by slug (public endpoint, no authentication required)
+ * Get current user
  */
-export const GET: RequestHandler = async ({ params, fetch, request }) => {
+export const GET: RequestHandler = async ({ fetch, request }) => {
   try {
-    const slug = params.slug;
-    
     // Forward the request to the WordPress API
     const response = await forwardApiRequest({
-      path: `${WP_TRIBUTE_PAGES_PATH}/by-slug/${slug}`,
+      path: `${WP_USERS_PATH}/me`,
       request,
       fetch
     });

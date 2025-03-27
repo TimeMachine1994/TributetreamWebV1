@@ -5,7 +5,7 @@
  */
 
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { forwardRequestToWordPress, createErrorResponse } from './apiUtils';
+import { forwardRequestToWordPress, createErrorResponse, FUNERAL_API_PATH } from './apiUtils';
 
 // WordPress JWT Auth paths
 export const JWT_TOKEN_PATH = '/jwt-auth/v1/token';
@@ -118,6 +118,48 @@ export async function getAuthenticatedUserId(event: RequestEvent): Promise<numbe
   // For now, we'll just return a placeholder value
   // In a real implementation, you would replace this with actual JWT token decoding
   return 1;
+}
+
+/**
+ * Check if user has admin privileges
+ * 
+ * @param userId User ID to check
+ * @param event SvelteKit request event
+ * @returns True if user is an admin
+ */
+export async function isUserAdmin(userId: number, event?: RequestEvent): Promise<boolean> {
+  try {
+    if (!event) {
+      // If no event is provided, we can't make the API call
+      return false;
+    }
+    
+    // Get the token
+    const token = await ensureAuthenticated(event);
+    
+    // Call the WordPress API to check if the user is an admin
+    const response = await forwardRequestToWordPress(
+      event,
+      `${FUNERAL_API_PATH}/users/${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    
+    // Check if the user has admin role
+    if (response.success && response.data) {
+      const userData = response.data as { roles?: string[] };
+      return Array.isArray(userData.roles) && userData.roles.includes('administrator');
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
 }
 
 /**

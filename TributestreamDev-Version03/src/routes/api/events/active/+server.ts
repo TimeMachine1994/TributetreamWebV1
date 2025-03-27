@@ -1,20 +1,19 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { forwardApiRequest, handleApiError } from '$lib/server/apiUtils';
-import { WP_TRIBUTE_PAGES_PATH } from '$lib/api/api-constants';
+import { WP_ACTIVE_EVENTS_PATH } from '$lib/api/api-constants';
 
 /**
- * GET /api/tribute/[slug]
+ * GET /api/events/active
  * 
- * Get a tribute page by slug (public endpoint, no authentication required)
+ * Get active events (not ended yet)
  */
-export const GET: RequestHandler = async ({ params, fetch, request }) => {
+export const GET: RequestHandler = async ({ url, fetch, request }) => {
   try {
-    const slug = params.slug;
-    
     // Forward the request to the WordPress API
     const response = await forwardApiRequest({
-      path: `${WP_TRIBUTE_PAGES_PATH}/by-slug/${slug}`,
+      path: WP_ACTIVE_EVENTS_PATH,
+      queryParams: url.searchParams,
       request,
       fetch
     });

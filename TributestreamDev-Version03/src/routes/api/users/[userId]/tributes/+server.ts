@@ -1,79 +1,130 @@
 /**
  * User Tributes Endpoint
  * 
- * Retrieves all tributes for a specific user
+ * Handles retrieving tributes for a specific user.
+ * 
+ * GET /api/users/[userId]/tributes - Get tributes for a specific user
  */
 
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { forwardRequestToWordPress } from '$lib/server/apiUtils';
-import { ensureAuthenticated } from '$lib/server/authUtils';
-import type { Tribute } from '$lib/server/types';
+import type { RequestEvent } from '@sveltejs/kit';
+import { 
+  forwardRequestToWordPress, 
+  createErrorResponse,
+  FUNERAL_API_PATH,
+  buildQueryString
+} from '$lib/server/apiUtils';
+import { 
+  getAuthenticatedUserId,
+  isUserAdmin
+} from '$lib/server/authUtils';
+import type { PaginatedTributesResponse } from '$lib/server/types';
 
 /**
- * @api {get} /api/users/:userId/tributes Get tributes by user
- * @apiName GetTributesByUser
- * @apiGroup Users
- * @apiDescription Retrieves all tributes for a specific user
- *
- * @apiHeader {String} Authorization Bearer token
- *
- * @apiParam {Number} userId User ID
- *
- * @apiSuccess {Boolean} success Indicates if the request was successful
- * @apiSuccess {Object} data Response data
- * @apiSuccess {Array} data.tributes List of user's tributes
+ * Handle GET requests to retrieve tributes for a user
  */
-export const GET: RequestHandler = async (event) => {
+export async function GET(event: RequestEvent) {
   try {
-    // Ensure user is authenticated
-    const authenticatedUserId = await ensureAuthenticated(event);
+    const { params } = event;
+    const userId = params.userId;
     
-    const userId = parseInt(event.params.userId, 10);
-    
-    if (isNaN(userId)) {
-      return json({
-        success: false,
-        error: {
-          code: 'INVALID_USER_ID',
-          message: 'Invalid user ID',
-          status: 400
-        }
-      }, { status: 400 });
+    if (!userId || isNaN(parseInt(userId, 10))) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Invalid user ID',
+          400
+        ),
+        { status: 400 }
+      );
     }
     
-    // Check if user is accessing their own tributes or has permission
-    // In a more advanced implementation, we would check if the authenticated user
-    // has permissions to view other users' tributes (e.g., admin role)
-    if (authenticatedUserId !== userId) {
-      return json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'You are not authorized to view tributes for this user',
-          status: 403
-        }
-      }, { status: 403 });
+    // Authenticate the user
+    let currentUserId: number;
+    
+    try {
+      currentUserId = await getAuthenticatedUserId(event);
+    } catch (error) {
+      // Return the error response from getAuthenticatedUserId
+      return error as Response;
     }
     
-    // Forward the request to WordPress
-    const response = await forwardRequestToWordPress<{ tributes: Tribute[] }>(
+    // Check if user is accessing their own data or is an admin
+    const targetUserId = parseInt(userId, 10);
+    const isAdmin = await isUserAdmin(currentUserId, event);
+    
+    if (currentUserId !== targetUserId && !isAdmin) {
+      return json(
+        createErrorResponse(
+          'PERMISSION_DENIED',
+          'You do not have permission to access tributes for this user',
+          403
+        ),
+        { status: 403 }
+      );
+    }
+    
+    // Parse query parameters
+    const url = new URL(event.request.url);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const perPage = parseInt(url.searchParams.get('perPage') || '10', 10);
+    const search = url.searchParams.get('search') || '';
+    
+    // Validate pagination parameters
+    if (isNaN(page) || page < 1) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'Page must be a positive integer',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    if (isNaN(perPage) || perPage < 1 || perPage > 100) {
+      return json(
+        createErrorResponse(
+          'VALIDATION_ERROR',
+          'perPage must be a positive integer between 1 and 100',
+          400
+        ),
+        { status: 400 }
+      );
+    }
+    
+    // Build query parameters as a Record
+    const queryParams: Record<string, string | number | boolean> = {
+      page,
+      per_page: perPage,
+      user_id: targetUserId
+    };
+    
+    if (search) {
+      queryParams.search = search;
+    }
+    
+    // Forward to WordPress API
+    const queryString = buildQueryString(queryParams);
+    const response = await forwardRequestToWordPress<PaginatedTributesResponse>(
       event,
-      `/tributestream/v1/tributes/by-user/${userId}`
+      `${FUNERAL_API_PATH}/tribute-pages${queryString ? `?${queryString}` : ''}`
     );
     
     // Return the response
-    return json(response, { status: response.success ? 200 : (response.status || 404) });
-  } catch (error) {
-    console.error('Error fetching user tributes:', error);
+    return json(response, { status: response.status });
     
-    return json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to fetch user tributes',
-        status: 500
-      }
-    }, { status: 500 });
+  } catch (error) {
+    // Handle any unexpected errors
+    console.error('Error retrieving user tributes:', error);
+    
+    return json(
+      createErrorResponse(
+        'SERVER_ERROR',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+        500
+      ),
+      { status: 500 }
+    );
   }
-};
+}

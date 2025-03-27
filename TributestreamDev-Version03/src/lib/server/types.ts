@@ -73,8 +73,348 @@ export interface UserRegistrationRequest {
   meta?: Record<string, unknown>;
 }
 
+// ============================================================================
+// Tribute Pages Types
+// ============================================================================
+
 /**
- * Tribute data interface
+ * Tribute page data interface
+ */
+export interface TributePage {
+  tribute_id: number;
+  created_by_user_id: number;
+  point_of_contact_user_id: number;
+  loved_ones_name: string;
+  slugified_name: string;
+  page_html?: string;
+  loved_ones_dob?: string;
+  loved_ones_dod?: string;
+}
+
+/**
+ * Create tribute page parameters
+ */
+export interface CreateTributePageParams {
+  created_by_user_id: number;
+  point_of_contact_user_id?: number;
+  loved_ones_name: string;
+  slugified_name?: string;
+  page_html?: string;
+  loved_ones_dob?: string;
+  loved_ones_dod?: string;
+}
+
+/**
+ * Create tribute page response
+ */
+export interface CreateTributePageResponse {
+  tribute_id: number;
+  slugified_name: string;
+}
+
+/**
+ * Update tribute page parameters
+ */
+export interface UpdateTributePageParams {
+  created_by_user_id?: number;
+  point_of_contact_user_id?: number;
+  loved_ones_name?: string;
+  slugified_name?: string;
+  page_html?: string;
+  loved_ones_dob?: string;
+  loved_ones_dod?: string;
+}
+
+/**
+ * Paginated tribute pages response
+ */
+export interface PaginatedTributePagesResponse {
+  tributes: TributePage[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Locations Types
+// ============================================================================
+
+/**
+ * Location data interface
+ */
+export interface Location {
+  location_id: number;
+  tribute_id: number;
+  location_name: string;
+  location_address?: string;
+  sort_order: number;
+}
+
+/**
+ * Create location parameters
+ */
+export interface CreateLocationParams {
+  tribute_id: number;
+  location_name: string;
+  location_address?: string;
+  sort_order?: number;
+}
+
+/**
+ * Create location response
+ */
+export interface CreateLocationResponse {
+  location_id: number;
+  tribute_id: number;
+}
+
+/**
+ * Update location parameters
+ */
+export interface UpdateLocationParams {
+  tribute_id?: number;
+  location_name?: string;
+  location_address?: string;
+  sort_order?: number;
+}
+
+/**
+ * Paginated locations response
+ */
+export interface PaginatedLocationsResponse {
+  locations: Location[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Events Types
+// ============================================================================
+
+/**
+ * Event data interface
+ */
+export interface Event {
+  event_id: number;
+  location_id: number;
+  stream_html?: string;
+  start_time: string;
+  end_time: string;
+}
+
+/**
+ * Create event parameters
+ */
+export interface CreateEventParams {
+  location_id: number;
+  stream_html?: string;
+  start_time: string;
+  end_time: string;
+}
+
+/**
+ * Create event response
+ */
+export interface CreateEventResponse {
+  event_id: number;
+  location_id: number;
+}
+
+/**
+ * Update event parameters
+ */
+export interface UpdateEventParams {
+  location_id?: number;
+  stream_html?: string;
+  start_time?: string;
+  end_time?: string;
+}
+
+/**
+ * Paginated events response
+ */
+export interface PaginatedEventsResponse {
+  events: Event[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Users Types
+// ============================================================================
+
+/**
+ * User data interface
+ */
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  display_name: string;
+  first_name: string;
+  last_name: string;
+  roles: string[];
+  registered: string;
+  user_type: string;
+}
+
+/**
+ * Create user parameters
+ */
+export interface CreateUserParams {
+  email_address: string;
+  password: string;
+  user_type: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+}
+
+/**
+ * Create user response
+ */
+export interface CreateUserResponse {
+  user_id: number;
+  email: string;
+  user_type: string;
+}
+
+/**
+ * Update user parameters
+ */
+export interface UpdateUserParams {
+  email_address?: string;
+  password?: string;
+  user_type?: string;
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+}
+
+/**
+ * Paginated users response
+ */
+export interface PaginatedUsersResponse {
+  users: User[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Funeral Homes Types
+// ============================================================================
+
+/**
+ * Funeral home data interface
+ */
+export interface FuneralHome {
+  funeral_home_id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email?: string;
+  website?: string;
+}
+
+/**
+ * Create funeral home parameters
+ */
+export interface CreateFuneralHomeParams {
+  name: string;
+  address: string;
+  phone: string;
+  email?: string;
+  website?: string;
+}
+
+/**
+ * Create funeral home response
+ */
+export interface CreateFuneralHomeResponse {
+  funeral_home_id: number;
+}
+
+/**
+ * Update funeral home parameters
+ */
+export interface UpdateFuneralHomeParams {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+}
+
+/**
+ * Paginated funeral homes response
+ */
+export interface PaginatedFuneralHomesResponse {
+  funeral_homes: FuneralHome[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Schedule Types
+// ============================================================================
+
+/**
+ * Schedule data interface
+ */
+export interface Schedule {
+  schedule_id: number;
+  funeral_director_user_id: number;
+  tribute_id: number;
+  number_of_days: number;
+}
+
+/**
+ * Create schedule parameters
+ */
+export interface CreateScheduleParams {
+  funeral_director_user_id: number;
+  tribute_id: number;
+  number_of_days: number;
+}
+
+/**
+ * Create schedule response
+ */
+export interface CreateScheduleResponse {
+  schedule_id: number;
+  tribute_id: number;
+}
+
+/**
+ * Update schedule parameters
+ */
+export interface UpdateScheduleParams {
+  funeral_director_user_id?: number;
+  tribute_id?: number;
+  number_of_days?: number;
+}
+
+/**
+ * Paginated schedules response
+ */
+export interface PaginatedSchedulesResponse {
+  schedules: Schedule[];
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// ============================================================================
+// Legacy Types (Kept for backward compatibility)
+// ============================================================================
+
+/**
+ * Tribute data interface (legacy)
  */
 export interface Tribute {
   id: number;

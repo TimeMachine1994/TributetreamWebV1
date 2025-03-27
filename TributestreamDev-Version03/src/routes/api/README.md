@@ -16,32 +16,73 @@ The TributeStream API uses JSON Web Tokens (JWT) for authentication. All authent
 
 Endpoints for managing tribute pages.
 
-- **GET /api/tributes** - List tributes with pagination and search
-- **POST /api/tributes** - Create a new tribute
-- **GET /api/tributes/[id]** - Get a tribute by ID
-- **PUT /api/tributes/[id]** - Update a tribute
-- **DELETE /api/tributes/[id]** - Delete a tribute
+- **GET /api/tribute-pages** - List tributes with pagination and search
+- **POST /api/tribute-pages** - Create a new tribute
+- **GET /api/tribute-pages/[id]** - Get a tribute by ID
+- **PUT /api/tribute-pages/[id]** - Update a tribute (full update)
+- **PATCH /api/tribute-pages/[id]** - Update a tribute (partial update)
+- **DELETE /api/tribute-pages/[id]** - Delete a tribute
 - **GET /api/tribute/[slug]** - Get a tribute by slug
-- **GET /api/tributes/[id]/data** - Get extended tribute data
-- **POST /api/tributes/[id]/data** - Create or replace tribute data
-- **PUT /api/tributes/[id]/data** - Update tribute data (partial update)
+- **GET /api/tribute-pages/[id]/events** - Get events for a specific tribute
+- **GET /api/tribute-pages/[id]/locations** - Get locations for a specific tribute
+
+## Locations
+
+Endpoints for managing locations.
+
+- **GET /api/locations** - List locations with pagination and filtering
+- **POST /api/locations** - Create a new location
+- **GET /api/locations/[id]** - Get a location by ID
+- **PUT /api/locations/[id]** - Update a location (full update)
+- **PATCH /api/locations/[id]** - Update a location (partial update)
+- **DELETE /api/locations/[id]** - Delete a location
+- **GET /api/locations/[id]/events** - Get events for a specific location
+
+## Events
+
+Endpoints for managing events.
+
+- **GET /api/events** - List events with pagination and filtering
+- **POST /api/events** - Create a new event
+- **GET /api/events/[id]** - Get an event by ID
+- **PUT /api/events/[id]** - Update an event (full update)
+- **PATCH /api/events/[id]** - Update an event (partial update)
+- **DELETE /api/events/[id]** - Delete an event
+- **GET /api/events/active** - Get active events (not ended yet)
 
 ## Users
 
 Endpoints for managing user data.
 
-- **GET /api/users/[userId]/tributes** - Get tributes for a specific user
-- **GET /api/users/[userId]/meta** - Get all metadata for a user
-- **POST /api/users/[userId]/meta** - Create or update user metadata
-- **GET /api/users/[userId]/meta/[metaKey]** - Get a single metadata value
-- **DELETE /api/users/[userId]/meta/[metaKey]** - Delete user metadata
+- **GET /api/users** - List users (admin only)
+- **POST /api/users** - Create a new user (admin only)
+- **GET /api/users/[id]** - Get a user by ID (admin or self)
+- **PUT /api/users/[id]** - Update a user (full update)
+- **PATCH /api/users/[id]** - Update a user (partial update)
+- **DELETE /api/users/[id]** - Delete a user (admin only)
+- **GET /api/users/me** - Get current user
 
-## Forms
+## Funeral Homes
 
-Endpoints for managing form data.
+Endpoints for managing funeral homes.
 
-- **GET /api/forms/[userId]** - Get form data for a user
-- **POST /api/forms** - Save form data for a user
+- **GET /api/funeral-homes** - List funeral homes
+- **POST /api/funeral-homes** - Create a new funeral home
+- **GET /api/funeral-homes/[id]** - Get a funeral home by ID
+- **PUT /api/funeral-homes/[id]** - Update a funeral home (full update)
+- **PATCH /api/funeral-homes/[id]** - Update a funeral home (partial update)
+- **DELETE /api/funeral-homes/[id]** - Delete a funeral home
+
+## Schedules
+
+Endpoints for managing schedules.
+
+- **GET /api/schedules** - List schedules
+- **POST /api/schedules** - Create a new schedule
+- **GET /api/schedules/[id]** - Get a schedule by ID
+- **PUT /api/schedules/[id]** - Update a schedule (full update)
+- **PATCH /api/schedules/[id]** - Update a schedule (partial update)
+- **DELETE /api/schedules/[id]** - Delete a schedule
 
 ## Response Format
 
