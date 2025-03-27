@@ -102,9 +102,20 @@ export const actions = {
         return fail(400, { loginForm: form });
       }
       
+      // Log the username being used (for debugging)
+      console.log('👤 Attempting login with username:', form.data.username);
+      
       // Attempt to log in the user
       console.log('🔒 Attempting user login...');
+      console.log('📞 Calling loginUser function from auth-helpers.ts');
       const loginResult = await loginUser(form.data.username, form.data.password, cookies, fetch);
+      
+      // Log the login result (for debugging)
+      console.log('📊 Login result:', JSON.stringify({
+        success: loginResult.success,
+        message: loginResult.message,
+        hasUser: !!loginResult.user
+      }));
       
       // Handle login failure
       if (!loginResult.success) {

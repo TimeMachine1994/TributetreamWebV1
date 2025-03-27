@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { TributeApiClient } from '$lib/api/tribute-api-client';
 import { tributePersistence } from '$lib/persistence/tribute-persistence';
+import { eventsPersistence } from '$lib/persistence/events-persistence';
+import { UserRoles } from '$lib/types/user-roles';
 
 export const load: PageServerLoad = async ({ locals, fetch }) => {
   // Check if user is authenticated
@@ -13,16 +15,25 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
     // Initialize the persistence layer with the JWT token
     const apiClient = new TributeApiClient(locals.token);
     tributePersistence.setApiClient(apiClient);
+    eventsPersistence.setApiClient(apiClient);
     
     // Ensure userId is a number for API calls
-    const userId = typeof locals.user.id === 'string' 
-      ? parseInt(locals.user.id, 10) 
+    const userId = typeof locals.user.id === 'string'
+      ? parseInt(locals.user.id, 10)
       : locals.user.id;
     
-    // 1. Fetch the user's tributes using the persistence layer
-    console.log('Fetching tributes for user:', userId);
+    // Check if user is an admin
+    const isAdmin = locals.user.user_type === UserRoles.ADMIN;
     
-    const tributesResult = await tributePersistence.getTributesByUser(userId);
+    // 1. Fetch tributes - all tributes for admins, user tributes for others
+    console.log(`Fetching tributes for ${isAdmin ? 'admin' : 'user'}:`, userId);
+    
+    let tributesResult;
+    if (isAdmin) {
+      tributesResult = await eventsPersistence.getAllTributes();
+    } else {
+      tributesResult = await tributePersistence.getTributesByUser(userId);
+    }
     
     if (!tributesResult.success) {
       console.error('Failed to fetch tributes:', tributesResult.error);
@@ -61,6 +72,10 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
         }
       }
     }
+    
+    // 3. Fetch active events
+    const eventsResult = await eventsPersistence.getActiveEvents();
+    const activeEvents = eventsResult.success ? eventsResult.data : [];
     
     // 3. Fetch user form data to check if they have memorial form data
     const formDataResult = await tributePersistence.getFormData(userId);
@@ -111,20 +126,25 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
     // 4. Return data to the client
     return {
       user: locals.user,
+      isAdmin: isAdmin,
       tributes: tributes,
       detailedTributes: detailedTributes,
       hasMemorialData,
-      memorialData
+      memorialData,
+      activeEvents: activeEvents
     };
   } catch (error) {
     console.error('Error loading dashboard data:', error);
+    const isAdmin = locals.user?.user_type === UserRoles.ADMIN;
     return {
       user: locals.user,
+      isAdmin: isAdmin,
       tributes: [],
       detailedTributes: [],
       hasMemorialData: false,
-      error: error instanceof Error 
-        ? `Error loading dashboard data: ${error.message}` 
+      activeEvents: [],
+      error: error instanceof Error
+        ? `Error loading dashboard data: ${error.message}`
         : 'Error loading dashboard data. Please try again later.'
     };
   }

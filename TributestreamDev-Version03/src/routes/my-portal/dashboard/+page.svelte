@@ -2,8 +2,38 @@
   import type { PageData } from './$types';
   import type { Tribute } from '$lib/types/tribute';
   import UserDataWidget from '$lib/components/dashboard/UserDataWidget.svelte';
+  import EnhancedUserDataWidget from '$lib/components/dashboard/EnhancedUserDataWidget.svelte';
 
   let { data } = $props<{ data: PageData }>();
+  
+  // Pagination state
+  let currentPage = $state(1);
+  let itemsPerPage = $state(5);
+  
+  // Computed properties for pagination
+  let totalPages = $derived(Math.ceil((data.tributes?.length || 0) / itemsPerPage));
+  let paginatedTributes = $derived(data.tributes
+    ? data.tributes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : []);
+  
+  // Pagination controls
+  function nextPage() {
+    if (currentPage < totalPages) {
+      currentPage++;
+    }
+  }
+  
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+    }
+  }
+  
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+    }
+  }
   
   // Format date for display
   function formatDate(dateString: string): string {
@@ -80,13 +110,20 @@
       <!-- Tributes section -->
       <section class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-800">My Tributes</h2>
+          <h2 class="text-xl font-semibold text-gray-800">
+            {#if data.isAdmin}
+              All Tributes
+              <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Admin View</span>
+            {:else}
+              My Tributes
+            {/if}
+          </h2>
         </div>
         
         <div class="p-6">
           {#if data.tributes && data.tributes.length > 0}
             <div class="space-y-6">
-              {#each data.tributes as tribute}
+              {#each paginatedTributes as tribute}
                 {@const detailedTribute = getDetailedTribute(tribute.ID)}
                 <div class="bg-white border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                   <h3 class="text-lg font-semibold text-primary">{tribute.loved_one_name || 'Unnamed Tribute'}</h3>
@@ -141,17 +178,56 @@
                   </div>
                 </div>
               {/each}
+              
+              <!-- Pagination controls -->
+              {#if totalPages > 1}
+                <div class="flex justify-center items-center mt-6 pt-4 border-t border-gray-100">
+                  <nav class="flex items-center space-x-2" aria-label="Pagination">
+                    <button
+                      class="px-2 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      on:click={prevPage}
+                      disabled={currentPage === 1}
+                      aria-label="Previous page"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    
+                    <span class="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <button
+                      class="px-2 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      on:click={nextPage}
+                      disabled={currentPage === totalPages}
+                      aria-label="Next page"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </nav>
+                </div>
+              {/if}
             </div>
           {:else}
             <div class="text-center py-6">
-              <p class="text-gray-500">You don't have any tributes yet.</p>
+              <p class="text-gray-500">
+                {#if data.isAdmin}
+                  No tributes found in the system.
+                {:else}
+                  You don't have any tributes yet.
+                {/if}
+              </p>
             </div>
           {/if}
         </div>
       </section>
 
-      <!-- Memorial Information using the new UserDataWidget component -->
-      <UserDataWidget userId={getUserId()} />
+      <!-- Memorial Information using the enhanced widget with events -->
+      <EnhancedUserDataWidget userId={getUserId()} />
     </div>
 
     <!-- Account Settings -->

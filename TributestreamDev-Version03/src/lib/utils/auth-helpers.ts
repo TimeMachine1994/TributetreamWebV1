@@ -17,6 +17,66 @@ export interface User {
 }
 
 /**
+ * Login user with username and password
+ * @param username Username or email
+ * @param password User password
+ * @param cookies Cookies object from the event
+ * @param fetchFn Optional fetch function (use event.fetch in server contexts)
+ * @returns Login result with success status and user data or error message
+ */
+export async function loginUser(
+  username: string,
+  password: string,
+  cookies: Cookies,
+  fetchFn: typeof fetch = fetch
+): Promise<{ success: boolean; message?: string; user?: User }> {
+  try {
+    console.log('🔐 [auth-helpers] Attempting to login user:', username);
+    
+    // Make request to the auth API endpoint
+    const response = await fetchFn('/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
+    
+    // Parse the response
+    const data = await response.json();
+    
+    // Handle authentication failure
+    if (!response.ok) {
+      console.error('❌ [auth-helpers] Login failed:', data.message);
+      return {
+        success: false,
+        message: data.message || 'Invalid username or password'
+      };
+    }
+    
+    // Set authentication cookies
+    console.log('✅ [auth-helpers] Login successful, setting auth cookies');
+    setAuthCookies(cookies, data);
+    
+    // Return success with user data
+    return {
+      success: true,
+      user: {
+        id: data.user_id,
+        name: data.user_display_name,
+        email: data.user_email
+      }
+    };
+  } catch (error) {
+    console.error('💥 [auth-helpers] Unexpected error during login:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred'
+    };
+  }
+}
+
+/**
  * Generates a secure random password
  * @param length Length of the password
  * @returns A secure random password
