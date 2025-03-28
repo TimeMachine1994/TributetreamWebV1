@@ -2,9 +2,11 @@
  * Events API Client
  * 
  * Provides methods for interacting with the events-related endpoints of the TributeStream API.
+ * This version uses the new API client through the adapter for backward compatibility.
  */
 
-import { tributeApi } from './tribute-api-client';
+import { tributeApiAdapter } from './tribute-api-adapter';
+import { tributeApiV2 } from './tribute-api-client-v2';
 import type { ApiResponse } from './tribute-api-client';
 import type { Event } from '$lib/types/event';
 import type { Location } from '$lib/types/location';
@@ -41,116 +43,268 @@ function mapTributePageToTribute(tributePage: TributePage): Tribute {
 }
 
 /**
- * Events API Client
+ * Events API
  */
-export const eventsApi = {
+class EventsApi {
   /**
-   * Get all tributes (admin only)
-   * 
-   * @returns All tributes
+   * Set custom fetch function for the underlying API client
+   *
+   * @param fetchFn Custom fetch function (e.g., event.fetch in SvelteKit server-side code)
    */
-  async getAllTributes(): Promise<ApiResponse<{ tributes: Tribute[] }>> {
-    const response = await tributeApi['request']<{ tributes: TributePage[] }>(
-      `${TRIBUTE_PAGES_PATH}`
-    );
-
-    // If the request was successful, map TributePage[] to Tribute[]
-    if (response.success && response.data?.tributes) {
+  setFetch(fetchFn: typeof fetch): void {
+    tributeApiV2.setFetch(fetchFn);
+  }
+  /**
+   * Get all tributes
+   * 
+   * @returns List of tributes
+   */
+  async getAllTributes(): Promise<ApiResponse<Tribute[]>> {
+    try {
+      const response = await tributeApiV2.getTributes();
+      
+      if (response.success && response.data) {
+        const tributes = response.data.tributes.map(mapTributePageToTribute);
+        
+        return {
+          success: true,
+          data: tributes
+        };
+      }
+      
       return {
-        ...response,
-        data: {
-          tributes: response.data.tributes.map(mapTributePageToTribute)
-        }
+        success: false,
+        error: response.error || 'Failed to fetch tributes',
+        code: response.code,
+        status: response.status
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
       };
     }
-
-    // If the request failed, return the error response
-    return {
-      ...response,
-      data: { tributes: [] }
-    } as ApiResponse<{ tributes: Tribute[] }>;
-  },
-
+  }
+  
   /**
    * Get all events
    * 
-   * @returns List of all events
+   * @returns List of events
    */
-  async getAllEvents(): Promise<ApiResponse<{ events: Event[] }>> {
-    return tributeApi['request']<{ events: Event[] }>(
-      `${EVENTS_PATH}`
-    );
-  },
-
+  async getAllEvents(): Promise<ApiResponse<Event[]>> {
+    try {
+      const response = await tributeApiV2.request<{ events: Event[] }>(
+        EVENTS_PATH
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.events
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
    * Get active events (not ended yet)
    * 
    * @returns List of active events
    */
-  async getActiveEvents(): Promise<ApiResponse<{ events: Event[] }>> {
-    return tributeApi['request']<{ events: Event[] }>(
-      `${ACTIVE_EVENTS_PATH}`
-    );
-  },
-
+  async getActiveEvents(): Promise<ApiResponse<Event[]>> {
+    try {
+      const response = await tributeApiV2.request<{ events: Event[] }>(
+        ACTIVE_EVENTS_PATH
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.events
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
-   * Get events for a specific location
+   * Get events for a location
    * 
    * @param locationId Location ID
-   * @returns Events for the location
+   * @returns List of events
    */
-  async getEventsByLocation(locationId: number | string): Promise<ApiResponse<{ events: Event[] }>> {
-    return tributeApi['request']<{ events: Event[] }>(
-      `${LOCATIONS_PATH}/${locationId}/events`
-    );
-  },
-
+  async getEventsByLocation(locationId: number): Promise<ApiResponse<Event[]>> {
+    try {
+      const response = await tributeApiV2.request<{ events: Event[] }>(
+        `${LOCATIONS_PATH}/${locationId}/events`
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.events
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
-   * Get events for a specific tribute
+   * Get events for a tribute
    * 
    * @param tributeId Tribute ID
-   * @returns Events for the tribute
+   * @returns List of events
    */
-  async getEventsByTribute(tributeId: number | string): Promise<ApiResponse<{ events: Event[] }>> {
-    return tributeApi['request']<{ events: Event[] }>(
-      `${TRIBUTE_PAGES_PATH}/${tributeId}/events`
-    );
-  },
-
+  async getEventsByTribute(tributeId: number): Promise<ApiResponse<Event[]>> {
+    try {
+      const response = await tributeApiV2.request<{ events: Event[] }>(
+        `${TRIBUTE_PAGES_PATH}/${tributeId}/events`
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.events
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
-   * Get current user information with role
+   * Get current user
    * 
-   * @returns User information
+   * @returns User data
    */
   async getCurrentUser(): Promise<ApiResponse<User>> {
-    return tributeApi['request']<User>(
-      `${CURRENT_USER_PATH}`
-    );
-  },
-
+    try {
+      const response = await tributeApiV2.request<User>(
+        CURRENT_USER_PATH
+      );
+      
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
    * Get all locations
    * 
-   * @returns List of all locations
+   * @returns List of locations
    */
-  async getAllLocations(): Promise<ApiResponse<{ locations: Location[] }>> {
-    return tributeApi['request']<{ locations: Location[] }>(
-      `${LOCATIONS_PATH}`
-    );
-  },
-
+  async getAllLocations(): Promise<ApiResponse<Location[]>> {
+    try {
+      const response = await tributeApiV2.request<{ locations: Location[] }>(
+        LOCATIONS_PATH
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.locations
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
-   * Get locations for a specific tribute
+   * Get locations for a tribute
    * 
    * @param tributeId Tribute ID
-   * @returns Locations for the tribute
+   * @returns List of locations
    */
-  async getLocationsByTribute(tributeId: number | string): Promise<ApiResponse<{ locations: Location[] }>> {
-    return tributeApi['request']<{ locations: Location[] }>(
-      `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
-    );
-  },
-
+  async getLocationsByTribute(tributeId: number): Promise<ApiResponse<Location[]>> {
+    try {
+      const response = await tributeApiV2.request<{ locations: Location[] }>(
+        `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.locations
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
    * Create a new event
    * 
@@ -158,59 +312,100 @@ export const eventsApi = {
    * @returns Created event ID
    */
   async createEvent(data: {
-    location_id: number | string;
-    stream_html?: string;
+    location_id: number;
     start_time: string;
     end_time: string;
+    title?: string;
+    description?: string;
+    is_public?: boolean;
   }): Promise<ApiResponse<{ event_id: number }>> {
-    return tributeApi['request']<{ event_id: number }>(
-      `${EVENTS_PATH}`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }
-    );
-  },
-
+    try {
+      const response = await tributeApiV2.request<{ event_id: number }>(
+        EVENTS_PATH,
+        {
+          method: 'POST',
+          body: JSON.stringify(data)
+        }
+      );
+      
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
    * Update an existing event
    * 
    * @param eventId Event ID
    * @param data Updated event data
-   * @returns Update result
+   * @returns Updated event ID
    */
   async updateEvent(
-    eventId: number | string,
-    data: Partial<{
-      location_id: number | string;
-      stream_html: string;
-      start_time: string;
-      end_time: string;
-    }>
+    eventId: number,
+    data: {
+      location_id?: number;
+      start_time?: string;
+      end_time?: string;
+      title?: string;
+      description?: string;
+      is_public?: boolean;
+    }
   ): Promise<ApiResponse<{ event_id: number }>> {
-    return tributeApi['request']<{ event_id: number }>(
-      `${EVENTS_PATH}/${eventId}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }
-    );
-  },
-
+    try {
+      const response = await tributeApiV2.request<{ event_id: number }>(
+        `${EVENTS_PATH}/${eventId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        }
+      );
+      
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
+  }
+  
   /**
    * Delete an event
    * 
    * @param eventId Event ID
-   * @returns Delete result
+   * @returns Deleted event ID
    */
-  async deleteEvent(eventId: number | string): Promise<ApiResponse<{ deleted_id: number }>> {
-    return tributeApi['request']<{ deleted_id: number }>(
-      `${EVENTS_PATH}/${eventId}`,
-      {
-        method: 'DELETE'
-      }
-    );
+  async deleteEvent(eventId: number): Promise<ApiResponse<{ deleted_id: number }>> {
+    try {
+      const response = await tributeApiV2.request<{ deleted_id: number }>(
+        `${EVENTS_PATH}/${eventId}`,
+        {
+          method: 'DELETE'
+        }
+      );
+      
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
   }
-};
+}
 
+// Create a singleton instance for global use
+export const eventsApi = new EventsApi();
+
+// Export default instance
 export default eventsApi;

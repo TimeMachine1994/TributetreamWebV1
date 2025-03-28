@@ -4,7 +4,7 @@
  * Provides methods for interacting with the locations endpoints of the TributeStream API.
  */
 
-import { tributeApi } from './tribute-api-client';
+import { tributeApiV2 } from './tribute-api-client-v2';
 import type { ApiResponse } from './tribute-api-client';
 import { LOCATIONS_PATH, TRIBUTE_PAGES_PATH } from './api-constants';
 import type {
@@ -35,7 +35,7 @@ export const locationsApi = {
       queryParams.append('tribute_id', tributeId.toString());
     }
     
-    return tributeApi['request']<PaginatedLocationsResponse>(
+    return tributeApiV2.request<PaginatedLocationsResponse>(
       `${LOCATIONS_PATH}?${queryParams.toString()}`
     );
   },
@@ -57,7 +57,7 @@ export const locationsApi = {
    * @returns Location data
    */
   async getLocationById(id: number): Promise<ApiResponse<{ data: Location }>> {
-    return tributeApi['request']<{ data: Location }>(
+    return tributeApiV2.request<{ data: Location }>(
       `${LOCATIONS_PATH}/${id}`
     );
   },
@@ -68,10 +68,31 @@ export const locationsApi = {
    * @param tributeId Tribute ID
    * @returns Locations for the tribute
    */
-  async getLocationsByTribute(tributeId: number | string): Promise<ApiResponse<{ locations: Location[] }>> {
-    return tributeApi['request']<{ locations: Location[] }>(
-      `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
-    );
+  async getLocationsByTribute(tributeId: number | string): Promise<ApiResponse<Location[]>> {
+    try {
+      const response = await tributeApiV2.request<{ locations: Location[] }>(
+        `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
+      );
+      
+      if (response.success && response.data) {
+        return {
+          ...response,
+          data: response.data.locations
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'UNKNOWN_ERROR',
+        status: 500
+      };
+    }
   },
   
   /**
@@ -81,7 +102,7 @@ export const locationsApi = {
    * @returns Created location ID
    */
   async createLocation(data: CreateLocationParams): Promise<ApiResponse<{ location_id: number; tribute_id: number }>> {
-    return tributeApi['request']<{ location_id: number; tribute_id: number }>(
+    return tributeApiV2.request<{ location_id: number; tribute_id: number }>(
       `${LOCATIONS_PATH}`,
       {
         method: 'POST',
@@ -101,7 +122,7 @@ export const locationsApi = {
     id: number,
     data: UpdateLocationParams
   ): Promise<ApiResponse<{ location_id: number }>> {
-    return tributeApi['request']<{ location_id: number }>(
+    return tributeApiV2.request<{ location_id: number }>(
       `${LOCATIONS_PATH}/${id}`,
       {
         method: 'PUT',
@@ -117,7 +138,7 @@ export const locationsApi = {
    * @returns Delete result
    */
   async deleteLocation(id: number): Promise<ApiResponse<{ deleted_id: number }>> {
-    return tributeApi['request']<{ deleted_id: number }>(
+    return tributeApiV2.request<{ deleted_id: number }>(
       `${LOCATIONS_PATH}/${id}`,
       {
         method: 'DELETE'

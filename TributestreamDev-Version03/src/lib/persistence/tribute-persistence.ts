@@ -7,8 +7,11 @@
  */
 
 import { browser } from '$app/environment';
-import { TributeApiClient, type FormData, type ApiResponse, type Tribute } from '$lib/api/tribute-api-client';
+import { tributeApiV2 } from '$lib/api/tribute-api-client-v2';
+import type { ApiResponse, CreateTributePageParams, TributePage, UpdateTributePageParams } from '$lib/server/types';
+import type { FormData, Tribute } from '$lib/server/types';
 import { writable, type Writable } from 'svelte/store';
+import { FORMS_PATH } from '$lib/api/api-constants';
 
 // Cache TTL in milliseconds (5 minutes)
 const CACHE_TTL = 5 * 60 * 1000;
@@ -25,7 +28,7 @@ interface CacheEntry<T> {
  * TributePersistence - Enhanced persistence layer for Tributestream data
  */
 export class TributePersistence {
-  private apiClient: TributeApiClient;
+  // No longer need a private apiClient property as we use tributeApiV2 directly
   private formDataCache: Map<number, CacheEntry<FormData>> = new Map();
   private tributeCache: Map<number, CacheEntry<Tribute>> = new Map();
   private userTributesCache: Map<number, CacheEntry<Tribute[]>> = new Map();
@@ -41,20 +44,9 @@ export class TributePersistence {
   
   /**
    * Constructor
-   * 
-   * @param apiClient Optional API client instance
    */
-  constructor(apiClient?: TributeApiClient) {
-    this.apiClient = apiClient || new TributeApiClient();
-  }
-  
-  /**
-   * Set API client (useful for testing or changing authentication)
-   * 
-   * @param apiClient API client instance
-   */
-  setApiClient(apiClient: TributeApiClient): void {
-    this.apiClient = apiClient;
+  constructor() {
+    // No initialization needed as we use tributeApiV2 directly
   }
   
   /**
@@ -65,10 +57,11 @@ export class TributePersistence {
    * @returns Form data and success indicator
    */
   async getFormData(
-    userId: number, 
-    options: { 
+    userId: number,
+    options: {
       forceRefresh?: boolean;
       retry?: boolean;
+      fetch?: typeof fetch;
     } = {}
   ): Promise<{ data: FormData | null; success: boolean; error?: string }> {
     // Check cache first unless force refresh requested
@@ -80,13 +73,25 @@ export class TributePersistence {
         return { data: cachedEntry.data, success: true };
       }
     }
-    
     // Fetch from API
     try {
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.getFormData(userId),
-        options.retry ?? true
-      );
+      const response = await this.executeWithRetry(() => {
+        // If a custom fetch function is provided, use it temporarily
+        if (options.fetch) {
+          const originalFetch = tributeApiV2.getFetch();
+          tributeApiV2.setFetch(options.fetch);
+          
+          // Make the API call
+          const result = tributeApiV2.request<{ form_data: FormData }>(`${FORMS_PATH}/${userId}`);
+          
+          // Restore the original fetch function
+          tributeApiV2.setFetch(originalFetch);
+          
+          return result;
+        } else {
+          return tributeApiV2.request<{ form_data: FormData }>(`${FORMS_PATH}/${userId}`);
+        }
+      }, options.retry ?? true);
       
       if (response.success && response.data?.form_data) {
         // Update cache
@@ -163,8 +168,17 @@ export class TributePersistence {
       }
       
       // Save to API
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.saveFormData(userId, formData, tributeId)
+      const response = await this.executeWithRetry(() =>
+        tributeApiV2.request<{ success: boolean }>(
+          `${FORMS_PATH}/${userId}`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              form_data: formData,
+              tribute_id: tributeId
+            })
+          }
+        )
       );
       
       if (response.success) {
@@ -210,9 +224,10 @@ export class TributePersistence {
    */
   async getTributeById(
     tributeId: number,
-    options: { 
+    options: {
       forceRefresh?: boolean;
       retry?: boolean;
+      fetch?: typeof fetch;
     } = {}
   ): Promise<{ data: Tribute | null; success: boolean; error?: string }> {
     // Check cache first unless force refresh requested
@@ -227,22 +242,48 @@ export class TributePersistence {
     
     // Fetch from API
     try {
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.getTributeById(tributeId),
-        options.retry ?? true
-      );
+      const response = await this.executeWithRetry(() => {
+        // If a custom fetch function is provided, use it temporarily
+        if (options.fetch) {
+          const originalFetch = tributeApiV2.getFetch();
+          tributeApiV2.setFetch(options.fetch);
+          
+          // Make the API call
+          const result = tributeApiV2.getTributeById(tributeId);
+          
+          // Restore the original fetch function
+          tributeApiV2.setFetch(originalFetch);
+          
+          return result;
+        } else {
+          return tributeApiV2.getTributeById(tributeId);
+        }
+      }, options.retry ?? true);
       
-      if (response.success && response.data) {
+      if (response.success && response.data?.data) {
+        // Convert TributePage to Tribute
+        const tributeData: Tribute = {
+          id: response.data.data.tribute_id,
+          user_id: response.data.data.created_by_user_id,
+          loved_one_name: response.data.data.loved_ones_name,
+          slug: response.data.data.slugified_name,
+          created_at: '', // Not available in TributePage
+          updated_at: '', // Not available in TributePage
+          custom_html: response.data.data.page_html,
+          phone_number: '', // Not available in TributePage
+          number_of_streams: 0 // Not available in TributePage
+        };
+        
         // Update cache
         this.tributeCache.set(tributeId, {
-          data: response.data,
+          data: tributeData,
           timestamp: Date.now()
         });
         
         // Update store
-        this.updateTributeStore(tributeId, response.data);
+        this.updateTributeStore(tributeId, tributeData);
         
-        return { data: response.data, success: true };
+        return { data: tributeData, success: true };
       }
       
       return { 
@@ -292,9 +333,10 @@ export class TributePersistence {
    */
   async getTributesByUser(
     userId: number,
-    options: { 
+    options: {
       forceRefresh?: boolean;
       retry?: boolean;
+      fetch?: typeof fetch;
     } = {}
   ): Promise<{ data: Tribute[] | null; success: boolean; error?: string }> {
     // Check cache first unless force refresh requested
@@ -309,23 +351,58 @@ export class TributePersistence {
     
     // Fetch from API
     try {
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.getTributesByUser(userId),
-        options.retry ?? true
-      );
+      const response = await this.executeWithRetry(() => {
+        // If a custom fetch function is provided, use it temporarily
+        if (options.fetch) {
+          const originalFetch = tributeApiV2.getFetch();
+          tributeApiV2.setFetch(options.fetch);
+          
+          // Make the API call
+          const result = tributeApiV2.getTributesByUser(userId);
+          
+          // Restore the original fetch function
+          tributeApiV2.setFetch(originalFetch);
+          
+          return result;
+        } else {
+          return tributeApiV2.getTributesByUser(userId);
+        }
+      }, options.retry ?? true);
       
-      if (response.success && response.data?.tributes) {
+      // Add detailed logging to understand the response structure
+      console.log('API Response from getTributesByUser:', JSON.stringify(response, null, 2));
+      
+      if (response.success && response.data) {
+        // Check if tributes array exists
+        if (!response.data.tributes) {
+          console.error('Tributes array is missing in the response:', response.data);
+          return { data: [], success: true };
+        }
+        
+        // Convert TributePage[] to Tribute[]
+        const tributes: Tribute[] = response.data.tributes.map((tributePage: TributePage) => ({
+          id: tributePage.tribute_id,
+          user_id: tributePage.created_by_user_id,
+          loved_one_name: tributePage.loved_ones_name,
+          slug: tributePage.slugified_name,
+          created_at: '', // Not available in TributePage
+          updated_at: '', // Not available in TributePage
+          custom_html: tributePage.page_html,
+          phone_number: '', // Not available in TributePage
+          number_of_streams: 0 // Not available in TributePage
+        }));
+        
         // Update cache
         this.userTributesCache.set(userId, {
-          data: response.data.tributes,
+          data: tributes,
           timestamp: Date.now()
         });
         
         // Update store
-        this.updateUserTributeStore(userId, response.data.tributes);
+        this.updateUserTributeStore(userId, tributes);
         
         // Also cache individual tributes
-        for (const tribute of response.data.tributes) {
+        for (const tribute of tributes) {
           this.tributeCache.set(tribute.id, {
             data: tribute,
             timestamp: Date.now()
@@ -333,7 +410,7 @@ export class TributePersistence {
           this.updateTributeStore(tribute.id, tribute);
         }
         
-        return { data: response.data.tributes, success: true };
+        return { data: tributes, success: true };
       }
       
       return { 
@@ -390,8 +467,16 @@ export class TributePersistence {
     extended_data?: Record<string, any>;
   }): Promise<{ tributeId?: number; slug?: string; success: boolean; error?: string }> {
     try {
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.createTribute(data)
+      // Convert to CreateTributePageParams format
+      const createParams: CreateTributePageParams = {
+        created_by_user_id: data.user_id,
+        loved_ones_name: data.loved_one_name,
+        slugified_name: data.slug,
+        page_html: data.custom_html
+      };
+      
+      const response = await this.executeWithRetry(() =>
+        tributeApiV2.createTribute(createParams)
       );
       
       if (response.success && response.data) {
@@ -399,10 +484,10 @@ export class TributePersistence {
         this.userTributesCache.delete(data.user_id);
         this.updateUserTributeStore(data.user_id, null);
         
-        return { 
-          tributeId: response.data.id,
-          slug: response.data.slug,
-          success: true 
+        return {
+          tributeId: response.data.tribute_id,
+          slug: response.data.slugified_name,
+          success: true
         };
       }
       
@@ -438,8 +523,15 @@ export class TributePersistence {
     }>
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await this.executeWithRetry(() => 
-        this.apiClient.updateTribute(tributeId, data)
+      // Convert to UpdateTributePageParams format
+      const updateParams: UpdateTributePageParams = {
+        loved_ones_name: data.loved_one_name,
+        slugified_name: data.slug,
+        page_html: data.custom_html
+      };
+      
+      const response = await this.executeWithRetry(() =>
+        tributeApiV2.updateTribute(tributeId, updateParams)
       );
       
       if (response.success) {

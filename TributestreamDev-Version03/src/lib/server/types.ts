@@ -17,6 +17,7 @@ export interface ApiResponse<T = unknown> {
   error?: string;
   code?: string;
   status?: number;
+  htmlPreview?: string; // Added for HTML error responses
 }
 
 /**

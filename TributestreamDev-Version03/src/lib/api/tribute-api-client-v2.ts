@@ -31,24 +31,30 @@ import type {
  */
 export class TributeApiClientV2 {
   private token: string | null = null;
+  private customFetch: typeof fetch | null = null;
 
   /**
    * Constructor
-   * 
+   *
    * @param token Optional JWT token for authentication
+   * @param customFetch Optional fetch function to use (for server-side requests)
    */
-  constructor(token?: string) {
+  constructor(token?: string, customFetch?: typeof fetch) {
     if (token) {
       this.token = token;
     } else if (browser) {
       // Try to get token from localStorage
       this.token = localStorage.getItem('jwt_token');
     }
+    
+    if (customFetch) {
+      this.customFetch = customFetch;
+    }
   }
 
   /**
    * Set authentication token
-   * 
+   *
    * @param token JWT token
    */
   setToken(token: string): void {
@@ -56,6 +62,24 @@ export class TributeApiClientV2 {
     if (browser) {
       localStorage.setItem('jwt_token', token);
     }
+  }
+
+  /**
+   * Set custom fetch function
+   *
+   * @param fetchFn Custom fetch function (e.g., event.fetch in SvelteKit server-side code)
+   */
+  setFetch(fetchFn: typeof fetch): void {
+    this.customFetch = fetchFn;
+  }
+
+  /**
+   * Get the current fetch function
+   *
+   * @returns The current fetch function being used
+   */
+  getFetch(): typeof fetch {
+    return this.customFetch || fetch;
   }
 
   /**
@@ -98,24 +122,79 @@ export class TributeApiClientV2 {
         ...(options.headers || {})
       };
 
+      // Use custom fetch if provided, otherwise use global fetch
+      const fetchFn = this.customFetch || fetch;
+      
+      // Log the request details for debugging
+      console.log(`API Request: ${url}`);
+      console.log(`Using custom fetch: ${!!this.customFetch}`);
+      console.log(`Is URL relative: ${url.startsWith('/')}`);
+      console.log(`Request options:`, options);
+      
       // Make the request
-      const response = await fetch(url, options);
+      let response;
+      try {
+        // For relative URLs, ensure we're using the custom fetch function
+        // This is critical for server-side rendering with SvelteKit
+        if (url.startsWith('/')) {
+          if (!this.customFetch) {
+            console.error(`Error: Cannot use relative URL (${url}) with global fetch. Use event.fetch instead.`);
+            throw new Error(`Cannot use relative URL (${url}) with global fetch — use event.fetch instead: https://svelte.dev/docs/kit/web-standards#fetch-apis`);
+          }
+          console.log(`Using custom fetch for relative URL: ${url}`);
+        }
+        
+        response = await fetchFn(url, options);
+        console.log(`Response status: ${response.status}`);
+      } catch (fetchError) {
+        console.error(`Fetch error:`, fetchError);
+        console.error(`Fetch error details:`, {
+          url,
+          isRelative: url.startsWith('/'),
+          usingCustomFetch: !!this.customFetch
+        });
+        throw fetchError;
+      }
       
       // Parse the response
       let data: any;
       const contentType = response.headers.get('content-type');
+      
+      // Check if response is JSON
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
+        console.log('Received JSON response:', JSON.stringify(data).substring(0, 200) + '...');
       } else {
-        data = await response.text();
+        // Handle non-JSON responses (like HTML)
+        const textData = await response.text();
+        
+        // Check if it's HTML (likely a login page or error page)
+        if (textData.includes('<!doctype html>') || textData.includes('<html')) {
+          console.error('Received HTML response instead of JSON. Authentication may have failed.');
+          console.error('Response URL:', response.url);
+          console.error('Response status:', response.status);
+          console.error('Response headers:', JSON.stringify(Object.fromEntries([...response.headers])));
+          console.error('HTML preview:', textData.substring(0, 200) + '...');
+          
+          return {
+            success: false,
+            error: 'Authentication failed or invalid endpoint. Received HTML instead of JSON.',
+            code: 'AUTH_ERROR',
+            status: response.status,
+            htmlPreview: textData.substring(0, 200) + '...'
+          };
+        }
+        
+        console.log('Received non-JSON response:', textData.substring(0, 200) + '...');
+        data = textData;
       }
 
       // Handle error responses
       if (!response.ok) {
         return {
           success: false,
-          error: data.message || data.error || 'Unknown error occurred',
-          code: data.code || 'API_ERROR',
+          error: typeof data === 'object' ? (data.message || data.error || 'Unknown error occurred') : 'API error: ' + String(data).substring(0, 100),
+          code: typeof data === 'object' ? (data.code || 'API_ERROR') : 'API_ERROR',
           status: response.status
         };
       }
@@ -158,9 +237,28 @@ export class TributeApiClientV2 {
       queryParams.append('user_id', userId.toString());
     }
     
-    return this.request<PaginatedTributePagesResponse>(
-      `${TRIBUTE_PAGES_PATH}?${queryParams.toString()}`
-    );
+    // Enhanced logging to debug fetch issues
+    console.log('getTributes options:', options);
+    console.log('getTributes URL:', `${TRIBUTE_PAGES_PATH}?${queryParams.toString()}`);
+    console.log('Using custom fetch:', !!this.customFetch);
+    
+    try {
+      // Use the request method which should use the custom fetch if set
+      const response = await this.request<PaginatedTributePagesResponse>(
+        `${TRIBUTE_PAGES_PATH}?${queryParams.toString()}`
+      );
+      
+      console.log('getTributes raw response:', response);
+      
+      return response;
+    } catch (error) {
+      console.error('Error in getTributes:', error);
+      return {
+        success: false,
+        error: `Failed to fetch tributes: ${error}`,
+        code: 'FETCH_ERROR'
+      };
+    }
   }
 
   /**
@@ -170,7 +268,31 @@ export class TributeApiClientV2 {
    * @returns User's tributes
    */
   async getTributesByUser(userId: number): Promise<ApiResponse<PaginatedTributePagesResponse>> {
-    return this.getTributes({ userId });
+    console.log('getTributesByUser called with userId:', userId);
+    console.log('Using custom fetch in getTributesByUser:', !!this.customFetch);
+    
+    try {
+      // Directly call getTributes with the userId
+      const response = await this.getTributes({ userId });
+      
+      // Log detailed response information
+      console.log('getTributesByUser response status:', response.success);
+      if (!response.success) {
+        console.error('getTributesByUser error:', response.error);
+      } else {
+        console.log('getTributesByUser data structure:',
+          response.data ? Object.keys(response.data).join(', ') : 'No data');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error in getTributesByUser:', error);
+      return {
+        success: false,
+        error: `Failed to fetch tributes for user ${userId}: ${error}`,
+        code: 'FETCH_ERROR'
+      };
+    }
   }
 
   /**
@@ -180,9 +302,29 @@ export class TributeApiClientV2 {
    * @returns Tribute data
    */
   async getTributeById(tributeId: number): Promise<ApiResponse<{ data: TributePage }>> {
-    return this.request<{ data: TributePage }>(
-      `${TRIBUTE_PAGES_PATH}/${tributeId}`
-    );
+    console.log(`getTributeById called with tributeId: ${tributeId}`);
+    console.log(`Using custom fetch in getTributeById: ${!!this.customFetch}`);
+    
+    try {
+      const url = `${TRIBUTE_PAGES_PATH}/${tributeId}`;
+      console.log(`getTributeById URL: ${url}`);
+      
+      const response = await this.request<{ data: TributePage }>(url);
+      
+      console.log(`getTributeById response status: ${response.success}`);
+      if (!response.success) {
+        console.error(`getTributeById error: ${response.error}`);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Error in getTributeById: ${error}`);
+      return {
+        success: false,
+        error: `Failed to fetch tribute ${tributeId}: ${error}`,
+        code: 'FETCH_ERROR'
+      };
+    }
   }
 
   /**

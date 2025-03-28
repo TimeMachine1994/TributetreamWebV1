@@ -14,6 +14,7 @@ export const EVENTS_PATH = `${API_BASE_URL}/events`;
 export const USERS_PATH = `${API_BASE_URL}/users`;
 export const FUNERAL_HOMES_PATH = `${API_BASE_URL}/funeral-homes`;
 export const SCHEDULES_PATH = `${API_BASE_URL}/schedules`;
+export const FORMS_PATH = `${API_BASE_URL}/forms`;
 
 // Special endpoints for frontend requests
 export const ACTIVE_EVENTS_PATH = `${EVENTS_PATH}/active`;

@@ -27,7 +27,7 @@ async function fetchUserTributes() {
   }
   
   // Then get tributes for the user
-  const userId = userResponse.data.data.id;
+  const userId = userResponse.data?.data?.id;
   const tributesResponse = await usersApi.getTributesByUser(userId);
   
   if (!tributesResponse.success || !tributesResponse.data) {
@@ -35,7 +35,7 @@ async function fetchUserTributes() {
     return [];
   }
   
-  return tributesResponse.data.tributes;
+  return tributesResponse.data;
 }
 
 /**
@@ -49,7 +49,7 @@ async function fetchActiveEvents() {
     return [];
   }
   
-  return response.data.events;
+  return response.data;
 }
 
 /**
@@ -87,11 +87,11 @@ async function fetchLocationsWithEvents(tributeId: number) {
   
   // For each location, get its events
   const locationsWithEvents = await Promise.all(
-    locationsResponse.data.locations.map(async (location) => {
+    locationsResponse.data.map(async (location: any) => {
       const eventsResponse = await eventsApi.getEventsByLocation(location.location_id);
       
       const events = eventsResponse.success && eventsResponse.data 
-        ? eventsResponse.data.events 
+        ? eventsResponse.data
         : [];
       
       return {

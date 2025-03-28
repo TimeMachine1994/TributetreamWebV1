@@ -143,7 +143,12 @@ export async function forwardRequestToWordPress<T>(
     };
     
     // Make the request to WordPress
-    const response = await fetch(apiUrl, requestOptions);
+    console.log(`forwardRequestToWordPress - Making request to: ${apiUrl}`);
+    console.log(`forwardRequestToWordPress - Using event.fetch: ${!!event.fetch}`);
+    console.log(`forwardRequestToWordPress - Request options:`, requestOptions);
+    
+    // Use event.fetch instead of global fetch
+    const response = await event.fetch(apiUrl, requestOptions);
     
     // Parse the response
     let responseData: unknown;

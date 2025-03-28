@@ -9,7 +9,7 @@
 import { browser } from '$app/environment';
 import { writable, type Writable } from 'svelte/store';
 import { eventsApi } from '$lib/api/events-api';
-import type { ApiResponse, TributeApiClient } from '$lib/api/tribute-api-client';
+import type { ApiResponse } from '$lib/api/tribute-api-client';
 import type { Event } from '$lib/types/event';
 import type { Location } from '$lib/types/location';
 import type { Tribute } from '$lib/types/tribute';
@@ -43,20 +43,6 @@ export class EventsPersistence {
   private maxRetries = 3;
   private retryDelayMs = 1000;
   
-  // API client reference
-  private apiClient: TributeApiClient | null = null;
-  
-  /**
-   * Set the API client for making authenticated requests
-   *
-   * @param apiClient The API client instance
-   */
-  setApiClient(apiClient: TributeApiClient): void {
-    this.apiClient = apiClient;
-    // Clear caches when API client changes (e.g., on login/logout)
-    this.clearCaches();
-  }
-  
   /**
    * Get active events with caching
    * 
@@ -88,9 +74,9 @@ export class EventsPersistence {
         options.retry ?? true
       );
       
-      if (response.success && response.data?.events) {
+      if (response.success && response.data) {
         // Sort events by status and start time
-        const sortedEvents = sortEventsByStatusAndTime(response.data.events);
+        const sortedEvents = sortEventsByStatusAndTime(response.data);
         
         // Update cache
         this.eventsCache.set(cacheKey, {
@@ -151,7 +137,7 @@ export class EventsPersistence {
    * @returns Events for the location and success indicator
    */
   async getEventsByLocation(
-    locationId: string,
+    locationId: string | number,
     options: { 
       forceRefresh?: boolean;
       retry?: boolean;
@@ -172,13 +158,13 @@ export class EventsPersistence {
     // Fetch from API
     try {
       const response = await this.executeWithRetry(() => 
-        eventsApi.getEventsByLocation(locationId),
+        eventsApi.getEventsByLocation(typeof locationId === 'string' ? parseInt(locationId, 10) : locationId),
         options.retry ?? true
       );
       
-      if (response.success && response.data?.events) {
+      if (response.success && response.data) {
         // Sort events by status and start time
-        const sortedEvents = sortEventsByStatusAndTime(response.data.events);
+        const sortedEvents = sortEventsByStatusAndTime(response.data);
         
         // Update cache
         this.eventsCache.set(cacheKey, {
@@ -213,7 +199,7 @@ export class EventsPersistence {
    * @param locationId Location ID
    * @returns Svelte store with location events
    */
-  getLocationEventsStore(locationId: string): Writable<Event[] | null> {
+  getLocationEventsStore(locationId: string | number): Writable<Event[] | null> {
     const cacheKey = `location_${locationId}_events`;
     
     if (!this.eventsStores.has(cacheKey)) {
@@ -261,13 +247,13 @@ export class EventsPersistence {
     // Fetch from API
     try {
       const response = await this.executeWithRetry(() => 
-        eventsApi.getEventsByTribute(tributeId),
+        eventsApi.getEventsByTribute(typeof tributeId === 'string' ? parseInt(tributeId, 10) : tributeId),
         options.retry ?? true
       );
       
-      if (response.success && response.data?.events) {
+      if (response.success && response.data) {
         // Sort events by status and start time
-        const sortedEvents = sortEventsByStatusAndTime(response.data.events);
+        const sortedEvents = sortEventsByStatusAndTime(response.data);
         
         // Update cache
         this.eventsCache.set(cacheKey, {
@@ -346,17 +332,17 @@ export class EventsPersistence {
         options.retry ?? true
       );
       
-      if (response.success && response.data?.tributes) {
+      if (response.success && response.data) {
         // Update cache
         this.allTributesCache = {
-          data: response.data.tributes,
+          data: response.data,
           timestamp: Date.now()
         };
         
         // Update store
-        this.allTributesStore.set(response.data.tributes);
+        this.allTributesStore.set(response.data);
         
-        return { data: response.data.tributes, success: true };
+        return { data: response.data, success: true };
       }
       
       return { 

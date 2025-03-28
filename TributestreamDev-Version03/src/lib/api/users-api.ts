@@ -4,7 +4,7 @@
  * Provides methods for interacting with the users endpoints of the TributeStream API.
  */
 
-import { tributeApi } from './tribute-api-client';
+import { tributeApiV2 } from './tribute-api-client-v2';
 import type { ApiResponse } from './tribute-api-client';
 import { USERS_PATH, CURRENT_USER_PATH, TRIBUTE_PAGES_PATH } from './api-constants';
 import type {
@@ -41,7 +41,7 @@ export const usersApi = {
       queryParams.append('role', role);
     }
     
-    return tributeApi['request']<PaginatedUsersResponse>(
+    return tributeApiV2.request<PaginatedUsersResponse>(
       `${USERS_PATH}?${queryParams.toString()}`
     );
   },
@@ -63,7 +63,7 @@ export const usersApi = {
    * @returns User data
    */
   async getUserById(id: number): Promise<ApiResponse<{ data: User }>> {
-    return tributeApi['request']<{ data: User }>(
+    return tributeApiV2.request<{ data: User }>(
       `${USERS_PATH}/${id}`
     );
   },
@@ -74,7 +74,7 @@ export const usersApi = {
    * @returns Current user data
    */
   async getCurrentUser(): Promise<ApiResponse<{ data: User }>> {
-    const response = await tributeApi['request']<User>(
+    const response = await tributeApiV2.request<User>(
       `${CURRENT_USER_PATH}`
     );
     
@@ -102,7 +102,7 @@ export const usersApi = {
   async getTributesByUser(
     userId: number,
     options: { page?: number; perPage?: number } = {}
-  ): Promise<ApiResponse<{ tributes: Tribute[] }>> {
+  ): Promise<ApiResponse<Tribute[]>> {
     const { page = 1, perPage = 10 } = options;
     const queryParams = new URLSearchParams();
     
@@ -110,13 +110,13 @@ export const usersApi = {
     queryParams.append('per_page', perPage.toString());
     queryParams.append('user_id', userId.toString());
     
-    const response = await tributeApi['request']<PaginatedTributePagesResponse>(
+    const response = await tributeApiV2.request<PaginatedTributePagesResponse>(
       `${TRIBUTE_PAGES_PATH}?${queryParams.toString()}`
     );
     
     // Map TributePage[] to Tribute[] for backward compatibility
-    if (response.success && response.data?.tributes) {
-      const tributes = response.data.tributes.map(tributePage => ({
+    if (response.success && Array.isArray(response.data)) {
+      const tributes = response.data.map((tributePage: any) => ({
         id: tributePage.tribute_id,
         user_id: tributePage.created_by_user_id,
         loved_one_name: tributePage.loved_ones_name,
@@ -130,14 +130,14 @@ export const usersApi = {
       
       return {
         ...response,
-        data: { tributes }
+        data: tributes
       };
     }
     
     return {
       ...response,
-      data: { tributes: [] }
-    } as ApiResponse<{ tributes: Tribute[] }>;
+      data: []
+    } as ApiResponse<Tribute[]>;
   },
   
   /**
@@ -147,7 +147,7 @@ export const usersApi = {
    * @returns Created user ID
    */
   async createUser(data: CreateUserParams): Promise<ApiResponse<{ user_id: number; email: string; user_type: string }>> {
-    return tributeApi['request']<{ user_id: number; email: string; user_type: string }>(
+    return tributeApiV2.request<{ user_id: number; email: string; user_type: string }>(
       `${USERS_PATH}`,
       {
         method: 'POST',
@@ -167,7 +167,7 @@ export const usersApi = {
     id: number,
     data: UpdateUserParams
   ): Promise<ApiResponse<{ user_id: number }>> {
-    return tributeApi['request']<{ user_id: number }>(
+    return tributeApiV2.request<{ user_id: number }>(
       `${USERS_PATH}/${id}`,
       {
         method: 'PUT',
@@ -183,7 +183,7 @@ export const usersApi = {
    * @returns Delete result
    */
   async deleteUser(id: number): Promise<ApiResponse<{ deleted_id: number }>> {
-    return tributeApi['request']<{ deleted_id: number }>(
+    return tributeApiV2.request<{ deleted_id: number }>(
       `${USERS_PATH}/${id}`,
       {
         method: 'DELETE'
@@ -198,7 +198,7 @@ export const usersApi = {
    * @returns All user metadata
    */
   async getUserMeta(userId: number): Promise<ApiResponse<{ meta: Record<string, any> }>> {
-    return tributeApi['request']<{ meta: Record<string, any> }>(
+    return tributeApiV2.request<{ meta: Record<string, any> }>(
       `${USERS_PATH}/${userId}/meta`
     );
   },
@@ -214,7 +214,7 @@ export const usersApi = {
     userId: number,
     metaKey: string
   ): Promise<ApiResponse<{ key: string; value: any }>> {
-    return tributeApi['request']<{ key: string; value: any }>(
+    return tributeApiV2.request<{ key: string; value: any }>(
       `${USERS_PATH}/${userId}/meta/${encodeURIComponent(metaKey)}`
     );
   },
@@ -232,7 +232,7 @@ export const usersApi = {
     metaKey: string,
     metaValue: any
   ): Promise<ApiResponse<{ success: boolean }>> {
-    return tributeApi['request']<{ success: boolean }>(
+    return tributeApiV2.request<{ success: boolean }>(
       `${USERS_PATH}/${userId}/meta`,
       {
         method: 'POST',
@@ -255,7 +255,7 @@ export const usersApi = {
     userId: number,
     metaKey: string
   ): Promise<ApiResponse<{ success: boolean }>> {
-    return tributeApi['request']<{ success: boolean }>(
+    return tributeApiV2.request<{ success: boolean }>(
       `${USERS_PATH}/${userId}/meta/${encodeURIComponent(metaKey)}`,
       {
         method: 'DELETE'

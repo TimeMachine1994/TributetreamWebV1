@@ -1,77 +1,71 @@
-/**
- * Form Data Endpoint (GET)
- * 
- * Retrieves form data for a specific user
- */
-
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { forwardRequestToWordPress } from '$lib/server/apiUtils';
-import { ensureAuthenticated } from '$lib/server/authUtils';
-import type { FormData } from '$lib/server/types';
+import { forwardApiRequest, handleApiError } from '$lib/server/apiUtils';
 
 /**
- * @api {get} /api/forms/:userId Get form data
- * @apiName GetFormData
- * @apiGroup Forms
- * @apiDescription Retrieves form data for a specific user
- *
- * @apiHeader {String} Authorization Bearer token
- *
- * @apiParam {Number} userId User ID
- *
- * @apiSuccess {Boolean} success Indicates if the request was successful
- * @apiSuccess {Object} data Response data
- * @apiSuccess {Object} data.form_data User's form data
+ * GET handler for retrieving form data for a user
  */
-export const GET: RequestHandler = async (event) => {
+export const GET: RequestHandler = async ({ params, request, fetch, locals }) => {
   try {
+    // Ensure we have a valid user ID
+    const userId = params.userId;
+    if (!userId) {
+      return json({ success: false, error: 'User ID is required' }, { status: 400 });
+    }
+
     // Ensure user is authenticated
-    const authenticatedUserId = await ensureAuthenticated(event);
-    
-    const userId = parseInt(event.params.userId, 10);
-    
-    if (isNaN(userId)) {
-      return json({
-        success: false,
-        error: {
-          code: 'INVALID_USER_ID',
-          message: 'Invalid user ID',
-          status: 400
-        }
-      }, { status: 400 });
+    if (!locals.authenticated || !locals.token) {
+      return json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
-    
-    // Check if user is accessing their own form data or has permission
-    if (authenticatedUserId !== userId) {
-      return json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'You are not authorized to view form data for this user',
-          status: 403
-        }
-      }, { status: 403 });
-    }
-    
-    // Forward the request to WordPress
-    const response = await forwardRequestToWordPress<{ form_data: FormData }>(
-      event,
-      `/tributestream/v1/form-data/${userId}`
-    );
-    
+
+    // Use the forwardApiRequest utility to properly forward the request to WordPress
+    const response = await forwardApiRequest({
+      path: `/api/users/${userId}/form-data`,
+      request,
+      fetch,
+      method: 'GET'
+    });
+
     // Return the response
-    return json(response, { status: response.success ? 200 : (response.status || 404) });
+    return json(response, { status: response.status || 200 });
   } catch (error) {
     console.error('Error fetching form data:', error);
-    
-    return json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to fetch form data',
-        status: 500
-      }
-    }, { status: 500 });
+    return handleApiError(error);
+  }
+};
+
+/**
+ * POST handler for saving form data for a user
+ */
+export const POST: RequestHandler = async ({ params, request, fetch, locals }) => {
+  try {
+    // Ensure we have a valid user ID
+    const userId = params.userId;
+    if (!userId) {
+      return json({ success: false, error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Ensure user is authenticated
+    if (!locals.authenticated || !locals.token) {
+      return json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Get the request body
+    const body = await request.json();
+
+    // Use the forwardApiRequest utility to properly forward the request to WordPress
+    const response = await forwardApiRequest({
+      path: `/api/users/${userId}/form-data`,
+      request,
+      fetch,
+      method: 'POST',
+      body
+    });
+
+    // Return the response
+    return json(response, { status: response.status || 200 });
+  } catch (error) {
+    console.error('Error saving form data:', error);
+    return handleApiError(error);
   }
 };
