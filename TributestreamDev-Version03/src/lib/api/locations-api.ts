@@ -4,15 +4,14 @@
  * Provides methods for interacting with the locations endpoints of the TributeStream API.
  */
 
-import { tributeApiV2 } from './tribute-api-client-v2';
+import { tributeApi } from './tribute-api-client';
+import type { ApiResponse } from './tribute-api-client';
 import { LOCATIONS_PATH, TRIBUTE_PAGES_PATH } from './api-constants';
-import type { ApiResponse } from '$lib/server/types';
 import type {
   Location,
-  PaginatedLocationsResponse,
   CreateLocationParams,
   UpdateLocationParams,
-  CreateLocationResponse
+  PaginatedLocationsResponse
 } from '$lib/server/types';
 
 /**
@@ -23,62 +22,66 @@ export const locationsApi = {
    * Get all locations with pagination
    * 
    * @param options Pagination options
-   * @returns List of all locations
+   * @returns List of locations
    */
-  async getAllLocations(options: { page?: number; perPage?: number } = {}): Promise<ApiResponse<PaginatedLocationsResponse>> {
-    const { page = 1, perPage = 10 } = options;
+  async getLocations(options: { page?: number; perPage?: number; tributeId?: number } = {}): Promise<ApiResponse<PaginatedLocationsResponse>> {
+    const { page = 1, perPage = 10, tributeId } = options;
     const queryParams = new URLSearchParams();
     
     queryParams.append('page', page.toString());
     queryParams.append('per_page', perPage.toString());
     
-    return tributeApiV2.request<PaginatedLocationsResponse>(
+    if (tributeId) {
+      queryParams.append('tribute_id', tributeId.toString());
+    }
+    
+    return tributeApi['request']<PaginatedLocationsResponse>(
       `${LOCATIONS_PATH}?${queryParams.toString()}`
     );
   },
-
+  
+  /**
+   * Alias for getLocations (for backward compatibility)
+   * 
+   * @param options Pagination options
+   * @returns List of locations
+   */
+  async getAllLocations(options: { page?: number; perPage?: number; tributeId?: number } = {}): Promise<ApiResponse<PaginatedLocationsResponse>> {
+    return this.getLocations(options);
+  },
+  
+  /**
+   * Get a location by ID
+   * 
+   * @param id Location ID
+   * @returns Location data
+   */
+  async getLocationById(id: number): Promise<ApiResponse<{ data: Location }>> {
+    return tributeApi['request']<{ data: Location }>(
+      `${LOCATIONS_PATH}/${id}`
+    );
+  },
+  
   /**
    * Get locations for a specific tribute
    * 
    * @param tributeId Tribute ID
-   * @param options Pagination options
    * @returns Locations for the tribute
    */
-  async getLocationsByTribute(
-    tributeId: number, 
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<ApiResponse<PaginatedLocationsResponse>> {
-    const { page = 1, perPage = 10 } = options;
-    const queryParams = new URLSearchParams();
-    
-    queryParams.append('page', page.toString());
-    queryParams.append('per_page', perPage.toString());
-    
-    return tributeApiV2.request<PaginatedLocationsResponse>(
-      `${TRIBUTE_PAGES_PATH}/${tributeId}/locations?${queryParams.toString()}`
+  async getLocationsByTribute(tributeId: number | string): Promise<ApiResponse<{ locations: Location[] }>> {
+    return tributeApi['request']<{ locations: Location[] }>(
+      `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
     );
   },
-
-  /**
-   * Get a location by ID
-   * 
-   * @param locationId Location ID
-   * @returns Location data
-   */
-  async getLocationById(locationId: number): Promise<ApiResponse<{ data: Location }>> {
-    return tributeApiV2.request<{ data: Location }>(
-      `${LOCATIONS_PATH}/${locationId}`
-    );
-  },
-
+  
   /**
    * Create a new location
    * 
    * @param data Location data
    * @returns Created location ID
    */
-  async createLocation(data: CreateLocationParams): Promise<ApiResponse<CreateLocationResponse>> {
-    return tributeApiV2.request<CreateLocationResponse>(
+  async createLocation(data: CreateLocationParams): Promise<ApiResponse<{ location_id: number; tribute_id: number }>> {
+    return tributeApi['request']<{ location_id: number; tribute_id: number }>(
       `${LOCATIONS_PATH}`,
       {
         method: 'POST',
@@ -86,36 +89,36 @@ export const locationsApi = {
       }
     );
   },
-
+  
   /**
    * Update an existing location
    * 
-   * @param locationId Location ID
+   * @param id Location ID
    * @param data Updated location data
    * @returns Update result
    */
   async updateLocation(
-    locationId: number,
+    id: number,
     data: UpdateLocationParams
   ): Promise<ApiResponse<{ location_id: number }>> {
-    return tributeApiV2.request<{ location_id: number }>(
-      `${LOCATIONS_PATH}/${locationId}`,
+    return tributeApi['request']<{ location_id: number }>(
+      `${LOCATIONS_PATH}/${id}`,
       {
         method: 'PUT',
         body: JSON.stringify(data)
       }
     );
   },
-
+  
   /**
    * Delete a location
    * 
-   * @param locationId Location ID
+   * @param id Location ID
    * @returns Delete result
    */
-  async deleteLocation(locationId: number): Promise<ApiResponse<{ deleted_id: number }>> {
-    return tributeApiV2.request<{ deleted_id: number }>(
-      `${LOCATIONS_PATH}/${locationId}`,
+  async deleteLocation(id: number): Promise<ApiResponse<{ deleted_id: number }>> {
+    return tributeApi['request']<{ deleted_id: number }>(
+      `${LOCATIONS_PATH}/${id}`,
       {
         method: 'DELETE'
       }

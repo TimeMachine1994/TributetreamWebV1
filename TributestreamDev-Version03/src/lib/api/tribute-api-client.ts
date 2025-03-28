@@ -6,9 +6,7 @@
  */
 
 import { browser } from '$app/environment';
-
-// Base API URL
-const API_BASE_URL = 'https://wp.tributestream.com/wp-json/tributestream/v1';
+import { API_BASE_URL } from './api-constants';
 
 /**
  * API interface types
@@ -17,6 +15,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: string;
   status?: number;
 }
 
@@ -52,10 +51,38 @@ export interface Tribute {
   extended_data?: Record<string, any>;
 }
 
+export interface TributeCollection {
+  tributes: Tribute[];
+  total_pages: number;
+  total_items: number;
+  current_page: number;
+}
+
+export interface TributeCreationResult {
+  id: number;
+  slug: string;
+}
+
+export interface TributeApiClient {
+  setToken(token: string): void;
+  clearToken(): void;
+  getAllTributes(options?: { page?: number; perPage?: number; search?: string }): Promise<ApiResponse<TributeCollection>>;
+  getTributeById(tributeId: number): Promise<ApiResponse<Tribute>>;
+  getTributeBySlug(slug: string): Promise<ApiResponse<Tribute>>;
+  createTribute(data: any): Promise<ApiResponse<TributeCreationResult>>;
+  updateTribute(tributeId: number, data: any): Promise<ApiResponse<{ updated_rows: number }>>;
+  deleteTribute(tributeId: number): Promise<ApiResponse<{ deleted_rows: number }>>;
+  getTributeData(tributeId: number): Promise<ApiResponse<Record<string, any>>>;
+  createTributeData(tributeId: number, data: Record<string, any>): Promise<ApiResponse<{ success: boolean }>>;
+  updateTributeData(tributeId: number, data: Record<string, any>): Promise<ApiResponse<{ success: boolean }>>;
+  saveFormData(data: FormData): Promise<ApiResponse<{ success: boolean }>>;
+  getFormData(userId: number): Promise<ApiResponse<FormData>>;
+}
+
 /**
- * API Client Class
+ * TributeStream API Client
  */
-export class TributeApiClient {
+export class TributeApiClientImpl implements TributeApiClient {
   private token: string | null = null;
 
   /**
@@ -73,7 +100,7 @@ export class TributeApiClient {
   }
 
   /**
-   * Set authentication token
+   * Set the JWT token for authenticated requests
    * 
    * @param token JWT token
    */
@@ -85,7 +112,7 @@ export class TributeApiClient {
   }
 
   /**
-   * Clear authentication token
+   * Clear the JWT token
    */
   clearToken(): void {
     this.token = null;
@@ -95,7 +122,9 @@ export class TributeApiClient {
   }
 
   /**
-   * Get authorization headers
+   * Get request headers with authentication
+   * 
+   * @returns Headers object
    */
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
@@ -116,7 +145,7 @@ export class TributeApiClient {
    * @param options Fetch options
    * @returns Response data or error
    */
-  private async request<T>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  protected async request<T>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
       // Set default headers
       options.headers = {
@@ -140,16 +169,16 @@ export class TributeApiClient {
       if (!response.ok) {
         return {
           success: false,
-          error: data.message || 'Unknown error occurred',
-          status: response.status,
-          data: data
+          error: data.message || data.error || 'Unknown error occurred',
+          code: data.code || 'API_ERROR',
+          status: response.status
         };
       }
 
       // Return successful response
       return {
         success: true,
-        data: data as T,
+        data: data,
         status: response.status
       };
     } catch (error) {
@@ -157,21 +186,22 @@ export class TributeApiClient {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Network error',
+        code: 'NETWORK_ERROR',
         status: 0
       };
     }
   }
 
   /**
-   * Get all tributes with pagination and search
+   * Get all tributes with pagination
    * 
-   * @param options Pagination and search options
+   * @param options Pagination options
    * @returns List of tributes
    */
-  async getTributes(options: { page?: number; perPage?: number; search?: string } = {}): Promise<ApiResponse<{ tributes: Tribute[]; total_pages: number; total_items: number; current_page: number }>> {
+  async getAllTributes(options: { page?: number; perPage?: number; search?: string } = {}): Promise<ApiResponse<TributeCollection>> {
     const { page = 1, perPage = 10, search = '' } = options;
-    const queryParams = new URLSearchParams();
     
+    const queryParams = new URLSearchParams();
     queryParams.append('page', page.toString());
     queryParams.append('per_page', perPage.toString());
     
@@ -179,21 +209,46 @@ export class TributeApiClient {
       queryParams.append('search', search);
     }
     
-    return this.request<{ tributes: Tribute[]; total_pages: number; total_items: number; current_page: number }>(
-      `${API_BASE_URL}/tributes?${queryParams.toString()}`
+    const response = await this.request<{ data: { tributes: any[]; total_items: number; total_pages: number; current_page: number } }>(
+      `${API_BASE_URL}/tribute-pages?${queryParams.toString()}`
     );
-  }
-
-  /**
-   * Get tributes for a specific user
-   * 
-   * @param userId User ID
-   * @returns User's tributes
-   */
-  async getTributesByUser(userId: number): Promise<ApiResponse<{ tributes: Tribute[] }>> {
-    return this.request<{ tributes: Tribute[] }>(
-      `${API_BASE_URL}/tributes/by-user/${userId}`
-    );
+    
+    // Map the new API response format to the old format for backward compatibility
+    if (response.success && response.data?.data) {
+      const { tributes, total_items, total_pages, current_page } = response.data.data;
+      
+      const mappedTributes = tributes.map(tribute => ({
+        id: tribute.tribute_id,
+        user_id: tribute.created_by_user_id,
+        loved_one_name: tribute.loved_ones_name,
+        slug: tribute.slugified_name,
+        created_at: new Date().toISOString(), // Default value as this isn't in the new API
+        updated_at: new Date().toISOString(), // Default value as this isn't in the new API
+        custom_html: tribute.page_html || '',
+        phone_number: '', // Default value as this isn't in the new API
+        number_of_streams: 0 // Default value as this isn't in the new API
+      }));
+      
+      return {
+        ...response,
+        data: {
+          tributes: mappedTributes,
+          total_pages,
+          total_items,
+          current_page
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: {
+        tributes: [],
+        total_pages: 0,
+        total_items: 0,
+        current_page: 1
+      }
+    } as ApiResponse<TributeCollection>;
   }
 
   /**
@@ -203,9 +258,34 @@ export class TributeApiClient {
    * @returns Tribute data
    */
   async getTributeById(tributeId: number): Promise<ApiResponse<Tribute>> {
-    return this.request<Tribute>(
-      `${API_BASE_URL}/tributes/${tributeId}`
+    const response = await this.request<{ data: any }>(
+      `${API_BASE_URL}/tribute-pages/${tributeId}`
     );
+    
+    // Map the new API response format to the old format for backward compatibility
+    if (response.success && response.data?.data) {
+      const tribute = response.data.data;
+      
+      return {
+        ...response,
+        data: {
+          id: tribute.tribute_id,
+          user_id: tribute.created_by_user_id,
+          loved_one_name: tribute.loved_ones_name,
+          slug: tribute.slugified_name,
+          created_at: new Date().toISOString(), // Default value as this isn't in the new API
+          updated_at: new Date().toISOString(), // Default value as this isn't in the new API
+          custom_html: tribute.page_html || '',
+          phone_number: '', // Default value as this isn't in the new API
+          number_of_streams: 0 // Default value as this isn't in the new API
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: undefined
+    } as ApiResponse<Tribute>;
   }
 
   /**
@@ -215,9 +295,34 @@ export class TributeApiClient {
    * @returns Tribute data
    */
   async getTributeBySlug(slug: string): Promise<ApiResponse<Tribute>> {
-    return this.request<Tribute>(
-      `${API_BASE_URL}/tribute/${encodeURIComponent(slug)}`
+    const response = await this.request<{ data: any }>(
+      `${API_BASE_URL}/tribute-pages/by-slug/${encodeURIComponent(slug)}`
     );
+    
+    // Map the new API response format to the old format for backward compatibility
+    if (response.success && response.data?.data) {
+      const tribute = response.data.data;
+      
+      return {
+        ...response,
+        data: {
+          id: tribute.tribute_id,
+          user_id: tribute.created_by_user_id,
+          loved_one_name: tribute.loved_ones_name,
+          slug: tribute.slugified_name,
+          created_at: new Date().toISOString(), // Default value as this isn't in the new API
+          updated_at: new Date().toISOString(), // Default value as this isn't in the new API
+          custom_html: tribute.page_html || '',
+          phone_number: '', // Default value as this isn't in the new API
+          number_of_streams: 0 // Default value as this isn't in the new API
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: undefined
+    } as ApiResponse<Tribute>;
   }
 
   /**
@@ -234,14 +339,71 @@ export class TributeApiClient {
     custom_html?: string;
     number_of_streams?: number;
     extended_data?: Record<string, any>;
+  } | {
+    created_by_user_id: number;
+    loved_ones_name: string;
+    point_of_contact_user_id?: number;
+    page_html?: string;
+    loved_ones_dob?: string;
+    loved_ones_dod?: string;
   }): Promise<ApiResponse<{ id: number; slug: string }>> {
-    return this.request<{ id: number; slug: string }>(
-      `${API_BASE_URL}/tributes`,
+    // Check if the data is in the old format
+    if ('user_id' in data && 'loved_one_name' in data) {
+      // Map the old format to the new format
+      const newFormatData = {
+        created_by_user_id: data.user_id,
+        loved_ones_name: data.loved_one_name,
+        page_html: data.custom_html,
+        // Add any other fields that need to be mapped
+      };
+      
+      const response = await this.request<{ data: { tribute_id: number; slugified_name: string } }>(
+        `${API_BASE_URL}/tribute-pages`,
+        {
+          method: 'POST',
+          body: JSON.stringify(newFormatData)
+        }
+      );
+      
+      if (response.success && response.data?.data) {
+        return {
+          ...response,
+          data: {
+            id: response.data.data.tribute_id,
+            slug: response.data.data.slugified_name
+          }
+        };
+      }
+      
+      return {
+        ...response,
+        data: undefined
+      } as ApiResponse<{ id: number; slug: string }>;
+    }
+    
+    // Use the new format directly
+    const response = await this.request<{ data: { tribute_id: number; slugified_name: string } }>(
+      `${API_BASE_URL}/tribute-pages`,
       {
         method: 'POST',
         body: JSON.stringify(data)
       }
     );
+    
+    if (response.success && response.data?.data) {
+      return {
+        ...response,
+        data: {
+          id: response.data.data.tribute_id,
+          slug: response.data.data.slugified_name
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: undefined
+    } as ApiResponse<{ id: number; slug: string }>;
   }
 
   /**
@@ -249,68 +411,117 @@ export class TributeApiClient {
    * 
    * @param tributeId Tribute ID
    * @param data Updated tribute data
-   * @returns Update result
+   * @returns Number of updated rows
    */
   async updateTribute(
     tributeId: number,
-    data: Partial<{
-      loved_one_name: string;
-      slug: string;
-      custom_html: string;
-      phone_number: string;
-      number_of_streams: number;
-      extended_data: Record<string, any>;
-    }>
+    data: {
+      loved_one_name?: string;
+      slug?: string;
+      custom_html?: string;
+      phone_number?: string;
+      number_of_streams?: number;
+      extended_data?: Record<string, any>;
+    }
   ): Promise<ApiResponse<{ updated_rows: number }>> {
-    return this.request<{ updated_rows: number }>(
-      `${API_BASE_URL}/tributes/${tributeId}`,
+    // Map the old format to the new format
+    const newFormatData: Record<string, any> = {};
+    
+    if (data.loved_one_name) {
+      newFormatData.loved_ones_name = data.loved_one_name;
+    }
+    
+    if (data.slug) {
+      newFormatData.slugified_name = data.slug;
+    }
+    
+    if (data.custom_html) {
+      newFormatData.page_html = data.custom_html;
+    }
+    
+    // Add any other fields that need to be mapped
+    
+    const response = await this.request<{ data: { tribute_id: number } }>(
+      `${API_BASE_URL}/tribute-pages/${tributeId}`,
       {
         method: 'PUT',
-        body: JSON.stringify(data)
+        body: JSON.stringify(newFormatData)
       }
     );
+    
+    if (response.success) {
+      return {
+        ...response,
+        data: {
+          updated_rows: 1 // Assume 1 row was updated
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: {
+        updated_rows: 0
+      }
+    };
   }
 
   /**
    * Delete a tribute
    * 
    * @param tributeId Tribute ID
-   * @returns Delete result
+   * @returns Number of deleted rows
    */
   async deleteTribute(tributeId: number): Promise<ApiResponse<{ deleted_rows: number }>> {
-    return this.request<{ deleted_rows: number }>(
-      `${API_BASE_URL}/tributes/${tributeId}`,
+    const response = await this.request<{ data: { deleted_id: number } }>(
+      `${API_BASE_URL}/tribute-pages/${tributeId}`,
       {
         method: 'DELETE'
       }
     );
+    
+    if (response.success && response.data?.data) {
+      return {
+        ...response,
+        data: {
+          deleted_rows: 1 // Assume 1 row was deleted
+        }
+      };
+    }
+    
+    return {
+      ...response,
+      data: {
+        deleted_rows: 0
+      }
+    };
   }
 
   /**
-   * Get extended tribute data
+   * Get extended data for a tribute
    * 
    * @param tributeId Tribute ID
    * @returns Extended data
    */
   async getTributeData(tributeId: number): Promise<ApiResponse<Record<string, any>>> {
     return this.request<Record<string, any>>(
-      `${API_BASE_URL}/tribute-data/${tributeId}`
+      `${API_BASE_URL}/tribute-pages/${tributeId}/data`
     );
   }
 
   /**
-   * Create or replace extended tribute data
+   * Create extended data for a tribute
    * 
    * @param tributeId Tribute ID
    * @param data Extended data
-   * @returns Operation result
+   * @returns Success indicator
    */
-  async createOrReplaceTributeData(
+  async createTributeData(
     tributeId: number,
     data: Record<string, any>
   ): Promise<ApiResponse<{ success: boolean }>> {
     return this.request<{ success: boolean }>(
-      `${API_BASE_URL}/tribute-data/${tributeId}`,
+      `${API_BASE_URL}/tribute-pages/${tributeId}/data`,
       {
         method: 'POST',
         body: JSON.stringify(data)
@@ -319,20 +530,36 @@ export class TributeApiClient {
   }
 
   /**
-   * Update extended tribute data (partial update)
+   * Update extended data for a tribute
    * 
    * @param tributeId Tribute ID
-   * @param data Extended data to merge
-   * @returns Operation result
+   * @param data Extended data
+   * @returns Success indicator
    */
   async updateTributeData(
     tributeId: number,
     data: Record<string, any>
   ): Promise<ApiResponse<{ success: boolean }>> {
     return this.request<{ success: boolean }>(
-      `${API_BASE_URL}/tribute-data/${tributeId}`,
+      `${API_BASE_URL}/tribute-pages/${tributeId}/data`,
       {
         method: 'PUT',
+        body: JSON.stringify(data)
+      }
+    );
+  }
+
+  /**
+   * Save form data
+   * 
+   * @param data Form data
+   * @returns Success indicator
+   */
+  async saveFormData(data: FormData): Promise<ApiResponse<{ success: boolean }>> {
+    return this.request<{ success: boolean }>(
+      `${API_BASE_URL}/forms`,
+      {
+        method: 'POST',
         body: JSON.stringify(data)
       }
     );
@@ -344,154 +571,15 @@ export class TributeApiClient {
    * @param userId User ID
    * @returns Form data
    */
-  async getFormData(userId: number): Promise<ApiResponse<{ form_data: FormData }>> {
-    return this.request<{ form_data: FormData }>(
-      `${API_BASE_URL}/form-data/${userId}`
-    );
-  }
-
-  /**
-   * Save form data for a user
-   * 
-   * @param userId User ID
-   * @param formData Form data
-   * @param tributeId Optional tribute ID to update
-   * @returns Operation result
-   */
-  async saveFormData(
-    userId: number,
-    formData: FormData,
-    tributeId?: number
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    const data: { user_id: number; form_data: FormData; tribute_id?: number } = {
-      user_id: userId,
-      form_data: formData
-    };
-    
-    if (tributeId) {
-      data.tribute_id = tributeId;
-    }
-    
-    return this.request<{ success: boolean }>(
-      `${API_BASE_URL}/form-data`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }
-    );
-  }
-
-  /**
-   * Get all user metadata
-   * 
-   * @param userId User ID
-   * @returns All user metadata
-   */
-  async getUserMeta(userId: number): Promise<ApiResponse<{ meta: Record<string, any> }>> {
-    return this.request<{ meta: Record<string, any> }>(
-      `${API_BASE_URL}/user-meta/${userId}`
-    );
-  }
-
-  /**
-   * Get single user metadata entry
-   * 
-   * @param userId User ID
-   * @param metaKey Metadata key
-   * @returns Metadata value
-   */
-  async getUserMetaSingle(
-    userId: number,
-    metaKey: string
-  ): Promise<ApiResponse<{ key: string; value: any }>> {
-    return this.request<{ key: string; value: any }>(
-      `${API_BASE_URL}/user-meta/${userId}/${encodeURIComponent(metaKey)}`
-    );
-  }
-
-  /**
-   * Create or update user metadata
-   * 
-   * @param userId User ID
-   * @param metaKey Metadata key
-   * @param metaValue Metadata value
-   * @returns Operation result
-   */
-  async createOrUpdateUserMeta(
-    userId: number,
-    metaKey: string,
-    metaValue: any
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    return this.request<{ success: boolean }>(
-      `${API_BASE_URL}/user-meta`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          user_id: userId,
-          meta_key: metaKey,
-          meta_value: metaValue
-        })
-      }
-    );
-  }
-
-  /**
-   * Delete user metadata
-   * 
-   * @param userId User ID
-   * @param metaKey Metadata key
-   * @returns Operation result
-   */
-  async deleteUserMeta(
-    userId: number,
-    metaKey: string
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    return this.request<{ success: boolean }>(
-      `${API_BASE_URL}/user-meta/${userId}/${encodeURIComponent(metaKey)}`,
-      {
-        method: 'DELETE'
-      }
-    );
-  }
-
-  /**
-   * Register a new user
-   * 
-   * @param data User registration data
-   * @returns Registration result with user information and JWT token
-   */
-  async registerUser(data: {
-    username: string;
-    email: string;
-    password: string;
-    meta?: Record<string, any>;
-  }): Promise<ApiResponse<{
-    user_id: number;
-    token: string;
-    user_display_name: string;
-    user_email: string;
-  }>> {
-    return this.request<{
-      user_id: number;
-      token: string;
-      user_display_name: string;
-      user_email: string;
-    }>(
-      `${API_BASE_URL}/register`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }
+  async getFormData(userId: number): Promise<ApiResponse<FormData>> {
+    return this.request<FormData>(
+      `${API_BASE_URL}/forms/${userId}`
     );
   }
 }
 
-/**
- * Create a singleton instance for global use
- */
-export const tributeApi = new TributeApiClient();
+// Create a singleton instance for global use
+export const tributeApi = new TributeApiClientImpl();
 
-/**
- * Export default instance
- */
+// Export default instance
 export default tributeApi;

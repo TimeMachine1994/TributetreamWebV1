@@ -10,9 +10,35 @@ import type { Event } from '$lib/types/event';
 import type { Location } from '$lib/types/location';
 import type { User } from '$lib/types/user';
 import type { Tribute } from '$lib/types/tribute';
+import type { TributePage } from '$lib/server/types';
+import {
+  EVENTS_PATH,
+  ACTIVE_EVENTS_PATH,
+  LOCATIONS_PATH,
+  TRIBUTE_PAGES_PATH,
+  USERS_PATH,
+  CURRENT_USER_PATH
+} from './api-constants';
 
-// Base API URL - must match the one in tribute-api-client.ts
-const API_BASE_URL = 'https://wp.tributestream.com/wp-json/tributestream/v1';
+/**
+ * Map TributePage to Tribute (for backward compatibility)
+ * 
+ * @param tributePage TributePage from the new API
+ * @returns Tribute object compatible with the old format
+ */
+function mapTributePageToTribute(tributePage: TributePage): Tribute {
+  return {
+    id: tributePage.tribute_id,
+    user_id: tributePage.created_by_user_id,
+    loved_one_name: tributePage.loved_ones_name,
+    slug: tributePage.slugified_name,
+    created_at: new Date().toISOString(), // Default value as this isn't in the new API
+    updated_at: new Date().toISOString(), // Default value as this isn't in the new API
+    custom_html: tributePage.page_html || '',
+    phone_number: '', // Default value as this isn't in the new API
+    number_of_streams: 0 // Default value as this isn't in the new API
+  };
+}
 
 /**
  * Events API Client
@@ -24,9 +50,25 @@ export const eventsApi = {
    * @returns All tributes
    */
   async getAllTributes(): Promise<ApiResponse<{ tributes: Tribute[] }>> {
-    return tributeApi['request']<{ tributes: Tribute[] }>(
-      `${API_BASE_URL}/tributes/all`
+    const response = await tributeApi['request']<{ tributes: TributePage[] }>(
+      `${TRIBUTE_PAGES_PATH}`
     );
+
+    // If the request was successful, map TributePage[] to Tribute[]
+    if (response.success && response.data?.tributes) {
+      return {
+        ...response,
+        data: {
+          tributes: response.data.tributes.map(mapTributePageToTribute)
+        }
+      };
+    }
+
+    // If the request failed, return the error response
+    return {
+      ...response,
+      data: { tributes: [] }
+    } as ApiResponse<{ tributes: Tribute[] }>;
   },
 
   /**
@@ -36,7 +78,7 @@ export const eventsApi = {
    */
   async getAllEvents(): Promise<ApiResponse<{ events: Event[] }>> {
     return tributeApi['request']<{ events: Event[] }>(
-      `${API_BASE_URL}/events`
+      `${EVENTS_PATH}`
     );
   },
 
@@ -46,9 +88,8 @@ export const eventsApi = {
    * @returns List of active events
    */
   async getActiveEvents(): Promise<ApiResponse<{ events: Event[] }>> {
-    const now = new Date().toISOString();
     return tributeApi['request']<{ events: Event[] }>(
-      `${API_BASE_URL}/events?end_time_gt=${now}`
+      `${ACTIVE_EVENTS_PATH}`
     );
   },
 
@@ -58,9 +99,9 @@ export const eventsApi = {
    * @param locationId Location ID
    * @returns Events for the location
    */
-  async getEventsByLocation(locationId: string): Promise<ApiResponse<{ events: Event[] }>> {
+  async getEventsByLocation(locationId: number | string): Promise<ApiResponse<{ events: Event[] }>> {
     return tributeApi['request']<{ events: Event[] }>(
-      `${API_BASE_URL}/locations/${locationId}/events`
+      `${LOCATIONS_PATH}/${locationId}/events`
     );
   },
 
@@ -70,9 +111,9 @@ export const eventsApi = {
    * @param tributeId Tribute ID
    * @returns Events for the tribute
    */
-  async getEventsByTribute(tributeId: string | number): Promise<ApiResponse<{ events: Event[] }>> {
+  async getEventsByTribute(tributeId: number | string): Promise<ApiResponse<{ events: Event[] }>> {
     return tributeApi['request']<{ events: Event[] }>(
-      `${API_BASE_URL}/tributes/${tributeId}/events`
+      `${TRIBUTE_PAGES_PATH}/${tributeId}/events`
     );
   },
 
@@ -83,7 +124,7 @@ export const eventsApi = {
    */
   async getCurrentUser(): Promise<ApiResponse<User>> {
     return tributeApi['request']<User>(
-      `${API_BASE_URL}/users/me`
+      `${CURRENT_USER_PATH}`
     );
   },
 
@@ -94,7 +135,7 @@ export const eventsApi = {
    */
   async getAllLocations(): Promise<ApiResponse<{ locations: Location[] }>> {
     return tributeApi['request']<{ locations: Location[] }>(
-      `${API_BASE_URL}/locations`
+      `${LOCATIONS_PATH}`
     );
   },
 
@@ -104,9 +145,9 @@ export const eventsApi = {
    * @param tributeId Tribute ID
    * @returns Locations for the tribute
    */
-  async getLocationsByTribute(tributeId: string | number): Promise<ApiResponse<{ locations: Location[] }>> {
+  async getLocationsByTribute(tributeId: number | string): Promise<ApiResponse<{ locations: Location[] }>> {
     return tributeApi['request']<{ locations: Location[] }>(
-      `${API_BASE_URL}/tributes/${tributeId}/locations`
+      `${TRIBUTE_PAGES_PATH}/${tributeId}/locations`
     );
   },
 
@@ -117,13 +158,13 @@ export const eventsApi = {
    * @returns Created event ID
    */
   async createEvent(data: {
-    location_id: string;
+    location_id: number | string;
     stream_html?: string;
     start_time: string;
     end_time: string;
-  }): Promise<ApiResponse<{ event_id: string }>> {
-    return tributeApi['request']<{ event_id: string }>(
-      `${API_BASE_URL}/events`,
+  }): Promise<ApiResponse<{ event_id: number }>> {
+    return tributeApi['request']<{ event_id: number }>(
+      `${EVENTS_PATH}`,
       {
         method: 'POST',
         body: JSON.stringify(data)
@@ -139,16 +180,16 @@ export const eventsApi = {
    * @returns Update result
    */
   async updateEvent(
-    eventId: string,
+    eventId: number | string,
     data: Partial<{
-      location_id: string;
+      location_id: number | string;
       stream_html: string;
       start_time: string;
       end_time: string;
     }>
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    return tributeApi['request']<{ success: boolean }>(
-      `${API_BASE_URL}/events/${eventId}`,
+  ): Promise<ApiResponse<{ event_id: number }>> {
+    return tributeApi['request']<{ event_id: number }>(
+      `${EVENTS_PATH}/${eventId}`,
       {
         method: 'PUT',
         body: JSON.stringify(data)
@@ -162,9 +203,9 @@ export const eventsApi = {
    * @param eventId Event ID
    * @returns Delete result
    */
-  async deleteEvent(eventId: string): Promise<ApiResponse<{ success: boolean }>> {
-    return tributeApi['request']<{ success: boolean }>(
-      `${API_BASE_URL}/events/${eventId}`,
+  async deleteEvent(eventId: number | string): Promise<ApiResponse<{ deleted_id: number }>> {
+    return tributeApi['request']<{ deleted_id: number }>(
+      `${EVENTS_PATH}/${eventId}`,
       {
         method: 'DELETE'
       }

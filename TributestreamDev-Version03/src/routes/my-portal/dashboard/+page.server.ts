@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { TributeApiClient } from '$lib/api/tribute-api-client';
+import { TributeApiClientImpl } from '$lib/api/tribute-api-client';
 import { tributePersistence } from '$lib/persistence/tribute-persistence';
 import { eventsPersistence } from '$lib/persistence/events-persistence';
 import { UserRoles } from '$lib/types/user-roles';
@@ -13,7 +13,8 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
 
   try {
     // Initialize the persistence layer with the JWT token
-    const apiClient = new TributeApiClient(locals.token);
+    const apiClient = new TributeApiClientImpl();
+    apiClient.setToken(locals.token);
     tributePersistence.setApiClient(apiClient);
     eventsPersistence.setApiClient(apiClient);
     

@@ -4,15 +4,14 @@
  * Provides methods for interacting with the schedules endpoints of the TributeStream API.
  */
 
-import { tributeApiV2 } from './tribute-api-client-v2';
+import { tributeApi } from './tribute-api-client';
+import type { ApiResponse } from './tribute-api-client';
 import { SCHEDULES_PATH } from './api-constants';
-import type { ApiResponse } from '$lib/server/types';
 import type {
   Schedule,
-  PaginatedSchedulesResponse,
   CreateScheduleParams,
   UpdateScheduleParams,
-  CreateScheduleResponse
+  PaginatedSchedulesResponse
 } from '$lib/server/types';
 
 /**
@@ -25,11 +24,7 @@ export const schedulesApi = {
    * @param options Pagination options
    * @returns List of schedules
    */
-  async getAllSchedules(options: { 
-    page?: number; 
-    perPage?: number;
-    tributeId?: number;
-  } = {}): Promise<ApiResponse<PaginatedSchedulesResponse>> {
+  async getSchedules(options: { page?: number; perPage?: number; tributeId?: number } = {}): Promise<ApiResponse<PaginatedSchedulesResponse>> {
     const { page = 1, perPage = 10, tributeId } = options;
     const queryParams = new URLSearchParams();
     
@@ -40,31 +35,41 @@ export const schedulesApi = {
       queryParams.append('tribute_id', tributeId.toString());
     }
     
-    return tributeApiV2.request<PaginatedSchedulesResponse>(
+    return tributeApi['request']<PaginatedSchedulesResponse>(
       `${SCHEDULES_PATH}?${queryParams.toString()}`
     );
   },
-
+  
+  /**
+   * Alias for getSchedules (for backward compatibility)
+   * 
+   * @param options Pagination options
+   * @returns List of schedules
+   */
+  async getAllSchedules(options: { page?: number; perPage?: number; tributeId?: number } = {}): Promise<ApiResponse<PaginatedSchedulesResponse>> {
+    return this.getSchedules(options);
+  },
+  
   /**
    * Get a schedule by ID
    * 
-   * @param scheduleId Schedule ID
+   * @param id Schedule ID
    * @returns Schedule data
    */
-  async getScheduleById(scheduleId: number): Promise<ApiResponse<{ data: Schedule }>> {
-    return tributeApiV2.request<{ data: Schedule }>(
-      `${SCHEDULES_PATH}/${scheduleId}`
+  async getScheduleById(id: number): Promise<ApiResponse<{ data: Schedule }>> {
+    return tributeApi['request']<{ data: Schedule }>(
+      `${SCHEDULES_PATH}/${id}`
     );
   },
-
+  
   /**
    * Create a new schedule
    * 
    * @param data Schedule data
    * @returns Created schedule ID
    */
-  async createSchedule(data: CreateScheduleParams): Promise<ApiResponse<CreateScheduleResponse>> {
-    return tributeApiV2.request<CreateScheduleResponse>(
+  async createSchedule(data: CreateScheduleParams): Promise<ApiResponse<{ schedule_id: number; tribute_id: number }>> {
+    return tributeApi['request']<{ schedule_id: number; tribute_id: number }>(
       `${SCHEDULES_PATH}`,
       {
         method: 'POST',
@@ -72,36 +77,36 @@ export const schedulesApi = {
       }
     );
   },
-
+  
   /**
    * Update an existing schedule
    * 
-   * @param scheduleId Schedule ID
+   * @param id Schedule ID
    * @param data Updated schedule data
    * @returns Update result
    */
   async updateSchedule(
-    scheduleId: number,
+    id: number,
     data: UpdateScheduleParams
   ): Promise<ApiResponse<{ schedule_id: number }>> {
-    return tributeApiV2.request<{ schedule_id: number }>(
-      `${SCHEDULES_PATH}/${scheduleId}`,
+    return tributeApi['request']<{ schedule_id: number }>(
+      `${SCHEDULES_PATH}/${id}`,
       {
         method: 'PUT',
         body: JSON.stringify(data)
       }
     );
   },
-
+  
   /**
    * Delete a schedule
    * 
-   * @param scheduleId Schedule ID
+   * @param id Schedule ID
    * @returns Delete result
    */
-  async deleteSchedule(scheduleId: number): Promise<ApiResponse<{ deleted_id: number }>> {
-    return tributeApiV2.request<{ deleted_id: number }>(
-      `${SCHEDULES_PATH}/${scheduleId}`,
+  async deleteSchedule(id: number): Promise<ApiResponse<{ deleted_id: number }>> {
+    return tributeApi['request']<{ deleted_id: number }>(
+      `${SCHEDULES_PATH}/${id}`,
       {
         method: 'DELETE'
       }

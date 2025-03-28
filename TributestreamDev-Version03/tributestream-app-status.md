@@ -10,13 +10,16 @@ The Tributestream application is a SvelteKit-based web platform designed to mana
 - **Backend**: WordPress REST API integration
 - **Authentication**: JWT-based authentication system
 - **State Management**: Persistence layers with reactive stores
+- **API Architecture**: Modern API client structure with centralized constants and specialized clients
 
 ### Key Components
 
 #### API Layer
 - `TributeApiClient`: Core API client for interacting with the WordPress backend
+- `tribute-api-client-v2.ts`: Updated API client for the new endpoints
 - `events-api.ts`: API client for event-related endpoints
-- Various endpoint-specific API modules
+- `funeral-homes-api.ts`: Specialized client for funeral home operations
+- `api-constants.ts`: Centralized API constants for better maintainability
 - Complete SvelteKit server endpoints at `src/routes/api` that proxy to WordPress
 
 #### Persistence Layer
@@ -72,14 +75,22 @@ The Tributestream application is a SvelteKit-based web platform designed to mana
      - Funeral homes
      - Schedules
 
+2. **API Client Modernization**
+   - Implemented `tribute-api-client-v2.ts` to work with the new API endpoints
+   - Created specialized `funeral-homes-api.ts` client for funeral home operations
+   - Updated `events-api.ts` to use the new endpoint structure
+   - Centralized API constants in `api-constants.ts` for better maintainability
+   - Implemented proper error handling and response formatting in all clients
+
 ## What Still Needs to Be Done
 
 ### Frontend-Backend Integration
 
-1. **API Client Updates**
-   - Update frontend API clients to use the new proxy endpoints
-   - Ensure proper error handling in client code
-   - Update type definitions to match the new API response formats
+1. **API Client Integration**
+   - Complete the integration of new API clients with all frontend components
+   - Migrate remaining components from legacy API clients to the new versions
+   - Implement comprehensive error handling in component-level code
+   - Add loading states and fallback UI for API operations
 
 2. **Data Synchronization**
    - Implement real-time data synchronization for events
@@ -153,11 +164,11 @@ The Tributestream application is a SvelteKit-based web platform designed to mana
 
 ## Immediate Next Steps
 
-1. **Frontend API Client Updates**
-   - Update frontend API clients to use the new proxy endpoints
-   - Ensure proper error handling and type safety
-   - Implement comprehensive error recovery strategies
-   - Create integration tests for the API clients
+1. **Complete API Client Integration**
+   - Integrate the new API clients with all remaining frontend components
+   - Implement comprehensive testing for the API client integration
+   - Create fallback mechanisms for handling API errors gracefully
+   - Document the new API client usage patterns for developers
 
 2. **Enhance Event Management**
    - Create event management UI for admins
