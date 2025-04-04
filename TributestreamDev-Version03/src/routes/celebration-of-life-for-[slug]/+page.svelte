@@ -21,6 +21,28 @@
     </section>
 
  
+    <!-- Video Section -->
+    {#if tribute?.custom_html === null}
+        <section class="py-16 px-4">
+            <div class="container mx-auto max-w-4xl">
+                <div class="relative aspect-video bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <button class="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center transition-transform hover:scale-110">
+                            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {:else}
+        <div class="custom-html-container">
+            {@html tribute.custom_html}
+        </div>
+    {/if}
+
 
 
     <!-- FAQ Cards -->
