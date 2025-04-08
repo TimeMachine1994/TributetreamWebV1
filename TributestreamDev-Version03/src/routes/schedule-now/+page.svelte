@@ -1,9 +1,17 @@
 <script lang="ts">
   import PageLayout from '$lib/components/page-templates/page-layout.svelte';
+  import SuccessModal from '$lib/components/success-modal.svelte';
   import { superForm } from 'sveltekit-superforms';
   import type { PageData } from './$types';
   
   export let data: PageData;
+  
+  // Debug: Log the form data received from the server
+  console.log('Form data received from server:', data.form);
+  
+  // State for success modal
+  let showSuccessModal = false;
+  let successMessage = "";
   
   // Initialize the superForm
   const { form, errors, constraints, message, enhance, submitting } = superForm(data.form, {
@@ -14,8 +22,39 @@
     // Form is valid and was successfully submitted
     onUpdate: ({ form }) => {
       console.log('Form updated:', form);
+      
+      // Check if the form was successfully submitted
+      if ($message) {
+        successMessage = $message;
+        showSuccessModal = true;
+      }
+    },
+    onSubmit: ({ formData, cancel }) => {
+      console.log('Form submission started with data:', Object.fromEntries(formData));
+      
+      // Add all form fields to the formData
+      for (const [key, value] of Object.entries($form)) {
+        if (value !== undefined && value !== null) {
+          formData.set(key, value.toString());
+        }
+      }
+      
+      console.log('Enhanced form data:', Object.fromEntries(formData));
+      // Don't cancel the submission
+      return;
+    },
+    onResult: ({ result }) => {
+      console.log('Form submission result:', result);
     }
   });
+  
+  // Create a reactive variable to display validation errors
+  $: errorList = Object.entries($errors).flatMap(([field, fieldErrors]) =>
+    fieldErrors ? fieldErrors.map(error => ({ field, error })) : []
+  );
+  
+  // Check if we have any errors
+  $: hasErrors = errorList.length > 0;
   
   const dateOptions = {
     min: new Date().toISOString().split('T')[0] // Today's date as minimum
@@ -44,7 +83,18 @@
           </div>
         {/if}
         
-        <form method="POST" action="?/default" use:enhance class="space-y-6">
+        {#if hasErrors}
+          <div class="bg-red-900/30 p-4 rounded-md mb-6 border border-red-500/30">
+            <p class="text-red-300 font-medium mb-2">Please correct the following errors:</p>
+            <ul class="list-disc pl-5 space-y-1">
+              {#each errorList as { field, error }}
+                <li class="text-red-300">{field}: {error}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+        
+        <form method="POST" action="?/submit" use:enhance class="space-y-6">
           <!-- Contact Information -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -85,8 +135,8 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium mb-2">Preferred Contact Method</label>
-            <div class="flex space-x-4">
+            <label for="contact-method" class="block text-sm font-medium mb-2">Preferred Contact Method</label>
+            <div id="contact-method" class="flex space-x-4">
               <label class="inline-flex items-center">
                 <input 
                   type="radio" 
@@ -251,4 +301,12 @@
       </div>
     </div>
   </section>
+  
+  <!-- Success Modal -->
+  <SuccessModal
+    show={showSuccessModal}
+    title="Thank You!"
+    message={successMessage || "Your consultation request has been sent. We'll be in touch soon!"}
+    redirectUrl="/"
+  />
 </PageLayout>

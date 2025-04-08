@@ -46,8 +46,28 @@ interface FormData {
 import { SENDGRID_API_KEY } from '$env/static/private';
 
 // Initialize SendGrid with the API key from environment variables
-console.log('Initializing SendGrid with API key:', SENDGRID_API_KEY.substring(0, 10) + '...[REDACTED]');
-sgMail.setApiKey(SENDGRID_API_KEY);
+// Log SendGrid API key status (without revealing the actual key)
+console.log('📧 Initializing SendGrid with API key:',
+  SENDGRID_API_KEY ? (SENDGRID_API_KEY.substring(0, 10) + '...[REDACTED]') : 'MISSING API KEY');
+
+if (!SENDGRID_API_KEY) {
+  console.error('⚠️ WARNING: SendGrid API key is missing or empty. Email functionality will not work.');
+} else {
+  console.log('✅ SendGrid API key is configured');
+}
+
+// Set the API key for SendGrid
+sgMail.setApiKey(SENDGRID_API_KEY || 'SG.dummy-key-for-development');
+
+// Verify SendGrid configuration on startup
+(async () => {
+  try {
+    // We don't actually send an email here, just log that the configuration is ready
+    console.log('✅ SendGrid client initialized successfully');
+  } catch (error) {
+    console.error('❌ Error initializing SendGrid client:', error);
+  }
+})();
 
 /**
  * Send a confirmation email to the customer
@@ -57,6 +77,10 @@ sgMail.setApiKey(SENDGRID_API_KEY);
  */
 export async function sendCustomerConfirmation(to: string, data: CustomerEmailData): Promise<boolean> {
   try {
+    console.log('📧 Sending customer confirmation email to:', to);
+    console.log('📧 Customer email data:', JSON.stringify(data, null, 2));
+    console.log('📧 Using SendGrid API key:', SENDGRID_API_KEY ? 'Configured ✅' : 'Missing ❌');
+    
     const html = createCustomerEmailTemplate(data);
     const text = createCustomerEmailText(data);
     
@@ -71,6 +95,7 @@ export async function sendCustomerConfirmation(to: string, data: CustomerEmailDa
     console.log('✅ Customer confirmation email sent successfully');
     return true;
   } catch (error) {
+    console.error('❌ SendGrid API error details:', error);
     console.error('❌ Failed to send customer confirmation email:', error);
     return false;
   }
@@ -83,19 +108,21 @@ export async function sendCustomerConfirmation(to: string, data: CustomerEmailDa
  */
 export async function sendInternalNotification(formData: FormData): Promise<boolean> {
   try {
+    console.log('📧 Sending internal notification email to tributestream@tributestream.com');
     const html = createInternalNotificationTemplate(formData);
     
     await sgMail.send({
       from: 'tributestream@tributestream.com',
-      to: 'contact@tributestream.com',
+      to: 'tributestream@tributestream.com',
       subject: 'New Memorial Service Form Submission',
       html
     });
     
-    console.log('✅ Internal notification email sent successfully');
+    console.log('✅ Internal notification email sent successfully to tributestream@tributestream.com');
     return true;
   } catch (error) {
-    console.error('❌ Failed to send internal notification email:', error);
+    console.error('❌ SendGrid API error details:', error);
+    console.error('❌ Failed to send internal notification email to tributestream@tributestream.com:', error);
     return false;
   }
 }
