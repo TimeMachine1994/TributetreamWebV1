@@ -2,6 +2,18 @@
   import { enhance } from "$app/forms";
   import type { ActionResult } from "@sveltejs/kit";
   import type { PageData } from "./$types";
+  
+  // Define additional types for registration status
+  interface FormActionResult extends ActionResult {
+    data?: {
+      success?: boolean;
+      error?: boolean;
+      message?: string;
+      errors?: Record<string, string>;
+      formData?: Record<string, string>;
+      registrationStatus?: string;
+    }
+  }
 
   // Define types for form fields
   type FormField = 
@@ -26,9 +38,9 @@
   type TouchedMap = Partial<Record<FormField, boolean>>;
 
   // Component props
-  let { fdForm, form } = $props<{ 
-    fdForm?: FormData; 
-    form?: ActionResult;
+  let { fdForm, form } = $props<{
+    fdForm?: FormData;
+    form?: FormActionResult;
   }>();
   
   // Form data state with default empty values
@@ -58,6 +70,7 @@
   // Error state management
   let errors = $state<ErrorMap>({});
   let formError = $state<string>("");
+  let registrationStatus = $state<string>("");
   let isSubmitting = $state<boolean>(false);
   let touched = $state<TouchedMap>({});
 
@@ -150,7 +163,7 @@
     isSubmitting = true;
   }
 
-  // Handle server-side form errors
+  // Handle server-side form errors and status messages
   function processServerErrors(result: any): void {
     if (result?.error) {
       formError = result.message || "An error occurred during submission.";
@@ -161,7 +174,19 @@
           errors[key as FormField] = message as string;
         });
       }
+    } else if (result?.success) {
+      // Handle success with possible message
+      formError = ""; // Clear any previous errors
+      if (result.message) {
+        formError = result.message; // Use the message field for notifications
+      }
     }
+    
+    // Check for registration status
+    if (result?.registrationStatus) {
+      registrationStatus = result.registrationStatus;
+    }
+    
     isSubmitting = false;
   }
 
@@ -204,9 +229,10 @@
       touched[key as FormField] = true;
     });
     
-    // Clear any previous errors
+    // Clear any previous errors and status messages
     errors = {};
     formError = "";
+    registrationStatus = "";
   }
 </script>
 
@@ -228,8 +254,12 @@
           isSubmitting = false;
           
           // We don't need to manually handle the redirect as SvelteKit will do it automatically
+        } else if (result.type === 'success') {
+          // Process any success data, including registration status
+          processServerErrors(result.data);
+          await update();
         } else {
-          // Success but no redirect
+          // Other cases
           isSubmitting = false;
         }
       };
@@ -246,6 +276,13 @@
     {#if form?.error}
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
         <span class="block sm:inline">{form.message}</span>
+      </div>
+    {/if}
+    
+    {#if registrationStatus || form?.data?.registrationStatus}
+      <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <span class="font-bold">Registration Status:</span>
+        <span class="block sm:inline">{registrationStatus || form?.data?.registrationStatus}</span>
       </div>
     {/if}
 

@@ -1,12 +1,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { 
-  sendCustomerConfirmation, 
+import {
+  sendCustomerConfirmation,
   sendInternalNotification,
   sendEmail
 } from '$lib/utils/email-service';
+import { registerWordPressUser } from '$lib/server/wp-user-service';
 
 export const POST: RequestHandler = async ({ request }) => {
+  let registrationStatusMessage: string | undefined = undefined; // To hold registration outcome
   try {
     console.log('📨 Received request to send-email API endpoint');
     const data = await request.json();
@@ -22,13 +24,42 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // Handle dual email sending
     if (data.type === 'dual' && data.formData) {
-      console.log('🔄 Processing dual email request');
+      console.log('🔄 Processing dual email request (includes potential registration)');
       // Extract necessary data from the form data
-      const { 
+      const {
         familyMemberLastName,
+        firstName,
         email,
-        slug 
+        slug
       } = data.formData;
+
+      // --- WordPress Registration Step ---
+      // Attempt registration if email is present
+      let registrationAttempted = false;
+      if (email) {
+        registrationAttempted = true;
+        console.log(`🏁 Attempting WordPress registration for: ${email}`);
+        const registrationResult = await registerWordPressUser({
+          email: email,
+          firstName: firstName || familyMemberLastName, // Use available name fields
+          lastName: familyMemberLastName
+        });
+
+        if (registrationResult.success) {
+          registrationStatusMessage = `User ${email} registered successfully in WordPress (User ID: ${registrationResult.userId || 'N/A'}).`;
+          console.log(registrationStatusMessage);
+        } else if (registrationResult.isDuplicate) {
+          // Graceful handling of DUPLICATE users
+          registrationStatusMessage = `Note: User ${email} could not be registered because they already exist in WordPress. Form data processed normally.`;
+          console.warn(registrationStatusMessage); // Log as warning
+        } else {
+          // Handle OTHER registration errors (log but still send emails)
+          registrationStatusMessage = `Warning: WordPress registration failed for ${email}. Reason: ${registrationResult.message}. Form data still processed.`;
+          console.error(registrationStatusMessage); // Log as error
+        }
+      } else {
+        console.log('ℹ️ Registration skipped (no email provided in formData).');
+      }
 
       // Prepare data for customer email
       const customerData = {
@@ -47,7 +78,8 @@ export const POST: RequestHandler = async ({ request }) => {
       );
       
       // Send internal notification with all form data to tributestream@tributestream.com
-      const internalEmailResult = await sendInternalNotification(data.formData);
+      // Pass the registration status message to the internal notification
+      const internalEmailResult = await sendInternalNotification(data.formData, registrationStatusMessage);
       
       console.log('📊 Email sending results - Customer: ' + (customerEmailResult ? '✅' : '❌') +
                  ', Internal to tributestream@tributestream.com: ' + (internalEmailResult ? '✅' : '❌'));
@@ -57,13 +89,14 @@ export const POST: RequestHandler = async ({ request }) => {
       if (customerEmailResult || internalEmailResult) {
         return json({
           success: true,
+          registrationStatus: registrationStatusMessage || (registrationAttempted ? 'Registration failed (unknown reason)' : 'Registration not attempted'),
           customerEmailSent: customerEmailResult,
           internalEmailSent: internalEmailResult
         });
       } else {
         // Both emails failed
         return json(
-          { success: false, message: 'Failed to send emails' },
+          { success: false, message: 'Failed to send emails', registrationStatus: registrationStatusMessage },
           { status: 500 }
         );
       }
@@ -96,9 +129,10 @@ export const POST: RequestHandler = async ({ request }) => {
       { status: 400 }
     );
   } catch (error) {
-    console.error('Error processing email request:', error);
+    console.error('💥 Top-level error processing API request:', error);
+    // Include any registration status message obtained before the error, if available
     return json(
-      { success: false, message: 'Server error processing email request' },
+      { success: false, message: 'Server error processing request', registrationStatus: registrationStatusMessage },
       { status: 500 }
     );
   }

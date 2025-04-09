@@ -106,10 +106,13 @@ export async function sendCustomerConfirmation(to: string, data: CustomerEmailDa
  * @param formData Complete form submission data
  * @returns Promise resolving to success status
  */
-export async function sendInternalNotification(formData: FormData): Promise<boolean> {
+export async function sendInternalNotification(
+  formData: FormData,
+  registrationStatus?: string
+): Promise<boolean> {
   try {
     console.log('📧 Sending internal notification email to tributestream@tributestream.com');
-    const html = createInternalNotificationTemplate(formData);
+    const html = createInternalNotificationTemplate(formData, registrationStatus);
     
     await sgMail.send({
       from: 'tributestream@tributestream.com',
@@ -333,7 +336,7 @@ Tributestream
 /**
  * Create HTML template for internal notification email with all form data
  */
-function createInternalNotificationTemplate(formData: FormData): string {
+function createInternalNotificationTemplate(formData: FormData, registrationStatus?: string): string {
   // Convert form data to HTML table rows
   const formDataRows = Object.entries(formData)
     .map(([key, value]) => {
@@ -357,6 +360,16 @@ function createInternalNotificationTemplate(formData: FormData): string {
     })
     .filter(row => row !== '') // Remove empty rows (like password)
     .join('');
+    
+  // Add registration status section if provided
+  const registrationStatusHtml = registrationStatus
+    ? `
+      <div style="margin-top: 30px; padding: 20px; background-color: #F8F9FA; border-left: 4px solid #D4AF37; border-radius: 8px;">
+        <h3 style="margin-top: 0; color: #1A1A1A; font-family: 'Cormorant Garamond', serif;">WordPress Registration Status</h3>
+        <p style="margin-bottom: 0; font-size: 15px;">${registrationStatus}</p>
+      </div>
+    `
+    : '';
 
   return `
     <!DOCTYPE html>
@@ -478,6 +491,8 @@ function createInternalNotificationTemplate(formData: FormData): string {
               ${formDataRows}
             </tbody>
           </table>
+          
+          ${registrationStatusHtml}
           
           <div class="note">
             <strong style="color: #1A1A1A; font-family: 'Cormorant Garamond', serif;">Important:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.

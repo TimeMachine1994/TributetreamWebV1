@@ -3,6 +3,7 @@ import type { Actions } from './$types';
 import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
 import { validateFuneralDirectorForm } from '$lib/utils/form-validation';
 import { createTributeSlug } from '$lib/utils/string-helpers';
+import { registerWordPressUser } from '$lib/server/wp-user-service';
 
 /**
  * Parse form data from FormData object
@@ -103,211 +104,184 @@ export const actions = {
             const password = generateSecurePassword(16);
             console.log('✅ Password generated successfully');
             
-            // Step 4: Register the user
+            // Step 4: Register the user with graceful error handling
             console.log('🔄 Registering user...');
-            const registerResponse = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: data.email,
-                    email: data.email,
-                    password: password
-                })
+            let userId: number | undefined;
+            let registrationStatusMessage: string | undefined;
+            
+            // Use our new registerWordPressUser function
+            const registrationResult = await registerWordPressUser({
+                email: data.email,
+                firstName: data.familyMemberFirstName || data.directorFirstName,
+                lastName: data.familyMemberLastName || data.directorLastName,
+                username: data.email,
+                password: password
             });
-
-            // Handle registration errors
-            if (!registerResponse.ok) {
-                const registerError = await registerResponse.json();
-                console.error('❌ Registration failed:', registerError);
+            
+            if (registrationResult.success) {
+                // Registration successful
+                userId = registrationResult.userId;
+                registrationStatusMessage = `User ${data.email} registered successfully in WordPress (User ID: ${userId || 'N/A'}).`;
+                console.log('✅ User registered with ID:', userId);
+            } else if (registrationResult.isDuplicate) {
+                // Duplicate user - continue with the process
+                registrationStatusMessage = `Note: User ${data.email} could not be registered because they already exist in WordPress. Form data processed normally.`;
+                console.warn(registrationStatusMessage);
                 
-                // Handle specific error scenarios
-                if (registerError.message?.includes('email already exists')) {
-                    return fail(400, {
-                        error: true,
-                        message: 'An account with this email already exists. Please use a different email address.',
-                        errors: {
-                            "email-address": 'An account with this email already exists. Please use a different email address.'
-                        },
-                        formData: {
-                            "director-first-name": data.directorFirstName || "",
-                            "director-last-name": data.directorLastName || "",
-                            "family-member-first-name": data.familyMemberFirstName || "",
-                            "family-member-last-name": data.familyMemberLastName || "",
-                            "family-member-dob": data.familyMemberDOB || "",
-                            "deceased-first-name": data.deceasedFirstName || "",
-                            "deceased-last-name": data.deceasedLastName || "",
-                            "deceased-dob": data.deceasedDOB || "",
-                            "deceased-dop": data.deceasedDOP || "",
-                            "email-address": data.email || "",
-                            "phone-number": data.phone || "",
-                            "location-name": data.locationName || "",
-                            "location-address": data.locationAddress || "",
-                            "memorial-time": data.memorialTime || "",
-                            "memorial-date": data.memorialDate || ""
-                        }
+                // Need to get the user ID for the existing user
+                try {
+                    // Attempt to authenticate with the existing user to get their ID
+                    const authResponse = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: data.email,
+                            password: password // This will likely fail, but we'll handle that
+                        })
                     });
+                    
+                    if (authResponse.ok) {
+                        const authResult = await authResponse.json();
+                        userId = authResult.user_id;
+                    } else {
+                        // If authentication fails, we need to fetch the user ID another way
+                        // For now, we'll use a placeholder and continue the process
+                        console.warn('⚠️ Could not authenticate existing user to get ID');
+                        userId = undefined; // We'll handle this case below
+                    }
+                } catch (authError) {
+                    console.warn('⚠️ Error during authentication of existing user:', authError);
                 }
                 
-                return fail(registerResponse.status, {
-                    error: true,
-                    message: registerError.message || 'Registration failed',
-                    formData: {
-                        "director-first-name": data.directorFirstName || "",
-                        "director-last-name": data.directorLastName || "",
-                        "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name": data.familyMemberLastName || "",
-                        "family-member-dob": data.familyMemberDOB || "",
-                        "deceased-first-name": data.deceasedFirstName || "",
-                        "deceased-last-name": data.deceasedLastName || "",
-                        "deceased-dob": data.deceasedDOB || "",
-                        "deceased-dop": data.deceasedDOP || "",
-                        "email-address": data.email || "",
-                        "phone-number": data.phone || "",
-                        "location-name": data.locationName || "",
-                        "location-address": data.locationAddress || "",
-                        "memorial-time": data.memorialTime || "",
-                        "memorial-date": data.memorialDate || ""
-                    }
-                });
-            }
-            
-            const registerResult = await registerResponse.json();
-            const userId = registerResult.user_id;
-            console.log('✅ User registered with ID:', userId);
-
-            // Step 5: Authenticate the user
-            console.log('🔄 Authenticating user...');
-            const authResponse = await fetch('/api/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: data.email,
-                    password: password
-                })
-            });
-
-            // Handle authentication errors
-            if (!authResponse.ok) {
-                const authError = await authResponse.json();
-                console.error('❌ Authentication failed:', authError);
-                return fail(authResponse.status, { 
-                    error: true, 
-                    message: authError.message || 'Authentication failed after registration',
-                    formData: {
-                        "director-first-name": data.directorFirstName || "",
-                        "director-last-name": data.directorLastName || "",
-                        "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name": data.familyMemberLastName || "",
-                        "family-member-dob": data.familyMemberDOB || "",
-                        "deceased-first-name": data.deceasedFirstName || "",
-                        "deceased-last-name": data.deceasedLastName || "",
-                        "deceased-dob": data.deceasedDOB || "",
-                        "deceased-dop": data.deceasedDOP || "",
-                        "email-address": data.email || "",
-                        "phone-number": data.phone || "",
-                        "location-name": data.locationName || "",
-                        "location-address": data.locationAddress || "",
-                        "memorial-time": data.memorialTime || "",
-                        "memorial-date": data.memorialDate || ""
-                    }
-                });
+                // If we couldn't get the user ID, we'll show a message but continue
+                if (!userId) {
+                    console.warn('⚠️ Proceeding without user ID for duplicate user');
+                }
+            } else {
+                // Other registration error - show warning but continue
+                registrationStatusMessage = `Warning: WordPress registration failed for ${data.email}. Reason: ${registrationResult.message}. Form data still processed.`;
+                console.error(registrationStatusMessage);
             }
 
-            const authResult = await authResponse.json();
-            console.log('✅ User authenticated. JWT token received');
-
-            // Step 6: Store the JWT token in cookies
-            console.log('🔐 Storing authentication tokens...');
-            cookies.set('jwt_token', authResult.token, { // Using jwt_token to match hooks.server.ts
-                httpOnly: true, 
-                secure: true, 
-                path: '/',
-                maxAge: 60 * 60 * 24 * 7 // 7 days 
-            });
+            // Step 5: Authenticate the user (only if registration was successful)
+            let authToken: string | undefined;
+            let userDisplayName: string | undefined;
             
-            // Also store user data in cookie for client-side access
-            cookies.set('user', JSON.stringify({
-                id: userId,
-                name: authResult.user_display_name || data.email,
-                email: data.email
-            }), {
-                httpOnly: false, // Client accessible
-                secure: true,
-                path: '/',
-                maxAge: 60 * 60 * 24 * 7 // 7 days
-            });
-
-            // Step 7: Store user metadata
-            console.log('📝 Writing user metadata...');
-            const metaPayload = {
-                user_id: userId,
-                meta_key: 'memorial_form_data',
-                meta_value: JSON.stringify({
-                    director: {
-                        firstName: data.directorFirstName,
-                        lastName: data.directorLastName
-                    },
-                    familyMember: {
-                        firstName: data.familyMemberFirstName,
-                        lastName: data.familyMemberLastName,
-                        dob: data.familyMemberDOB
-                    },
-                    deceased: {
-                        firstName: data.deceasedFirstName,
-                        lastName: data.deceasedLastName,
-                        dob: data.deceasedDOB,
-                        dop: data.deceasedDOP
-                    },
-                    contact: {
-                        email: data.email,
-                        phone: data.phone
-                    },
-                    memorial: {
-                        locationName: data.locationName,
-                        locationAddress: data.locationAddress,
-                        time: data.memorialTime,
-                        date: data.memorialDate
+            if (registrationResult.success) {
+                console.log('🔄 Authenticating user...');
+                try {
+                    const authResponse = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: data.email,
+                            password: password
+                        })
+                    });
+    
+                    if (authResponse.ok) {
+                        const authResult = await authResponse.json();
+                        authToken = authResult.token;
+                        userDisplayName = authResult.user_display_name;
+                        console.log('✅ User authenticated. JWT token received');
+                    } else {
+                        const authError = await authResponse.json();
+                        console.error('❌ Authentication failed:', authError);
+                        registrationStatusMessage += ' However, automatic login failed.';
                     }
-                })
-            };
-            
-            const metaResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/user-meta', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authResult.token}`
-                },
-                body: JSON.stringify(metaPayload)
-            });
-
-            // Handle metadata errors
-            if (!metaResponse.ok) {
-                const metaError = await metaResponse.json();
-                console.error('❌ Metadata write failed:', metaError);
-                return fail(metaResponse.status, { 
-                    error: true, 
-                    message: metaError.message || 'Failed to save user metadata',
-                    formData: {
-                        "director-first-name": data.directorFirstName || "",
-                        "director-last-name": data.directorLastName || "",
-                        "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name": data.familyMemberLastName || "",
-                        "family-member-dob": data.familyMemberDOB || "",
-                        "deceased-first-name": data.deceasedFirstName || "",
-                        "deceased-last-name": data.deceasedLastName || "",
-                        "deceased-dob": data.deceasedDOB || "",
-                        "deceased-dop": data.deceasedDOP || "",
-                        "email-address": data.email || "",
-                        "phone-number": data.phone || "",
-                        "location-name": data.locationName || "",
-                        "location-address": data.locationAddress || "",
-                        "memorial-time": data.memorialTime || "",
-                        "memorial-date": data.memorialDate || ""
-                    }
-                });
+                } catch (authError) {
+                    console.error('❌ Authentication error:', authError);
+                    registrationStatusMessage += ' However, automatic login failed due to an error.';
+                }
+            } else {
+                console.log('⏩ Skipping authentication for duplicate or failed registration');
             }
 
-            console.log('✅ Metadata written successfully.');
+            // Step 6: Store the JWT token in cookies (only if authentication was successful)
+            if (authToken) {
+                console.log('🔐 Storing authentication tokens...');
+                cookies.set('jwt_token', authToken, { // Using jwt_token to match hooks.server.ts
+                    httpOnly: true,
+                    secure: true,
+                    path: '/',
+                    maxAge: 60 * 60 * 24 * 7 // 7 days
+                });
+                
+                // Also store user data in cookie for client-side access
+                cookies.set('user', JSON.stringify({
+                    id: userId,
+                    name: userDisplayName || data.email,
+                    email: data.email
+                }), {
+                    httpOnly: false, // Client accessible
+                    secure: true,
+                    path: '/',
+                    maxAge: 60 * 60 * 24 * 7 // 7 days
+                });
+            } else {
+                console.log('⏩ Skipping cookie storage due to missing authentication token');
+            }
+
+            // Step 7: Store user metadata (only if we have a user ID and auth token)
+            if (userId && authToken) {
+                console.log('📝 Writing user metadata...');
+                const metaPayload = {
+                    user_id: userId,
+                    meta_key: 'memorial_form_data',
+                    meta_value: JSON.stringify({
+                        director: {
+                            firstName: data.directorFirstName,
+                            lastName: data.directorLastName
+                        },
+                        familyMember: {
+                            firstName: data.familyMemberFirstName,
+                            lastName: data.familyMemberLastName,
+                            dob: data.familyMemberDOB
+                        },
+                        deceased: {
+                            firstName: data.deceasedFirstName,
+                            lastName: data.deceasedLastName,
+                            dob: data.deceasedDOB,
+                            dop: data.deceasedDOP
+                        },
+                        contact: {
+                            email: data.email,
+                            phone: data.phone
+                        },
+                        memorial: {
+                            locationName: data.locationName,
+                            locationAddress: data.locationAddress,
+                            time: data.memorialTime,
+                            date: data.memorialDate
+                        }
+                    })
+                };
+                
+                try {
+                    const metaResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/user-meta', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(metaPayload)
+                    });
+                    
+                    if (metaResponse.ok) {
+                        console.log('✅ Metadata written successfully.');
+                    } else {
+                        const metaError = await metaResponse.json();
+                        console.error('❌ Metadata write failed:', metaError);
+                        registrationStatusMessage += ' However, user metadata could not be saved.';
+                    }
+                } catch (metaError) {
+                    console.error('❌ Error during metadata write:', metaError);
+                    registrationStatusMessage += ' However, user metadata could not be saved due to an error.';
+                }
+            } else {
+                console.log('⏩ Skipping metadata write due to missing user ID or auth token');
+            }
+
 
             // Step 8: Create the tribute record
             console.log('🚀 Creating tribute...');
@@ -315,54 +289,48 @@ export const actions = {
             // Generate the slug
             slug = createTributeSlug(`${data.deceasedFirstName} ${data.deceasedLastName}`);
 
-            // Prepare the tribute payload
-            const tributePayload = {
-                loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
-                slug,
-                user_id: userId,
-                phone_number: data.phone || '000-000-0000' // Ensure we have a phone number
-            };
+            // We can create a tribute even without a user ID in some cases
+            let tributeCreated = false;
             
-            console.log('📦 Sending tribute payload:', tributePayload);
-            
-            const tributeResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authResult.token}`
-                },
-                body: JSON.stringify(tributePayload)
-            });
-            
-            // Handle tribute creation errors
-            if (!tributeResponse.ok) {
-                const tributeError = await tributeResponse.json();
-                console.error('❌ Tribute creation failed:', tributeError);
-                return fail(tributeResponse.status, { 
-                    error: true, 
-                    message: tributeError.message || 'Failed to create tribute',
-                    formData: {
-                        "director-first-name": data.directorFirstName || "",
-                        "director-last-name": data.directorLastName || "",
-                        "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name": data.familyMemberLastName || "",
-                        "family-member-dob": data.familyMemberDOB || "",
-                        "deceased-first-name": data.deceasedFirstName || "",
-                        "deceased-last-name": data.deceasedLastName || "",
-                        "deceased-dob": data.deceasedDOB || "",
-                        "deceased-dop": data.deceasedDOP || "",
-                        "email-address": data.email || "",
-                        "phone-number": data.phone || "",
-                        "location-name": data.locationName || "",
-                        "location-address": data.locationAddress || "",
-                        "memorial-time": data.memorialTime || "",
-                        "memorial-date": data.memorialDate || ""
+            if (authToken) {
+                // Prepare the tribute payload
+                const tributePayload = {
+                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                    slug,
+                    user_id: userId, // This might be undefined for duplicate users
+                    phone_number: data.phone || '000-000-0000' // Ensure we have a phone number
+                };
+                
+                console.log('📦 Sending tribute payload:', tributePayload);
+                
+                try {
+                    const tributeResponse = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/tributes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(tributePayload)
+                    });
+                    
+                    if (tributeResponse.ok) {
+                        const tributeResult = await tributeResponse.json();
+                        console.log('✅ Tribute created successfully:', tributeResult);
+                        tributeCreated = true;
+                    } else {
+                        const tributeError = await tributeResponse.json();
+                        console.error('❌ Tribute creation failed:', tributeError);
+                        registrationStatusMessage += ' However, tribute record could not be created.';
                     }
-                });
+                } catch (tributeError) {
+                    console.error('❌ Error during tribute creation:', tributeError);
+                    registrationStatusMessage += ' However, tribute record could not be created due to an error.';
+                }
+            } else {
+                console.log('⏩ Skipping tribute creation due to missing auth token');
+                registrationStatusMessage += ' Tribute record could not be created due to missing authentication.';
             }
             
-            const tributeResult = await tributeResponse.json();
-            console.log('✅ Tribute created successfully:', tributeResult);
             
             // Send both customer confirmation and internal notification emails
             try {
@@ -409,6 +377,7 @@ export const actions = {
                 };
 
                 // Send both emails using the new API endpoint with dual email functionality
+                // Include the registration status message
                 const emailResponse = await fetch('/api/send-email', {
                     method: 'POST',
                     headers: {
@@ -416,7 +385,10 @@ export const actions = {
                     },
                     body: JSON.stringify({
                         type: 'dual',
-                        formData: emailFormData
+                        formData: {
+                            ...emailFormData,
+                            registrationStatus: registrationStatusMessage
+                        }
                     })
                 });
                 
@@ -431,13 +403,25 @@ export const actions = {
                 console.warn('⚠️ Email notification failed, but process continues:', emailError);
             }
             
-            // Step 9: Redirect to the newly created tribute page
-            // Redirect to the tribute page
-            console.log('🔀 Redirecting to created tribute page...');
-            console.log('🔍 DEBUG: Slug value at redirect:', slug);
-            
-            // Use redirect in the success path inside the try block
-            throw redirect(303, `/celebration-of-life-for-${slug}`);
+            // Step 9: Redirect to the appropriate page
+            if (tributeCreated) {
+                // Redirect to the newly created tribute page
+                console.log('🔀 Redirecting to created tribute page...');
+                console.log('🔍 DEBUG: Slug value at redirect:', slug);
+                
+                // Use redirect in the success path inside the try block
+                throw redirect(303, `/celebration-of-life-for-${slug}`);
+            } else {
+                // If tribute wasn't created but we still processed the form, show a success message
+                console.log('🔀 Redirecting to success page without tribute...');
+                
+                // Return success but with a message about partial completion
+                return {
+                    success: true,
+                    message: "Your form was submitted successfully, but some steps couldn't be completed. Our team will contact you shortly.",
+                    registrationStatus: registrationStatusMessage
+                };
+            }
             
         } catch (error) {
             // Check for SvelteKit redirect objects - improved detection
