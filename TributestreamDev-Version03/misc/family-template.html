@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+    
+    body {
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 0;
+      background-color: #f7f7f7;
+    }
+    .email-container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      margin: 25px;
+    }
+    .header {
+      background: #1A1A1A;
+      color: #D4AF37;
+      padding: 35px 30px;
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      font-size: 28px;
+      letter-spacing: 1px;
+      border-bottom: 3px solid #D4AF37;
+    }
+    .content {
+      padding: 35px 30px;
+      color: #2A2A2A;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      padding: 25px;
+      font-size: 12px;
+      color: #777;
+      border-top: 1px solid #eaeaea;
+      background-color: #FCFAF5;
+    }
+    .button {
+      display: inline-block;
+      background-color: #D4AF37;
+      color: #1A1A1A;
+      text-decoration: none;
+      padding: 14px 32px;
+      border-radius: 8px;
+      margin: 25px 0;
+      font-weight: 500;
+      font-size: 15px;
+      box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
+      transition: all 0.3s ease;
+      border: 1px solid #D4AF37;
+      letter-spacing: 0.5px;
+    }
+    .button:hover {
+      background-color: #E6C346;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+    }
+    p {
+      margin-bottom: 18px;
+      color: #333;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .greeting {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #1A1A1A;
+      margin-bottom: 24px;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 35px 0;
+      padding: 15px 0;
+      background-color: #FCFAF5;
+      border-radius: 8px;
+    }
+    .signature {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      font-size: 17px;
+      color: #1A1A1A;
+      margin-top: 30px;
+    }
+    .company-name {
+      font-weight: 600;
+      color: #D4AF37;
+    }
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.3), transparent);
+      width: 60%;
+      margin: 30px auto;
+    }
+    /* Share button container and styles */
+    .share-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .share-button {
+      display: inline-block;
+      background-color: #D4AF37;
+      color: #1A1A1A;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #D4AF37;
+      margin: 5px;
+      font-weight: 500;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
+      transition: all 0.3s ease;
+    }
+    .share-button:hover {
+      background-color: #E6C346;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      Tributestream
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Dear ${data.familyLastName} Family,</p>
+      
+      <p>
+        Tributestream wishes you our deepest sympathy for the passing of your loved one.
+        We hope that our service to share the coming memorial will bring greater comfort during this difficult time.
+      </p>
+      
+      <div class="divider"></div>
+      
+      <p>
+        Please follow the link below to complete the process. You will receive a confirmation and a shareable link to the website page that will broadcast the stream:
+      </p>
+      
+      <div class="cta-container">
+        <a href="${data.tributeLink}" class="button">View Memorial Page</a>
+      </div>
+
+      <!-- Share Buttons -->
+      <div class="share-container">
+        <p>If you’d like to share this Memorial Page:</p>
+        <a
+          href="https://www.facebook.com/sharer/sharer.php?u=${data.tributeLink}"
+          class="share-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Share on Facebook
+        </a>
+        <a
+          href="https://twitter.com/intent/tweet?url=${data.tributeLink}"
+          class="share-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Share on X
+        </a>
+        <a
+          href="https://api.whatsapp.com/send?text=${data.tributeLink}"
+          class="share-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Share on WhatsApp
+        </a>
+      </div>
+      
+      <p>A member of our team will be in touch within 24-48 hours to assist you with any questions or special arrangements.</p>
+      
+      <p>We look forward to meeting you and offering our personal condolences.</p>
+      
+      <div class="signature">
+        Respectfully,<br>
+        <span class="company-name">Tributestream</span>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
