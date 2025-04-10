@@ -20,7 +20,6 @@ interface UserData {
 
 /**
  * Register a new user in WordPress
- * Uses the existing /api/auth/register endpoint
  * 
  * @param userData User data to register
  * @returns Promise resolving to a RegistrationResult
@@ -38,7 +37,7 @@ export async function registerWordPressUser(userData: UserData): Promise<Registr
 
     try {
         // Use the existing registration endpoint
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('https://wp.tributestream.com/wp-json/tributestream/v1/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
