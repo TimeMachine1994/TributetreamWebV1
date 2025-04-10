@@ -16,21 +16,18 @@
   }
 
   // Define types for form fields
-  type FormField = 
-    | "director-first-name" 
-    | "director-last-name" 
-    | "family-member-first-name" 
-    | "family-member-last-name" 
-    | "family-member-dob" 
-    | "deceased-first-name" 
-    | "deceased-last-name" 
-    | "deceased-dob" 
-    | "deceased-dop" 
-    | "email-address" 
-    | "phone-number" 
-    | "location-name" 
-    | "location-address" 
-    | "memorial-time" 
+  type FormField =
+    | "director-first-name"
+    | "director-last-name"
+    | "family-member-first-name"
+    | "family-member-last-name"
+    | "deceased-first-name"
+    | "deceased-last-name"
+    | "email-address"
+    | "phone-number"
+    | "location-name"
+    | "location-address"
+    | "memorial-time"
     | "memorial-date";
 
   type FormData = Record<FormField, string>;
@@ -49,11 +46,8 @@
     "director-last-name": "",
     "family-member-first-name": "",
     "family-member-last-name": "",
-    "family-member-dob": "",
     "deceased-first-name": "",
     "deceased-last-name": "",
-    "deceased-dob": "",
-    "deceased-dop": "",
     "email-address": "",
     "phone-number": "",
     "location-name": "",
@@ -62,10 +56,10 @@
     "memorial-date": ""
   });
   
-  // Prefill with passed-in data if available
-  if (fdForm) {
-    formData = { ...formData, ...fdForm };
-  }
+  // // Prefill with passed-in data if available
+  // if (fdForm) {
+  //   formData = { ...formData, ...fdForm };
+  // }
   
   // Error state management
   let errors = $state<ErrorMap>({});
@@ -116,8 +110,6 @@
       case "location-name":
         if (!value) errors[fieldName] = "Location name is required";
         break;
-      case "deceased-dob":
-      case "deceased-dop":
       case "memorial-date":
         if (value && isNaN(new Date(value).getTime())) {
           errors[fieldName] = "Invalid date format";
@@ -194,9 +186,6 @@
   function fillTestData(): void {
     // Generate dates that make logical sense
     const today = new Date();
-    const pastYear = today.getFullYear() - 85; // deceased birth year
-    const recentYear = today.getFullYear() - 1; // deceased passing year
-    const familyBirthYear = today.getFullYear() - 55; // family member birth year
     const memorialDate = new Date(today);
     memorialDate.setDate(today.getDate() + 7); // Memorial 7 days from today
     
@@ -211,11 +200,8 @@
       "director-last-name": "Smith",
       "family-member-first-name": "Mary",
       "family-member-last-name": "Johnson",
-      "family-member-dob": formatDate(new Date(familyBirthYear, 5, 15)), // June 15
       "deceased-first-name": "Robert",
       "deceased-last-name": "Williams",
-      "deceased-dob": formatDate(new Date(pastYear, 3, 10)), // April 10
-      "deceased-dop": formatDate(new Date(recentYear, 11, 25)), // December 25
       "email-address": "contact@example.com",
       "phone-number": "(555) 123-4567",
       "location-name": "Peaceful Gardens Funeral Home",
