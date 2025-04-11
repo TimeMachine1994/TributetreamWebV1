@@ -3,12 +3,7 @@ import sgMail from '@sendgrid/mail';
 /**
  * Interface for common email options
  */
-interface EmailOptions {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
-}
+// We're implementing our own email sending functions directly
 
 /**
  * Interface for customer confirmation email data
@@ -39,7 +34,8 @@ interface FormData {
   memorialDate?: string;
   slug?: string;
   password?: string;
-  [key: string]: any; // For any additional fields
+  // Type-safe index signature for additional fields
+  [key: string]: string | number | boolean | Date | null | undefined;
 }
 
 // Import environment variables in SvelteKit using the proper module
@@ -107,12 +103,11 @@ export async function sendCustomerConfirmation(to: string, data: CustomerEmailDa
  * @returns Promise resolving to success status
  */
 export async function sendInternalNotification(
-  formData: FormData,
-  registrationStatus?: string
+  formData: FormData
 ): Promise<boolean> {
   try {
     console.log('📧 Sending internal notification email to tributestream@tributestream.com');
-    const html = createInternalNotificationTemplate(formData, registrationStatus);
+    const html = createInternalNotificationTemplate(formData);
     
     await sgMail.send({
       from: 'tributestream@tributestream.com',
@@ -130,25 +125,7 @@ export async function sendInternalNotification(
   }
 }
 
-/**
- * Send a generic email - used for legacy compatibility
- * @param options Email options
- * @returns Promise resolving to success status
- */
-export async function sendEmail(options: EmailOptions): Promise<boolean> {
-  try {
-    await sgMail.send({
-      from: 'tributestream@tributestream.com',
-      ...options
-    });
-    
-    console.log('✅ Generic email sent successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send email:', error);
-    return false;
-  }
-}
+
 
 /**
  * Create HTML template for customer confirmation email
@@ -336,7 +313,7 @@ Tributestream
 /**
  * Create HTML template for internal notification email with all form data
  */
-function createInternalNotificationTemplate(formData: FormData, registrationStatus?: string): string {
+function createInternalNotificationTemplate(formData: FormData): string {
   // Convert form data to HTML table rows
   const formDataRows = Object.entries(formData)
     .map(([key, value]) => {
@@ -360,16 +337,6 @@ function createInternalNotificationTemplate(formData: FormData, registrationStat
     })
     .filter(row => row !== '') // Remove empty rows (like password)
     .join('');
-    
-  // Add registration status section if provided
-  const registrationStatusHtml = registrationStatus
-    ? `
-      <div style="margin-top: 30px; padding: 20px; background-color: #F8F9FA; border-left: 4px solid #D4AF37; border-radius: 8px;">
-        <h3 style="margin-top: 0; color: #1A1A1A; font-family: 'Cormorant Garamond', serif;">WordPress Registration Status</h3>
-        <p style="margin-bottom: 0; font-size: 15px;">${registrationStatus}</p>
-      </div>
-    `
-    : '';
 
   return `
     <!DOCTYPE html>
@@ -491,8 +458,6 @@ function createInternalNotificationTemplate(formData: FormData, registrationStat
               ${formDataRows}
             </tbody>
           </table>
-          
-          ${registrationStatusHtml}
           
           <div class="note">
             <strong style="color: #1A1A1A; font-family: 'Cormorant Garamond', serif;">Important:</strong> Please review this information and follow up with the family within 24-48 hours as per protocol.

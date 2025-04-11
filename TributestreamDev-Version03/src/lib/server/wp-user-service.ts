@@ -64,11 +64,14 @@ export async function registerWordPressUser(userData: UserData): Promise<Registr
             // Check for specific error messages that indicate duplicate user
             if (responseData.message?.includes('email already exists') || 
                 responseData.message?.includes('existing_user_email')) {
+                    console.log('Email exists detected, setting isDuplicate to true');
                 return {
                     success: false,
                     message: `User with email ${userData.email} already exists.`,
                     isDuplicate: true
+                    
                 };
+                
             }
             
             if (responseData.message?.includes('username already exists') || 
