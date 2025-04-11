@@ -63,7 +63,8 @@ export const actions = {
                         fieldErrors["email-address"] = error;
                     } else if (error.includes("phone number")) {
                         fieldErrors["phone-number"] = error;
-                    } else if (error.includes("Memorial location name")) {
+                    // Memorial location name is no longer required, but we'll keep the mapping for other error types
+                    } else if (error.includes("Memorial location")) {
                         fieldErrors["location-name"] = error;
                     } else if (error.includes("deceased date of birth")) {
                         fieldErrors["deceased-dob"] = error;
@@ -125,8 +126,8 @@ export const actions = {
                 console.log('✅ User registered with ID:', userId);
             } else if (registrationResult.isDuplicate) {
                 // Duplicate user - continue with the process
-                registrationStatusMessage = `Note: User ${data.email} could not be registered because they already exist in WordPress. Form data processed normally.`;
-                console.warn(registrationStatusMessage);
+                // We'll still log the actual status for debugging, but won't show it to the user
+                console.warn(`Note: User ${data.email} could not be registered because they already exist in WordPress. Form data processed normally.`);
                 
                 // Need to get the user ID for the existing user
                 try {
@@ -415,11 +416,12 @@ export const actions = {
                 // If tribute wasn't created but we still processed the form, show a success message
                 console.log('🔀 Redirecting to success page without tribute...');
                 
-                // Return success but with a message about partial completion
+                // Return success with the standardized message for duplicate users
                 return {
                     success: true,
-                    message: "Your form was submitted successfully, but some steps couldn't be completed. Our team will contact you shortly.",
-                    registrationStatus: registrationStatusMessage
+                    message: "Your form was submitted successfully. Our team will contact you shortly.",
+                    // Not including registrationStatus so it won't be displayed
+                    isPartialSuccess: true // Flag to indicate this is a partial success (for styling)
                 };
             }
             

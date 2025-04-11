@@ -28,42 +28,148 @@ export const actions = {
       
       // Step 3: Prepare email data
       console.log('📧 Preparing email data...');
-      const emailData = {
-        // Format the data for both customer and internal emails
-        name: form.data.name,
-        email: form.data.email,
-        phone: form.data.phone || 'Not provided',
-        message: form.data.message,
-        submissionDate: new Date().toISOString(),
-        familyMemberLastName: form.data.name.split(' ').pop() || 'Customer' // Used by the email service
-      };
       
-      // Step 4: Send emails using the email API
-      console.log('📤 Sending emails...');
-      const emailResponse = await fetch('/api/send-email', {
+      // Prepare user confirmation email content
+      const userEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
+          <h2 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">Thank You for Contacting Us</h2>
+          <p>Dear ${form.data.name},</p>
+          <p>Thank you for reaching out to TributeStream. We have received your message and will get back to you as soon as possible.</p>
+          <p>Here's a summary of the information you provided:</p>
+          <ul>
+            <li><strong>Name:</strong> ${form.data.name}</li>
+            <li><strong>Email:</strong> ${form.data.email}</li>
+            ${form.data.phone ? `<li><strong>Phone:</strong> ${form.data.phone}</li>` : ''}
+            <li><strong>Message:</strong> ${form.data.message}</li>
+          </ul>
+          <p>If you have any additional questions or information to share, please don't hesitate to reply to this email.</p>
+          <p>Best regards,</p>
+          <p>The TributeStream Team</p>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; font-size: 12px; color: #666;">
+            <p>© ${new Date().getFullYear()} TributeStream. All rights reserved.</p>
+          </div>
+        </div>
+      `;
+      
+      const userEmailText = `
+        Thank You for Contacting Us
+        
+        Dear ${form.data.name},
+        
+        Thank you for reaching out to TributeStream. We have received your message and will get back to you as soon as possible.
+        
+        Here's a summary of the information you provided:
+        - Name: ${form.data.name}
+        - Email: ${form.data.email}
+        ${form.data.phone ? `- Phone: ${form.data.phone}` : ''}
+        - Message: ${form.data.message}
+        
+        If you have any additional questions or information to share, please don't hesitate to reply to this email.
+        
+        Best regards,
+        The TributeStream Team
+        
+        © ${new Date().getFullYear()} TributeStream. All rights reserved.
+      `;
+      
+      // Send confirmation email to the user via API
+      const userEmailResponse = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          type: 'dual',
-          formData: emailData
+          to: form.data.email,
+          subject: 'Thank you for contacting TributeStream',
+          html: userEmailHtml,
+          text: userEmailText
         })
       });
       
-      const emailResult = await emailResponse.json();
+      const userEmailResult = userEmailResponse.ok;
       
-      if (!emailResult.success) {
-        console.error('❌ Email sending failed:', emailResult);
+      // Prepare admin notification email content
+      const adminEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
+          <h2 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">New Contact Form Submission</h2>
+          <p>A new contact form has been submitted with the following details:</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd; background-color: #f2f2f2;">Field</th>
+              <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd; background-color: #f2f2f2;">Value</th>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">Name</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${form.data.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">Email</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${form.data.email}</td>
+            </tr>
+            ${form.data.phone ? `
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">Phone</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${form.data.phone}</td>
+            </tr>` : ''}
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">Message</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${form.data.message}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">Submission Date</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${new Date().toLocaleString()}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 20px;">Please respond to this inquiry as soon as possible.</p>
+        </div>
+      `;
+      
+      const adminEmailText = `
+        New Contact Form Submission
+        
+        A new contact form has been submitted with the following details:
+        
+        Name: ${form.data.name}
+        Email: ${form.data.email}
+        ${form.data.phone ? `Phone: ${form.data.phone}` : ''}
+        Message: ${form.data.message}
+        Submission Date: ${new Date().toLocaleString()}
+        
+        Please respond to this inquiry as soon as possible.
+      `;
+      
+      // Send notification email to the admin via API
+      const adminEmailResponse = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: 'tributestream@tributestream.com',
+          subject: 'New Contact Form Submission',
+          html: adminEmailHtml,
+          text: adminEmailText
+        })
+      });
+      
+      const adminEmailResult = adminEmailResponse.ok;
+      
+      // Check if both emails failed to send
+      if (!userEmailResult && !adminEmailResult) {
+        console.error('❌ Both emails failed to send');
         return message(form, 'Failed to send your message. Please try again or contact us directly.', {
           status: 'error'
         });
       }
       
+      // Log email sending results
+      console.log('📊 Email sending results - User: ' + (userEmailResult ? '✅' : '❌') +
+                 ', Admin: ' + (adminEmailResult ? '✅' : '❌'));
+      
       console.log('✅ Emails sent successfully');
       
       // Return success response with a message
-      return message(form, 'Your message has been sent, check your email.', {
+      return message(form, 'Your message has been sent. We will get back to you soon.', {
         status: 'success'
       });
       

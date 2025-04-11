@@ -91,81 +91,76 @@ export const actions = {
         slug: nameSlug
       };
       
-      // Step 4: Send emails using the email API with retry logic
+      // Step 4: Send emails using the email API
       console.log('📤 Sending emails...');
       console.log('📧 Email data being sent:', JSON.stringify(emailData, null, 2));
       
-      // Function to send email with retry logic
-      async function sendEmailWithRetry(maxRetries = 3): Promise<any> {
-        let retries = 0;
-        let lastError;
+      try {
+        // Extract last name from full name for email template
+        const familyLastName = form.data.name.split(' ').pop() || 'Client';
         
-        while (retries < maxRetries) {
-          try {
-            console.log(`📧 Sending email attempt ${retries + 1}/${maxRetries}...`);
-            
-            const emailResponse = await fetch('/api/send-email', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                type: 'dual',
-                formData: {
-                  ...emailData,
-                  // These fields are expected by the email service
-                  familyMemberLastName: form.data.name.split(' ').pop() || 'Client'
-                }
-              })
-            });
-            
-            if (!emailResponse.ok) {
-              throw new Error(`Email API responded with status: ${emailResponse.status}`);
-            }
-            
-            const emailResult = await emailResponse.json();
-            
-            if (emailResult.success) {
-              console.log('✅ Email sent successfully on attempt', retries + 1);
-              return emailResult;
-            } else {
-              throw new Error(`Email API returned success: false - ${emailResult.message || 'Unknown error'}`);
-            }
-          } catch (error) {
-            lastError = error;
-            retries++;
-            
-            if (retries >= maxRetries) {
-              console.error(`❌ Failed to send email after ${maxRetries} attempts`);
-              break;
-            }
-            
-            // Exponential backoff
-            const delay = 1000 * Math.pow(2, retries - 1);
-            console.log(`⏱️ Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
+        // Create a comprehensive formData object with all relevant information
+        const emailFormData = {
+          // Contact information
+          name: form.data.name,
+          email: form.data.email,
+          phone: form.data.phone,
+          
+          // Service details
+          serviceDate: form.data.serviceDate,
+          serviceTime: form.data.serviceTime,
+          serviceLocation: form.data.serviceLocation || 'Not provided',
+          serviceType: form.data.serviceType || 'Not provided',
+          
+          // Additional information
+          attendees: form.data.attendees || 'Not specified',
+          additionalInfo: form.data.additionalInfo || 'None',
+          preferredContactMethod: form.data.preferredContactMethod || 'Email',
+          
+          // Metadata
+          submissionDate: new Date().toISOString(),
+          
+          // These fields are expected by the email service
+          familyMemberLastName: familyLastName,
+          slug: nameSlug
+        };
+        
+        // Send both emails using the API endpoint with dual email functionality
+        const emailResponse = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'dual',
+            formData: emailFormData
+          })
+        });
+        
+        if (!emailResponse.ok) {
+          throw new Error(`Email API responded with status: ${emailResponse.status}`);
         }
         
-        throw lastError;
-      }
-      
-      let emailResult;
-      try {
-        emailResult = await sendEmailWithRetry();
+        const emailResult = await emailResponse.json();
+        
+        if (!emailResult.success) {
+          throw new Error(`Email API returned success: false - ${emailResult.message || 'Unknown error'}`);
+        }
+        
         console.log('📬 Email API response:', JSON.stringify(emailResult, null, 2));
+        console.log('✅ Emails sent successfully');
+        
+        // Return success response with a detailed message
+        return message(
+          form,
+          'Your consultation request has been sent successfully! We\'ll be in touch within 24 hours to discuss your livestreaming needs.'
+        );
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError);
-        return message(form, 'Failed to send confirmation email. Please try again or contact us directly.');
+        return message(form, 'Failed to send confirmation email. Please try again or contact us directly.', {
+          status: 'error'
+        });
       }
-      console.log('✅ Emails sent successfully');
-      
-      // Return success response with a more detailed message
-      return message(
-        form,
-        'Your consultation request has been sent successfully! We\'ll be in touch within 24 hours to discuss your livestreaming needs.'
-      );
-      return message(form, 'Your message has been sent, check your email.');
       
     } catch (error) {
       console.error('💥 Unexpected error:', error);

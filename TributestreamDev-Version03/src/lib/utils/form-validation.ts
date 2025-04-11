@@ -18,16 +18,16 @@ export function validateFuneralDirectorForm(data: any): ValidationResult {
     if (!data.email) errors.push('Email address is required');
     if (!data.directorFirstName) errors.push('Director\'s first name is required');
     if (!data.directorLastName) errors.push('Director\'s last name is required');
-    if (!data.locationName) errors.push('Memorial location name is required');
     if (!data.deceasedFirstName) errors.push('Deceased\'s first name is required');
     if (!data.deceasedLastName) errors.push('Deceased\'s last name is required');
+    if (!data.phone) errors.push('Phone number is required');
     
     // Email validation
     if (data.email && !isValidEmail(data.email)) {
         errors.push('Invalid email format');
     }
     
-    // Phone validation (if provided)
+    // Phone validation
     if (data.phone && !isValidPhone(data.phone)) {
         errors.push('Invalid phone number format');
     }

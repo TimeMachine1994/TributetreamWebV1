@@ -1,32 +1,33 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
-  import type { ActionResult } from "@sveltejs/kit";
   import type { PageData } from "./$types";
   
-  // Define additional types for registration status
-  interface FormActionResult extends ActionResult {
+  // Define standalone interface for form action results
+  interface FormActionResult {
+    type: "success" | "failure" | "redirect" | "error";
+    status: number;
     data?: {
       success?: boolean;
       error?: boolean;
       message?: string;
       errors?: Record<string, string>;
       formData?: Record<string, string>;
-      registrationStatus?: string;
-    }
+      isPartialSuccess?: boolean;
+    };
+    location?: string;
+    error?: any;
+    message?: string;
   }
 
   // Define types for form fields
-  type FormField = 
-    | "director-first-name" 
-    | "director-last-name" 
-    | "family-member-first-name" 
-    | "family-member-last-name" 
-    | "family-member-dob" 
-    | "deceased-first-name" 
-    | "deceased-last-name" 
-    | "deceased-dob" 
-    | "deceased-dop" 
-    | "email-address" 
+  type FormField =
+    | "director-first-name"
+    | "director-last-name"
+    | "family-member-first-name"
+    | "family-member-last-name"
+    | "deceased-first-name"
+    | "deceased-last-name"
+    | "email-address"
     | "phone-number" 
     | "location-name" 
     | "location-address" 
@@ -49,11 +50,8 @@
     "director-last-name": "",
     "family-member-first-name": "",
     "family-member-last-name": "",
-    "family-member-dob": "",
     "deceased-first-name": "",
     "deceased-last-name": "",
-    "deceased-dob": "",
-    "deceased-dop": "",
     "email-address": "",
     "phone-number": "",
     "location-name": "",
@@ -70,7 +68,7 @@
   // Error state management
   let errors = $state<ErrorMap>({});
   let formError = $state<string>("");
-  let registrationStatus = $state<string>("");
+  let isPartialSuccess = $state<boolean>(false);
   let isSubmitting = $state<boolean>(false);
   let touched = $state<TouchedMap>({});
 
@@ -109,15 +107,15 @@
         }
         break;
       case "phone-number":
-        if (value && !/^[0-9\-\+\(\)\s]{7,20}$/.test(value)) {
+        if (!value) {
+          errors[fieldName] = "Phone number is required";
+        } else if (!/^[0-9\-\+\(\)\s]{7,20}$/.test(value)) {
           errors[fieldName] = "Invalid phone number format";
         }
         break;
       case "location-name":
-        if (!value) errors[fieldName] = "Location name is required";
+        // Location name is no longer required
         break;
-      case "deceased-dob":
-      case "deceased-dop":
       case "memorial-date":
         if (value && isNaN(new Date(value).getTime())) {
           errors[fieldName] = "Invalid date format";
@@ -167,6 +165,7 @@
   function processServerErrors(result: any): void {
     if (result?.error) {
       formError = result.message || "An error occurred during submission.";
+      isPartialSuccess = false;
       
       // If the server returned field-specific errors, map them to our errors object
       if (result.errors) {
@@ -179,61 +178,17 @@
       formError = ""; // Clear any previous errors
       if (result.message) {
         formError = result.message; // Use the message field for notifications
+        isPartialSuccess = !!result.isPartialSuccess; // Set partial success flag if present
       }
-    }
-    
-    // Check for registration status
-    if (result?.registrationStatus) {
-      registrationStatus = result.registrationStatus;
     }
     
     isSubmitting = false;
   }
 
-  // Fill form with test data for development purposes
-  function fillTestData(): void {
-    // Generate dates that make logical sense
-    const today = new Date();
-    const pastYear = today.getFullYear() - 85; // deceased birth year
-    const recentYear = today.getFullYear() - 1; // deceased passing year
-    const familyBirthYear = today.getFullYear() - 55; // family member birth year
-    const memorialDate = new Date(today);
-    memorialDate.setDate(today.getDate() + 7); // Memorial 7 days from today
-    
-    // Format dates to YYYY-MM-DD for date inputs
-    const formatDate = (date: Date): string => {
-      return date.toISOString().split('T')[0];
-    };
-    
-    // Fill form with realistic test data
-    formData = {
-      "director-first-name": "John",
-      "director-last-name": "Smith",
-      "family-member-first-name": "Mary",
-      "family-member-last-name": "Johnson",
-      "family-member-dob": formatDate(new Date(familyBirthYear, 5, 15)), // June 15
-      "deceased-first-name": "Robert",
-      "deceased-last-name": "Williams",
-      "deceased-dob": formatDate(new Date(pastYear, 3, 10)), // April 10
-      "deceased-dop": formatDate(new Date(recentYear, 11, 25)), // December 25
-      "email-address": "contact@example.com",
-      "phone-number": "(555) 123-4567",
-      "location-name": "Peaceful Gardens Funeral Home",
-      "location-address": "123 Memorial Lane, Anytown, ST 12345",
-      "memorial-time": "14:30", // 2:30 PM
-      "memorial-date": formatDate(memorialDate)
-    };
-    
-    // Mark all fields as touched to avoid validation errors
-    Object.keys(formData).forEach(key => {
-      touched[key as FormField] = true;
-    });
-    
-    // Clear any previous errors and status messages
-    errors = {};
-    formError = "";
-    registrationStatus = "";
-  }
+  // Format dates to YYYY-MM-DD for date inputs
+  const formatDate = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -243,10 +198,12 @@
     on:submit={handleSubmit}
     use:enhance={() => {
       return async ({ result, update }) => {
-        if (result.type === 'failure') {
-          processServerErrors(result.data);
+        // Cast the ActionResult to our FormActionResult type
+        const formResult = result as unknown as FormActionResult;
+        if (formResult.type === 'failure') {
+          processServerErrors(formResult.data);
           isSubmitting = false;
-        } else if (result.type === 'redirect') {
+        } else if (formResult.type === 'redirect') {
           // First, make sure the DOM is updated before the navigation happens
           await update();
           
@@ -254,9 +211,9 @@
           isSubmitting = false;
           
           // We don't need to manually handle the redirect as SvelteKit will do it automatically
-        } else if (result.type === 'success') {
+        } else if (formResult.type === 'success') {
           // Process any success data, including registration status
-          processServerErrors(result.data);
+          processServerErrors(formResult.data);
           await update();
         } else {
           // Other cases
@@ -267,8 +224,14 @@
   >
     <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
     
-    {#if formError}
+    {#if formError && !isPartialSuccess}
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <span class="block sm:inline">{formError}</span>
+      </div>
+    {/if}
+    
+    {#if formError && isPartialSuccess}
+      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
         <span class="block sm:inline">{formError}</span>
       </div>
     {/if}
@@ -279,10 +242,9 @@
       </div>
     {/if}
     
-    {#if registrationStatus || form?.data?.registrationStatus}
-      <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
-        <span class="font-bold">Registration Status:</span>
-        <span class="block sm:inline">{registrationStatus || form?.data?.registrationStatus}</span>
+    {#if form?.data?.success && form?.data?.isPartialSuccess}
+      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <span class="block sm:inline">{form.data.message}</span>
       </div>
     {/if}
 
@@ -365,21 +327,6 @@
     </div>
 
     <!-- Family Member Date of Birth -->
-    <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="family-member-dob">Family Member Date of Birth</label>
-      <input
-        name="family-member-dob"
-        type="date"
-        id="family-member-dob"
-        class={getInputClass("family-member-dob")}
-        bind:value={formData["family-member-dob"]}
-        on:blur={() => validateField("family-member-dob", formData["family-member-dob"])}
-        on:focus={() => markAsTouched("family-member-dob")}
-      />
-      {#if errors["family-member-dob"]}
-        <p class="text-red-500 text-xs mt-1">{errors["family-member-dob"]}</p>
-      {/if}
-    </div>
 
     <!-- Deceased Name -->
     <div>
@@ -422,39 +369,7 @@
       </div>
     </div>
 
-    <!-- Deceased Date of Birth -->
-    <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="deceased-dob">Deceased Date of Birth</label>
-      <input
-        name="deceased-dob"
-        type="date"
-        id="deceased-dob"
-        class={getInputClass("deceased-dob")}
-        bind:value={formData["deceased-dob"]}
-        on:blur={() => validateField("deceased-dob", formData["deceased-dob"])}
-        on:focus={() => markAsTouched("deceased-dob")}
-      />
-      {#if errors["deceased-dob"]}
-        <p class="text-red-500 text-xs mt-1">{errors["deceased-dob"]}</p>
-      {/if}
-    </div>
 
-    <!-- Deceased Date of Passing -->
-    <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="deceased-dop">Deceased Date of Passing</label>
-      <input
-        name="deceased-dop"
-        type="date"
-        id="deceased-dop"
-        class={getInputClass("deceased-dop")}
-        bind:value={formData["deceased-dop"]}
-        on:blur={() => validateField("deceased-dop", formData["deceased-dop"])}
-        on:focus={() => markAsTouched("deceased-dop")}
-      />
-      {#if errors["deceased-dop"]}
-        <p class="text-red-500 text-xs mt-1">{errors["deceased-dop"]}</p>
-      {/if}
-    </div>
 
     <!-- Contact Information -->
     <div>
@@ -487,9 +402,11 @@
             bind:value={formData["phone-number"]}
             on:blur={() => validateField("phone-number", formData["phone-number"])}
             on:focus={() => markAsTouched("phone-number")}
+            aria-invalid={errors["phone-number"] ? "true" : "false"}
+            aria-describedby={errors["phone-number"] ? "phone-number-error" : undefined}
           />
           {#if errors["phone-number"]}
-            <p class="text-red-500 text-xs mt-1">{errors["phone-number"]}</p>
+            <p id="phone-number-error" class="text-red-500 text-xs mt-1">{errors["phone-number"]}</p>
           {/if}
         </div>
       </div>
@@ -497,7 +414,7 @@
 
     <!-- Memorial Information -->
     <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="location-name">Memorial Information</label>
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="location-name">Memorial Information (Optional)</label>
       <div class="flex space-x-4">
         <div class="w-full">
           <input
@@ -509,8 +426,7 @@
             bind:value={formData["location-name"]}
             on:blur={() => validateField("location-name", formData["location-name"])}
             on:focus={() => markAsTouched("location-name")}
-            aria-invalid={errors["location-name"] ? "true" : "false"}
-            aria-describedby={errors["location-name"] ? "location-name-error" : undefined}
+            aria-required="false"
           />
           {#if errors["location-name"]}
             <p id="location-name-error" class="text-red-500 text-xs mt-1">{errors["location-name"]}</p>
@@ -521,11 +437,12 @@
             name="location-address"
             type="text"
             id="location-address"
-            placeholder="Location Address"
+            placeholder="Location Address (Optional)"
             class={getInputClass("location-address")}
             bind:value={formData["location-address"]}
             on:blur={() => validateField("location-address", formData["location-address"])}
             on:focus={() => markAsTouched("location-address")}
+            aria-required="false"
           />
           {#if errors["location-address"]}
             <p class="text-red-500 text-xs mt-1">{errors["location-address"]}</p>
@@ -539,10 +456,12 @@
           name="memorial-time"
           type="time"
           id="memorial-time"
+          placeholder="Time (Optional)"
           class={getInputClass("memorial-time")}
           bind:value={formData["memorial-time"]}
           on:blur={() => validateField("memorial-time", formData["memorial-time"])}
           on:focus={() => markAsTouched("memorial-time")}
+          aria-required="false"
         />
         {#if errors["memorial-time"]}
           <p class="text-red-500 text-xs mt-1">{errors["memorial-time"]}</p>
@@ -557,6 +476,7 @@
           bind:value={formData["memorial-date"]}
           on:blur={() => validateField("memorial-date", formData["memorial-date"])}
           on:focus={() => markAsTouched("memorial-date")}
+          aria-required="false"
         />
         {#if errors["memorial-date"]}
           <p class="text-red-500 text-xs mt-1">{errors["memorial-date"]}</p>
@@ -565,20 +485,12 @@
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex justify-between">
-      <!-- Test Data Button -->
-      <button
-        type="button"
-        class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
-        on:click={fillTestData}
-      >
-        Fill Test Data
-      </button>
-      
+    <div class="flex justify-center">
       <!-- Submit Button -->
       <button
         type="submit"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        class="bg-[#d5ba7f] hover:bg-[#c5aa6f] text-white font-bold py-3 px-6 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background-color: rgb(213, 186, 127); hover:background-color: rgb(193, 166, 107);"
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Submitting...' : 'Submit'}
