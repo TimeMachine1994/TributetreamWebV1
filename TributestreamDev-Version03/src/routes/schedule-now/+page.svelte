@@ -29,6 +29,10 @@
         showSuccessModal = true;
       }
     },
+    // Reset the form after successful submission
+    resetForm: true,
+    // Scroll to the top of the form after submission
+    scrollToError: true,
     onSubmit: ({ formData, cancel }) => {
       console.log('Form submission started with data:', Object.fromEntries(formData));
       
@@ -78,7 +82,7 @@
         <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Request a Consultation</h2>
         
         {#if $message}
-          <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30">
+          <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30 transition-all duration-300 animate-in fade-in slide-in-from-top-4">
             <p class="text-emerald-300">{$message}</p>
           </div>
         {/if}

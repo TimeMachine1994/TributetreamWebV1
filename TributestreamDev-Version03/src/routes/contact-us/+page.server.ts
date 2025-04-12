@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions = {
-  default: async ({ request, fetch }) => {
+  sendMessage: async ({ request, fetch }) => {
     console.log('🚀 Starting contact-us form action.');
     
     try {
@@ -73,6 +73,7 @@ export const actions = {
       `;
       
       // Send confirmation email to the user via API
+      console.log('📧 Sending confirmation email to user:', form.data.email);
       const userEmailResponse = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
@@ -87,6 +88,11 @@ export const actions = {
       });
       
       const userEmailResult = userEmailResponse.ok;
+      if (userEmailResult) {
+        console.log('✅ User confirmation email sent successfully');
+      } else {
+        console.error('❌ Failed to send user confirmation email');
+      }
       
       // Prepare admin notification email content
       const adminEmailHtml = `
@@ -139,6 +145,7 @@ export const actions = {
       `;
       
       // Send notification email to the admin via API
+      console.log('📧 Sending notification email to admin: tributestream@tributestream.com');
       const adminEmailResponse = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
@@ -153,6 +160,11 @@ export const actions = {
       });
       
       const adminEmailResult = adminEmailResponse.ok;
+      if (adminEmailResult) {
+        console.log('✅ Admin notification email sent successfully');
+      } else {
+        console.error('❌ Failed to send admin notification email');
+      }
       
       // Check if both emails failed to send
       if (!userEmailResult && !adminEmailResult) {
@@ -166,9 +178,9 @@ export const actions = {
       console.log('📊 Email sending results - User: ' + (userEmailResult ? '✅' : '❌') +
                  ', Admin: ' + (adminEmailResult ? '✅' : '❌'));
       
-      console.log('✅ Emails sent successfully');
+      console.log('✅ Form submission processed successfully');
       
-      // Return success response with a message
+      // Return success response with a message and reset the form
       return message(form, 'Your message has been sent. We will get back to you soon.', {
         status: 'success'
       });

@@ -48,6 +48,7 @@ export const load: PageServerLoad = async () => {
 export const actions = {
   submit: async ({ request, fetch }) => {
     console.log('🚀 Starting schedule-now form action.');
+    console.log('⏱️ Timestamp:', new Date().toISOString());
     
     try {
       // Get the form data
@@ -94,6 +95,8 @@ export const actions = {
       // Step 4: Send emails using the email API
       console.log('📤 Sending emails...');
       console.log('📧 Email data being sent:', JSON.stringify(emailData, null, 2));
+      console.log('📧 Recipient email:', form.data.email);
+      console.log('📧 Admin notification email: tributestream@tributestream.com');
       
       try {
         // Extract last name from full name for email template
@@ -157,16 +160,18 @@ export const actions = {
         );
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError);
-        return message(form, 'Failed to send confirmation email. Please try again or contact us directly.', {
-          status: 'error'
-        });
+        console.error('❌ Error details:', JSON.stringify(emailError, Object.getOwnPropertyNames(emailError), 2));
+        return message(form, 'Failed to send confirmation email. Please try again or contact us directly at (407) 221-5922.');
       }
       
     } catch (error) {
       console.error('💥 Unexpected error:', error);
+      console.error('💥 Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
+      
+      // Return a user-friendly error message
       return fail(500, {
         error: true,
-        message: 'An unexpected error occurred. Please try again or contact us directly.',
+        message: 'An unexpected error occurred. Please try again or contact us directly at (407) 221-5922.',
         formData: {}
       });
     }

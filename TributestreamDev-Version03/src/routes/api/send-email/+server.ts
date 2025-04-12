@@ -4,6 +4,13 @@ import {
   sendCustomerConfirmation,
   sendInternalNotification,
 } from '$lib/utils/email-service';
+import sgMail from '@sendgrid/mail';
+import { SENDGRID_API_KEY } from '$env/static/private';
+
+// Ensure SendGrid is initialized
+if (SENDGRID_API_KEY) {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
@@ -19,7 +26,7 @@ export const POST: RequestHandler = async ({ request }) => {
       );
     }
 
-    // Handle dual email sending
+    // Handle dual email sending (for memorial service forms)
     if (data.type === 'dual' && data.formData) {
       console.log('🔄 Processing dual email request');
       // Extract necessary data from the form data
@@ -68,7 +75,34 @@ export const POST: RequestHandler = async ({ request }) => {
         );
       }
     }
- 
+    // Handle direct email sending (for contact forms)
+    else if (data.to && (data.html || data.text)) {
+      console.log('📧 Processing direct email request to:', data.to);
+      
+      try {
+        if (!SENDGRID_API_KEY) {
+          throw new Error('SendGrid API key is not configured');
+        }
+        
+        // Send the email using SendGrid
+        await sgMail.send({
+          from: 'tributestream@tributestream.com',
+          to: data.to,
+          subject: data.subject || 'Message from TributeStream',
+          html: data.html || '',
+          text: data.text || ''
+        });
+        
+        console.log('✅ Email sent successfully to:', data.to);
+        return json({ success: true });
+      } catch (error) {
+        console.error('❌ Failed to send email:', error);
+        return json(
+          { success: false, message: 'Failed to send email' },
+          { status: 500 }
+        );
+      }
+    }
     // If we reach here, request didn't match any expected format
     return json(
       { success: false, message: 'Invalid email request format' },
