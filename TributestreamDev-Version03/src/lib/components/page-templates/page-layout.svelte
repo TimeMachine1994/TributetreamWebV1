@@ -1,7 +1,15 @@
 <script lang="ts">
   import { type HTMLAttributes } from 'svelte/elements';
+  import PageBackground from '$lib/components/ui/PageBackground.svelte';
+  import { page } from '$app/stores';
 
   let { title, metaDescription = '' } = $props();
+  
+  // Extract the current route path to determine which background to use
+  let currentPath = $derived($page.url.pathname);
+  let pageVariant = $derived(currentPath === '/'
+    ? 'home'
+    : currentPath.substring(1).replace(/\/.+$/, ''));
 </script>
 
 <svelte:head>
@@ -9,7 +17,8 @@
   <meta name="description" content={metaDescription} />
 </svelte:head>
 
-<div class="min-h-screen bg-black text-white">
+<div class="min-h-screen text-white relative">
+  <PageBackground variant={pageVariant} />
   <!-- Header is handled by the global layout -->
   
   <main class="container mx-auto px-4 py-16 max-w-6xl">

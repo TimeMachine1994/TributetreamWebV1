@@ -1,84 +1,95 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms';
-  import { message } from 'sveltekit-superforms/client';
-  import type { PageData } from './$types';
+  import LoginForm from '$lib/components/auth/login-form.svelte';
+  import ForgotPassword from '$lib/components/auth/forgot-password.svelte';
+  import TributeGrid from '$lib/components/tributes/tribute-grid.svelte';
+  import type { Tribute } from '$lib/types/tribute';
+  import type { SuperValidated } from 'sveltekit-superforms';
   
-  export let data: PageData;
+  interface PageData {
+    user: { id: string; name: string; email: string } | null;
+    tributes: Tribute[];
+    loginForm: SuperValidated<Record<string, unknown>>;
+    resetForm: SuperValidated<Record<string, unknown>>;
+  }
   
-  // Initialize the form
-  const { form, errors, enhance, constraints, message: formMessage } = superForm(data.form ?? {}, {
-    resetForm: true,
-    taintedMessage: false,
-    onUpdate: ({ form }) => {
-      if (form.valid) {
-        emailInput = '';
-      }
-    }
-  });
+  let { data } = $props<{ data: PageData }>();
   
-  let emailInput = '';
-  let isSubmitting = false;
+  // State
+  let showForgotPassword = $state(false);
+  
+  // Toggle between login and forgot password forms
+  function toggleForgotPassword() {
+    showForgotPassword = !showForgotPassword;
+  }
 </script>
 
 <svelte:head>
-  <title>Portal Under Construction | Tributestream</title>
-  <meta name="description" content="Our portal is under construction! Check back soon for updates." />
+  <title>{data.user ? 'My Tributes' : 'Login'} | Tributestream</title>
+  <meta name="description" content="Access your Tributestream account and manage your tributes." />
 </svelte:head>
 
 <div class="container min-h-screen px-4 py-16 mx-auto flex flex-col items-center justify-center">
-  <div class="max-w-2xl w-full bg-card rounded-lg shadow-lg overflow-hidden">
-    <div class="py-12 px-6 md:px-10 text-center">
-      <h1 class="text-3xl md:text-4xl font-bold mb-6 text-primary">
-        Our portal is under construction!
-      </h1>
-      
-      <p class="text-lg mb-8 text-muted-foreground">
-        Check back soon for updates. Subscribe below to be notified when our portal becomes available.
-      </p>
-      
-      <div class="divider h-px w-2/3 mx-auto bg-gradient-to-r from-transparent via-muted to-transparent my-8"></div>
-      
-      <form method="POST" use:enhance class="max-w-md mx-auto">
-        <div class="mb-6">
-          <label for="email" class="block text-sm font-medium mb-2 text-foreground">
-            Email address
-          </label>
+  <div class="max-w-4xl w-full">
+    {#if data.user}
+      <!-- Authenticated user view -->
+      <div class="bg-card rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6 md:p-8">
+          <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-primary">
+              My Tributes
+            </h1>
+            
+            <form method="POST" action="?/logout">
+              <button 
+                type="submit"
+                class="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors"
+              >
+                Log Out
+              </button>
+            </form>
+          </div>
           
-          <input
-            id="email"
-            name="email"
-            type="email"
-            bind:value={emailInput}
-            placeholder="Enter your email"
-            class="w-full px-4 py-3 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
-            autocomplete="email"
-            {...constraints.email}
-            required
-          />
+          <div class="mb-8">
+            <p class="text-muted-foreground">
+              Welcome back, <span class="font-medium text-foreground">{data.user.name}</span>. 
+              Here are the tributes associated with your account.
+            </p>
+          </div>
           
-          {#if $errors.email}
-            <p class="mt-1.5 text-sm text-destructive">{$errors.email}</p>
+          <TributeGrid tributes={data.tributes} />
+        </div>
+      </div>
+    {:else}
+      <!-- Unauthenticated user view -->
+      <div class="bg-card rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6 md:p-8">
+          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-primary">
+            {showForgotPassword ? 'Reset Your Password' : 'My Portal'}
+          </h1>
+          
+          {#if showForgotPassword}
+            <ForgotPassword form={data.resetForm} onCancel={toggleForgotPassword} />
+          {:else}
+            <div class="mb-6 text-center">
+              <p class="text-muted-foreground">
+                Log in to access your tributes and manage your account.
+              </p>
+            </div>
+            
+            <LoginForm form={data.loginForm} />
+            
+            <div class="mt-8 text-center">
+              <button 
+                type="button" 
+                class="text-primary hover:underline"
+                on:click={toggleForgotPassword}
+              >
+                Forgot your password?
+              </button>
+            </div>
           {/if}
         </div>
-        
-        <button
-          type="submit"
-          class="w-full py-3 px-6 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Subscribing...' : 'Notify me when available'}
-        </button>
-        
-        {#if $formMessage}
-          <div class="mt-4 p-3 rounded-md text-center {$formMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-            {$formMessage.text}
-          </div>
-        {/if}
-      </form>
-    </div>
+      </div>
+    {/if}
   </div>
 </div>
-
-<style>
-  /* Additional custom styles if needed */
-</style>
