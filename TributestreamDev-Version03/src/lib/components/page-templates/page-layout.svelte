@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head>
-  <title>{title} | TributeStream</title>
+  <title>{title} | Tributestream</title>
   <meta name="description" content={metaDescription} />
 </svelte:head>
 

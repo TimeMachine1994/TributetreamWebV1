@@ -19,7 +19,7 @@
              <!-- Navigation Links -->
              <li>
                <a href="/why-tributestream" class="text-white hover:text-[#D4AF37]">
-                 Why TributeStream?
+                 Why Tributestream?
                </a>
              </li>
              <li>

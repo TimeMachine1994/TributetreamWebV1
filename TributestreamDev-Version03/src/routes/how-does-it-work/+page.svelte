@@ -4,11 +4,11 @@
 
 <PageLayout 
   title="How Does It Work?" 
-  metaDescription="Learn how TributeStream's livestreaming service process works, from initial consultation to delivery of the final memorial video."
+  metaDescription="Learn how Tributestream's livestreaming service process works, from initial consultation to delivery of the final memorial video."
 >
   <section class="content-section">
     <p class="text-lg mb-10">
-      TributeStream provides a seamless, respectful process for livestreaming memorial services. 
+      Tributestream provides a seamless, respectful process for livestreaming memorial services. 
       Our professional team handles all technical aspects, allowing you to focus on what matters most.
     </p>
 
