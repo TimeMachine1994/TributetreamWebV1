@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { slide } from 'svelte/transition';
     import { quintOut } from 'svelte/easing';
+    import { onMount } from 'svelte';
     
     // Define props using Svelte 5 runes syntax
     const { form, data } = $props();
@@ -217,17 +218,18 @@
 <!-- Main component with video background -->
 <section class="relative bg-gray-900 text-white min-h-screen">
     <!-- Video background with conditional blur effect -->
-    <video 
-        autoplay 
-        muted 
-        loop 
-        playsinline 
-        class="absolute inset-0 w-full h-full object-cover z-0 transition-all duration-300" 
+    <div
+        class="absolute inset-0 w-full h-full z-0 bg-gray-900 overflow-hidden"
         class:blur-sm={isBlurred}
     >
-        <source src="https://209.74.64.181:12091/down/FCymVumu4aQG.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
+        <iframe
+            src="https://player.vimeo.com/video/1074841232?background=1&autoplay=1&loop=1&byline=0&title=0&muted=1"
+            class="absolute w-full h-full object-cover"
+            frameborder="0"
+            allow="autoplay; fullscreen"
+            title="Background Video"
+        ></iframe>
+    </div>
     
     <!-- Overlay for better text readability -->
     <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
@@ -486,3 +488,20 @@
         </div>
     </div>
 </section>
+
+<svelte:head>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+</svelte:head>
+
+<style>
+    /* Simple styling for the video background */
+    iframe {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        object-fit: cover;
+        transform: scale(1.1); /* Slightly scale up to avoid any borders */
+    }
+</style>
