@@ -34,7 +34,7 @@ export const actions = {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
           <h2 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">Thank You for Contacting Us</h2>
           <p>Dear ${form.data.name},</p>
-          <p>Thank you for reaching out to TributeStream. We have received your message and will get back to you as soon as possible.</p>
+          <p>Thank you for reaching out to Tributestream. We have received your message and will get back to you as soon as possible.</p>
           <p>Here's a summary of the information you provided:</p>
           <ul>
             <li><strong>Name:</strong> ${form.data.name}</li>
@@ -44,9 +44,9 @@ export const actions = {
           </ul>
           <p>If you have any additional questions or information to share, please don't hesitate to reply to this email.</p>
           <p>Best regards,</p>
-          <p>The TributeStream Team</p>
+          <p>The Tributestream Team</p>
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; font-size: 12px; color: #666;">
-            <p>© ${new Date().getFullYear()} TributeStream. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
           </div>
         </div>
       `;
@@ -56,7 +56,7 @@ export const actions = {
         
         Dear ${form.data.name},
         
-        Thank you for reaching out to TributeStream. We have received your message and will get back to you as soon as possible.
+        Thank you for reaching out to Tributestream. We have received your message and will get back to you as soon as possible.
         
         Here's a summary of the information you provided:
         - Name: ${form.data.name}
@@ -67,9 +67,9 @@ export const actions = {
         If you have any additional questions or information to share, please don't hesitate to reply to this email.
         
         Best regards,
-        The TributeStream Team
+        The Tributestream Team
         
-        © ${new Date().getFullYear()} TributeStream. All rights reserved.
+        © ${new Date().getFullYear()} Tributestream. All rights reserved.
       `;
       
       // Send confirmation email to the user via API
@@ -81,7 +81,7 @@ export const actions = {
         },
         body: JSON.stringify({
           to: form.data.email,
-          subject: 'Thank you for contacting TributeStream',
+          subject: 'Thank you for contacting Tributestream',
           html: userEmailHtml,
           text: userEmailText
         })

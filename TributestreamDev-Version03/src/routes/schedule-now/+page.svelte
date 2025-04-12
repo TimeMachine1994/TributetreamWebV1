@@ -67,7 +67,7 @@
 
 <PageLayout 
   title="Schedule Now" 
-  metaDescription="Schedule a consultation for TributeStream's professional livestreaming service for celebrations of life and memorial services."
+  metaDescription="Schedule a consultation for Tributestream's professional livestreaming service for celebrations of life and memorial services."
 >
   <section class="content-section">
     <p class="text-lg mb-10">

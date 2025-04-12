@@ -3,13 +3,13 @@
 </script>
 
 <PageLayout 
-  title="Why TributeStream?" 
-  metaDescription="Discover why TributeStream is the premier livestreaming service for celebrations of life, creating lasting memories for families and friends."
+  title="Why Tributestream?" 
+  metaDescription="Discover why Tributestream is the premier livestreaming service for celebrations of life, creating lasting memories for families and friends."
 >
   <section class="content-section">
     <h2 class="section-title">A Dignified Approach to Memorial Livestreaming</h2>
     <p class="text-lg mb-6">
-      TributeStream provides a respectful, professional livestreaming service specifically designed for celebrations of life.
+      Tributestream provides a respectful, professional livestreaming service specifically designed for celebrations of life.
       Our approach combines technical expertise with compassionate service to create meaningful experiences for families
       separated by distance during important memorial events.
     </p>
@@ -34,7 +34,7 @@
   <section class="content-section">
     <h2 class="section-title">Benefits for Families</h2>
     <p class="text-lg mb-10">
-      When distance prevents attendance, TributeStream ensures that family members and friends can still participate
+      When distance prevents attendance, Tributestream ensures that family members and friends can still participate
       in this important life event.
     </p>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

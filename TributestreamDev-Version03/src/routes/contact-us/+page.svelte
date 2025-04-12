@@ -24,7 +24,7 @@
 
 <PageLayout 
   title="Contact Us" 
-  metaDescription="Get in touch with TributeStream for livestreaming services for celebrations of life. We're here to answer your questions and provide information."
+  metaDescription="Get in touch with Tributestream for livestreaming services for celebrations of life. We're here to answer your questions and provide information."
 >
   <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
     <!-- Contact Form -->
@@ -131,7 +131,7 @@
         <div>
           <h3 class="text-lg font-medium mb-2">Coverage Areas</h3>
           <p>
-            TributeStream currently serves the following Florida counties: Orange, Lake, Osceola, 
+            Tributestream currently serves the following Florida counties: Orange, Lake, Osceola, 
             Seminole, Marion, Sumter, Volusia, Flagler, and Brevard.
           </p>
           <p class="mt-3 text-sm text-gray-400">
