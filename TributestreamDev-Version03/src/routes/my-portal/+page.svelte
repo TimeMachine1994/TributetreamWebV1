@@ -32,17 +32,17 @@
   <div class="max-w-4xl w-full">
     {#if data.user}
       <!-- Authenticated user view -->
-      <div class="bg-card rounded-lg shadow-lg overflow-hidden">
+      <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
         <div class="p-6 md:p-8">
           <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-primary">
+            <h1 class="text-3xl md:text-4xl font-bold text-warning-500">
               My Tributes
             </h1>
             
             <form method="POST" action="?/logout">
               <button 
                 type="submit"
-                class="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors"
+                class="px-4 py-2 bg-surface-200 text-surface-600 rounded-md hover:bg-surface-300 transition-colors"
               >
                 Log Out
               </button>
@@ -50,8 +50,8 @@
           </div>
           
           <div class="mb-8">
-            <p class="text-muted-foreground">
-              Welcome back, <span class="font-medium text-foreground">{data.user.name}</span>. 
+            <p class="text-surface-950">
+              Welcome back, <span class="font-medium text-surface-950">{data.user.name}</span>.
               Here are the tributes associated with your account.
             </p>
           </div>
@@ -61,9 +61,9 @@
       </div>
     {:else}
       <!-- Unauthenticated user view -->
-      <div class="bg-card rounded-lg shadow-lg overflow-hidden">
+      <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
         <div class="p-6 md:p-8">
-          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-primary">
+          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-warning-500">
             {showForgotPassword ? 'Reset Your Password' : 'My Portal'}
           </h1>
           
@@ -71,7 +71,7 @@
             <ForgotPassword form={data.resetForm} onCancel={toggleForgotPassword} />
           {:else}
             <div class="mb-6 text-center">
-              <p class="text-muted-foreground">
+              <p class="text-surface-950">
                 Log in to access your tributes and manage your account.
               </p>
             </div>
@@ -81,7 +81,7 @@
             <div class="mt-8 text-center">
               <button 
                 type="button" 
-                class="text-primary hover:underline"
+                class="text-primary-500 hover:underline"
                 on:click={toggleForgotPassword}
               >
                 Forgot your password?

@@ -34,13 +34,13 @@
 </script>
 
 <div class="w-full max-w-md mx-auto">
-  <div class="bg-card rounded-lg shadow-lg p-8">
-    <h2 class="text-2xl font-bold mb-6 text-center text-primary">Log In to Your Account</h2>
+  <div class="bg-surface-100 rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-bold mb-6 text-center text-warning-500">Log In to Your Account</h2>
     
     <form method="POST" action="?/login" use:enhance class="space-y-6">
       <!-- Username field -->
       <div>
-        <label for="username" class="block text-sm font-medium mb-2 text-foreground">
+        <label for="username" class="block text-sm font-medium mb-2 text-surface-950">
           Username
         </label>
         <input
@@ -48,18 +48,18 @@
           name="username"
           type="text"
           bind:value={$form.username}
-          class="w-full px-4 py-3 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+          class="w-full px-4 py-3 rounded-md border bg-surface-50 text-surface-950 focus:ring-2 focus:ring-warning-500 focus:outline-none"
           autocomplete="username"
           required
         />
         {#if $errors.username}
-          <p class="mt-1.5 text-sm text-destructive">{$errors.username}</p>
+          <p class="mt-1.5 text-sm text-error-500">{$errors.username}</p>
         {/if}
       </div>
       
       <!-- Password field -->
       <div>
-        <label for="password" class="block text-sm font-medium mb-2 text-foreground">
+        <label for="password" class="block text-sm font-medium mb-2 text-surface-950">
           Password
         </label>
         <div class="relative">
@@ -68,13 +68,13 @@
             name="password"
             type={showPassword ? "text" : "password"}
             bind:value={$form.password}
-            class="w-full px-4 py-3 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+            class="w-full px-4 py-3 rounded-md border bg-surface-50 text-surface-950 focus:ring-2 focus:ring-warning-500 focus:outline-none"
             autocomplete="current-password"
             required
           />
           <button 
             type="button" 
-            class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-surface-600 hover:text-surface-950"
             on:click={togglePasswordVisibility}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -91,13 +91,13 @@
           </button>
         </div>
         {#if $errors.password}
-          <p class="mt-1.5 text-sm text-destructive">{$errors.password}</p>
+          <p class="mt-1.5 text-sm text-error-500">{$errors.password}</p>
         {/if}
       </div>
       
       <!-- Forgot password link -->
       <div class="text-right">
-        <a href="#forgot-password" class="text-sm text-primary hover:underline">
+        <a href="#forgot-password" class="text-sm text-warning-500 hover:underline">
           Forgot your password?
         </a>
       </div>
@@ -105,7 +105,7 @@
       <!-- Submit button -->
       <button
         type="submit"
-        class="w-full py-3 px-6 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+        class="w-full py-3 px-6 bg-warning-500 text-surface-950 font-medium rounded-md hover:bg-warning-600 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 transition-colors"
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Logging in...' : 'Log In'}

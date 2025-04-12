@@ -26,17 +26,17 @@
 </script>
 
 <div class="w-full max-w-md mx-auto">
-  <div class="bg-card rounded-lg shadow-lg p-8">
-    <h2 class="text-2xl font-bold mb-6 text-center text-primary">Reset Password</h2>
+  <div class="bg-surface-100 rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-bold mb-6 text-center text-warning-500">Reset Password</h2>
     
-    <p class="text-muted-foreground mb-6 text-center">
+    <p class="text-surface-950 mb-6 text-center">
       Enter your email address and we'll send you a link to reset your password.
     </p>
     
     <form method="POST" action="?/resetPassword" use:enhance class="space-y-6">
       <!-- Email field -->
       <div>
-        <label for="email" class="block text-sm font-medium mb-2 text-foreground">
+        <label for="email" class="block text-sm font-medium mb-2 text-surface-950">
           Email Address
         </label>
         <input
@@ -44,12 +44,12 @@
           name="email"
           type="email"
           bind:value={$form.email}
-          class="w-full px-4 py-3 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+          class="w-full px-4 py-3 rounded-md border bg-surface-50 text-surface-950 focus:ring-2 focus:ring-warning-500 focus:outline-none"
           autocomplete="email"
           required
         />
         {#if $errors.email}
-          <p class="mt-1.5 text-sm text-destructive">{$errors.email}</p>
+          <p class="mt-1.5 text-sm text-error-500">{$errors.email}</p>
         {/if}
       </div>
       
@@ -57,7 +57,7 @@
       <div class="flex space-x-4">
         <button
           type="button"
-          class="flex-1 py-3 px-6 bg-muted text-muted-foreground font-medium rounded-md hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2 transition-colors"
+          class="flex-1 py-3 px-6 bg-surface-200 text-surface-950 font-medium rounded-md hover:bg-surface-300 focus:outline-none focus:ring-2 focus:ring-surface-200 focus:ring-offset-2 transition-colors"
           on:click={onCancel}
           disabled={isSubmitting}
         >
@@ -66,7 +66,7 @@
         
         <button
           type="submit"
-          class="flex-1 py-3 px-6 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+          class="flex-1 py-3 px-6 bg-warning-500 text-surface-950 font-medium rounded-md hover:bg-warning-600 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 transition-colors"
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Sending...' : 'Send Reset Link'}
