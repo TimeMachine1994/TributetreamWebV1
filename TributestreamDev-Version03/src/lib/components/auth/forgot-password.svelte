@@ -27,7 +27,7 @@
 
 <div class="w-full max-w-md mx-auto">
   <div class="bg-surface-100 rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold mb-6 text-center text-warning-500">Reset Password</h2>
+      <h2 class="text-2xl font-bold mb-6 text-center" style="color: #D5BA7F;">Reset Password</h2>
     
     <p class="text-surface-950 mb-6 text-center">
       Enter your email address and we'll send you a link to reset your password.
@@ -66,7 +66,10 @@
         
         <button
           type="submit"
-          class="flex-1 py-3 px-6 bg-warning-500 text-surface-950 font-medium rounded-md hover:bg-warning-600 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 transition-colors"
+          class="flex-1 py-3 px-6 text-surface-950 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
+          style="background-color: #D5BA7F; --tw-ring-color: #D5BA7F;"
+          on:mouseover={(e) => e.currentTarget.style.backgroundColor = '#C5AA6F'}
+          on:mouseout={(e) => e.currentTarget.style.backgroundColor = '#D5BA7F'}
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Sending...' : 'Send Reset Link'}

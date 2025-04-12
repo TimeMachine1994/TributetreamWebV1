@@ -35,7 +35,7 @@
       <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
         <div class="p-6 md:p-8">
           <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-warning-500">
+            <h1 class="text-3xl md:text-4xl font-bold" style="color: #D5BA7F;">
               My Tributes
             </h1>
             
@@ -63,7 +63,7 @@
       <!-- Unauthenticated user view -->
       <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
         <div class="p-6 md:p-8">
-          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-warning-500">
+          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center" style="color: #D5BA7F;">
             {showForgotPassword ? 'Reset Your Password' : 'My Portal'}
           </h1>
           
@@ -81,7 +81,7 @@
             <div class="mt-8 text-center">
               <button 
                 type="button" 
-                class="text-primary-500 hover:underline"
+                class="hover:underline" style="color: #D5BA7F;"
                 on:click={toggleForgotPassword}
               >
                 Forgot your password?

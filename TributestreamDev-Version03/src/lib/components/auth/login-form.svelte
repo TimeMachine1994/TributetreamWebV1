@@ -35,7 +35,7 @@
 
 <div class="w-full max-w-md mx-auto">
   <div class="bg-surface-100 rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold mb-6 text-center text-warning-500">Log In to Your Account</h2>
+      <h2 class="text-2xl font-bold mb-6 text-center" style="color: #D5BA7F;">Log In to Your Account</h2>
     
     <form method="POST" action="?/login" use:enhance class="space-y-6">
       <!-- Username field -->
@@ -97,7 +97,7 @@
       
       <!-- Forgot password link -->
       <div class="text-right">
-        <a href="#forgot-password" class="text-sm text-warning-500 hover:underline">
+        <a href="#forgot-password" class="text-sm hover:underline" style="color: #D5BA7F;">
           Forgot your password?
         </a>
       </div>
@@ -105,7 +105,10 @@
       <!-- Submit button -->
       <button
         type="submit"
-        class="w-full py-3 px-6 bg-warning-500 text-surface-950 font-medium rounded-md hover:bg-warning-600 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 transition-colors"
+        class="w-full py-3 px-6 text-surface-950 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
+        style="background-color: #D5BA7F; --tw-ring-color: #D5BA7F;"
+        on:mouseover={(e) => e.currentTarget.style.backgroundColor = '#C5AA6F'}
+        on:mouseout={(e) => e.currentTarget.style.backgroundColor = '#D5BA7F'}
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Logging in...' : 'Log In'}
