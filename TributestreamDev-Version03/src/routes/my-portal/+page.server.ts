@@ -3,7 +3,6 @@ import type { Actions, PageServerLoad } from './$types';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { loginSchema, portalSubscriptionSchema } from '$lib/utils/form-schemas';
-import { sendEmail } from '$lib/utils/email-service';
 import { setAuthCookies, getUserFromCookies } from '$lib/utils/auth-helpers';
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
@@ -30,11 +29,26 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
     }
   }
   
-  return { 
+  // Check if user is an administrator
+  let isAdmin = false;
+  if (user) {
+    try {
+      const response = await fetch(`/api/user-roles?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        isAdmin = data.roles?.includes('administrator') || false;
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+  }
+
+  return {
     user,
     tributes,
     loginForm,
-    resetForm
+    resetForm,
+    isAdmin
   };
 };
 
@@ -67,7 +81,7 @@ export const actions = {
       // Handle authentication failure
       if (!response.ok) {
         return message(loginForm, data.message || 'Authentication failed', {
-          status: 'error'
+          status: 400
         });
       }
       
@@ -75,19 +89,17 @@ export const actions = {
       setAuthCookies(cookies, data);
       
       // Return success message
-      return message(loginForm, 'Login successful', {
-        status: 'success'
-      });
+      return message(loginForm, 'Login successful');
     } catch (error) {
       console.error('Login error:', error);
       return message(loginForm, 'An unexpected error occurred', {
-        status: 'error'
+        status: 500
       });
     }
   },
   
   // Password reset action
-  resetPassword: async ({ request }) => {
+  resetPassword: async ({ request, fetch }) => {
     // Validate the form data
     const resetForm = await superValidate(request, zod(portalSubscriptionSchema));
     
@@ -97,38 +109,40 @@ export const actions = {
     }
     
     try {
-      // Prepare email data for password reset
-      const emailOptions = {
-        to: resetForm.data.email,
-        subject: 'Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
-            <h2 style="color: #333;">Password Reset Request</h2>
-            <p>We received a request to reset your password. Please click the link below to reset your password:</p>
-            <p><a href="https://tributestream.com/reset-password?token=PLACEHOLDER_TOKEN" style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
-            <p>If you did not request a password reset, please ignore this email.</p>
-          </div>
-        `,
-        text: `Password Reset Request\n\nWe received a request to reset your password. Please visit the following link to reset your password:\n\nhttps://tributestream.com/reset-password?token=PLACEHOLDER_TOKEN\n\nIf you did not request a password reset, please ignore this email.`
-      };
+      console.log('Requesting password reset code for:', resetForm.data.email);
       
-      // Send password reset email
-      const emailSuccess = await sendEmail(emailOptions);
+      // Call the password reset API endpoint
+      const response = await fetch('/api/password-reset/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: resetForm.data.email
+        })
+      });
       
-      if (!emailSuccess) {
-        return message(resetForm, 'Failed to send password reset email. Please try again later.', {
-          status: 'error'
+      const data = await response.json();
+      
+      // Handle API response
+      if (!response.ok) {
+        // Check for specific role restriction error
+        if (data.code === 'role_restriction') {
+          return message(resetForm, data.message, {
+            status: 403
+          });
+        }
+        
+        return message(resetForm, data.message || 'Failed to send password reset email. Please try again later.', {
+          status: 400
         });
       }
       
-      // Return success message
-      return message(resetForm, 'Password reset instructions have been sent to your email.', {
-        status: 'success'
-      });
+      return message(resetForm, 'Password reset code sent to your email. Please check your inbox.');
     } catch (error) {
-      console.error('Password reset error:', error);
-      return message(resetForm, 'An unexpected error occurred', {
-        status: 'error'
+      console.error('Error requesting password reset code:', error);
+      return message(resetForm, 'Failed to request password reset code. Please try again later.', {
+        status: 500
       });
     }
   },

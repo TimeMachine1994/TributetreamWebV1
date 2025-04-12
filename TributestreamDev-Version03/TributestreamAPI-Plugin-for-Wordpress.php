@@ -37,6 +37,9 @@ class TributeStreamComplete {
 
         // Hook into rest_pre_serve_request to add CORS headers.
         add_action('rest_api_init', array($this, 'handle_cors'));
+        
+        // Add filter to allow all user roles to reset their password
+        add_filter('bdpwr_allowed_roles', array($this, 'allow_all_roles_password_reset'), 10, 1);
     }
 
     /**
@@ -832,6 +835,16 @@ class TributeStreamComplete {
             'success' => true,
             'message' => __('User meta deleted successfully', 'tributestream-complete'),
         );
+    }
+    
+    /**
+     * Allow all user roles to reset their password
+     * This filter is used by the Password Reset REST API plugin
+     */
+    public function allow_all_roles_password_reset($roles) {
+        // Add administrator role to the allowed roles
+        $roles[] = 'administrator';
+        return $roles;
     }
 }
 

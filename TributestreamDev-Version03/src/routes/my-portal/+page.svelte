@@ -10,6 +10,7 @@
     tributes: Tribute[];
     loginForm: SuperValidated<Record<string, unknown>>;
     resetForm: SuperValidated<Record<string, unknown>>;
+    isAdmin: boolean;
   }
   
   let { data } = $props<{ data: PageData }>();
@@ -54,6 +55,17 @@
               Welcome back, <span class="font-medium text-surface-950">{data.user.name}</span>.
               Here are the tributes associated with your account.
             </p>
+            
+            {#if data.isAdmin}
+              <div class="mt-4">
+                <a
+                  href="/my-portal/users"
+                  class="inline-block px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+                >
+                  Manage Users
+                </a>
+              </div>
+            {/if}
           </div>
           
           <TributeGrid tributes={data.tributes} />

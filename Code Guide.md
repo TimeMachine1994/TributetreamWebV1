@@ -125,3 +125,26 @@ Looks like we got it fixed by simply editing the wp-user-service and if else jus
 
 ## New Focus: /contact-us page.
 When we click send-message, we want to cleawr the form and show a green box up top. And of course send two emails, one to me and one to the user to confirm we got the email, and one to us with the email itself. 
+
+
+## New Focus: /my-portal has a need to send emails? To what end?
+Let's see. We have our import statements in the +page.svelte.
+Import Components: Login Form, Forgot Password, TributeGrid, along with the Types:  Tribute and SuperValidated. 
+
+The backend however, is trying to import sendEMail... 
+Let's see where it is being used. 
+So, just as I have expected. We never defined how to "reset a password" so we need to do that next.  Let me see what wordpress prefers, I may need to add something to our plugin. 
+
+## Answser: we need to send a password reset email.
+This is how we do it: The wordpress plugin gives us reset, validate, and set password functions. We need to create proxy API endpoints that work similar to how our Auth endpoint works.  We use the same rest endpoints, https://wp.tributestream.com. 
+
+Current Issue is that there is some fake code hidden somewhere.
+We have proxy endpoints that forward request to wordpress, which is responsible for generating and validating tghe reset codes. 
+The WordpressPlugin is supposed to generate the secure resert code, store it, and send it to the user's email. 
+
+Right now our wordpress code is responsible for generating and store the codes, validating them when submitted, and handling the actual password presset and manging the expriation of codes. NO where in there does it mention sending the codes via an email seervice. That is on our front end. So we need to re-review how to get the code, adn the send that code to the user via SVelte's email service. 
+
+I would like to go with the api route, as i have instaleld the wordpress/api-fetch library. Let's focus on just getting password rest to work. Right now there is some issue with our users not being the right role to get their password reset. This implies 1) we haven't setup the users correctly and 2) we need to then fix that part. So let's try and find out exactly what about the backbone js client we can use to i guess ping wordpress and exect..so we can then add this to our users....
+
+## Backbone JS
+Fix the password reset functionality by allowing the Wordpress Plugin to allow all user roles to reset their password. This can be done by adding a filter to the bdpwr_allowed_roels hook. but its fine so thats not the issue.

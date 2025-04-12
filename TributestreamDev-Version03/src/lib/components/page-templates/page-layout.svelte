@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { type HTMLAttributes } from 'svelte/elements';
+  // Define a custom interface for the component props instead of importing from svelte/elements
+  interface PageLayoutProps {
+    title: string;
+    metaDescription?: string;
+  }
+  
   import PageBackground from '$lib/components/ui/PageBackground.svelte';
   import { page } from '$app/stores';
-
-  let { title, metaDescription = '' } = $props();
+let { title, metaDescription = '', children } = $props();
   
   // Extract the current route path to determine which background to use
   let currentPath = $derived($page.url.pathname);
@@ -25,7 +29,7 @@
     <h1 class="text-4xl md:text-5xl font-bold mb-8 text-[#D4AF37]">{title}</h1>
     
     <div class="page-content">
-      <slot />
+      {@render children()}
     </div>
   </main>
   

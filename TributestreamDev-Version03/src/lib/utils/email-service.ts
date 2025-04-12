@@ -633,3 +633,41 @@ function createInternalNotificationTemplate(formData: FormData): string {
     </html>
   `;
 }
+
+/**
+ * Interface for password reset email options
+ */
+interface PasswordResetEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+/**
+ * Send a password reset code email
+ * @param options Email options including recipient, subject, and content
+ * @returns Promise resolving to success status
+ */
+export async function sendPasswordResetCode(options: PasswordResetEmailOptions): Promise<boolean> {
+  try {
+    console.log('📧 Sending password reset code email to:', options.to);
+    console.log('📧 Using SendGrid API key:', SENDGRID_API_KEY ? 'Configured ✅' : 'Missing ❌');
+    
+    // Send the email using SendGrid
+    await sgMail.send({
+      from: 'tributestream@tributestream.com',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text
+    });
+    
+    console.log('✅ Password reset code email sent successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ SendGrid API error details:', error);
+    console.error('❌ Failed to send password reset code email:', error);
+    return false;
+  }
+}
