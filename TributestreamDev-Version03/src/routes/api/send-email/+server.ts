@@ -88,7 +88,7 @@ export const POST: RequestHandler = async ({ request }) => {
         await sgMail.send({
           from: 'tributestream@tributestream.com',
           to: data.to,
-          subject: data.subject || 'Message from TributeStream',
+          subject: data.subject || 'Message from Tributestream',
           html: data.html || '',
           text: data.text || ''
         });
