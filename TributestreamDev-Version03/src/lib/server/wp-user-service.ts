@@ -61,33 +61,13 @@ export async function registerWordPressUser(userData: UserData): Promise<Registr
         } else {
             console.warn(`❌ WordPress user registration failed for ${userData.email}. Status: ${response.status}`);
             
-            // Check for specific error messages that indicate duplicate user
-            if (responseData.message?.includes('email already exists') || 
-                responseData.message?.includes('existing_user_email')) {
-                    console.log('Email exists detected, setting isDuplicate to true');
-                return {
-                    success: false,
-                    message: `User with email ${userData.email} already exists.`,
-                    isDuplicate: true
-                    
-                };
-                
-            }
-            
-            if (responseData.message?.includes('username already exists') || 
-                responseData.message?.includes('existing_user_login')) {
+          
                 return {
                     success: false,
                     message: `User with username derived from ${userData.email} already exists.`,
                     isDuplicate: true
                 };
-            }
             
-            // Handle other errors
-            return {
-                success: false,
-                message: responseData.message || 'Unknown registration error'
-            };
         }
     } catch (error: any) {
         console.error(`💥 Error during WordPress user registration for ${userData.email}:`, error);

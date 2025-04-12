@@ -11,6 +11,7 @@ import sgMail from '@sendgrid/mail';
 interface CustomerEmailData {
   familyLastName: string;
   tributeLink: string;
+  isDuplicate?: boolean;
 }
 
 /**
@@ -131,6 +132,135 @@ export async function sendInternalNotification(
  * Create HTML template for customer confirmation email
  */
 function createCustomerEmailTemplate(data: CustomerEmailData): string {
+  // Check if this is a duplicate user
+  if (data.isDuplicate) {
+    // Template for duplicate users (no link, mention 24-hour timeframe)
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+          
+          body {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7f7f7;
+          }
+          .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            margin: 25px;
+          }
+          .header {
+            background: #1A1A1A;
+            color: #D4AF37;
+            padding: 35px 30px;
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            font-size: 28px;
+            letter-spacing: 1px;
+            border-bottom: 3px solid #D4AF37;
+          }
+          .content {
+            padding: 35px 30px;
+            color: #2A2A2A;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding: 25px;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #eaeaea;
+            background-color: #FCFAF5;
+          }
+          p {
+            margin-bottom: 18px;
+            color: #333;
+            font-size: 15px;
+            line-height: 1.7;
+          }
+          .greeting {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: #1A1A1A;
+            margin-bottom: 24px;
+          }
+          .signature {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 500;
+            font-size: 17px;
+            color: #1A1A1A;
+            margin-top: 30px;
+          }
+          .company-name {
+            font-weight: 600;
+            color: #D4AF37;
+          }
+          .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.3), transparent);
+            width: 60%;
+            margin: 30px auto;
+          }
+          .notice {
+            background-color: #FCFAF5;
+            border-left: 4px solid #D4AF37;
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin: 25px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="header">
+            Tributestream
+          </div>
+          
+          <div class="content">
+            <p class="greeting">Dear ${data.familyLastName} Family,</p>
+            
+            <p>Tributestream wishes you our deepest sympathy for the passing of your loved one.
+            We hope that our service to share the coming memorial will bring greater comfort during this difficult time.</p>
+            
+            <div class="divider"></div>
+            
+            <div class="notice">
+              <p><strong>We notice that you already have an account with us.</strong> We will send you a sample link within 24 hours.</p>
+            </div>
+            
+            <p>A member of our team will be in touch within 24-48 hours to assist you with any questions or special arrangements.</p>
+            
+            <p>We look forward to meeting you and offering our personal condolences.</p>
+            
+            <div class="signature">
+              Respectfully,<br>
+              <span class="company-name">Tributestream</span>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tributestream. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+  
+  // Regular template for new users (with link)
   return `
     <!DOCTYPE html>
     <html>
@@ -282,6 +412,35 @@ function createCustomerEmailTemplate(data: CustomerEmailData): string {
  * Create plain text version of customer email for clients that don't support HTML
  */
 function createCustomerEmailText(data: CustomerEmailData): string {
+  // Check if this is a duplicate user
+  if (data.isDuplicate) {
+    // Plain text template for duplicate users (no link)
+    return `
+TRIBUTESTREAM
+============
+
+Dear ${data.familyLastName} Family,
+
+Tributestream wishes you our deepest sympathy for the passing of your loved one.
+We hope that our service to share the coming memorial will bring greater comfort during this difficult time.
+
+------------------------
+
+We notice that you already have an account with us. We will send you a sample link within 24 hours.
+
+A member of our team will be in touch within 24-48 hours to assist you with any questions or special arrangements.
+
+We look forward to meeting you and offering our personal condolences.
+
+Respectfully,
+Tributestream
+
+============
+© ${new Date().getFullYear()} Tributestream. All rights reserved.
+  `;
+  }
+  
+  // Regular plain text template for new users (with link)
   return `
 TRIBUTESTREAM
 ============

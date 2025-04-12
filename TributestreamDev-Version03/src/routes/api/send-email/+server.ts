@@ -26,7 +26,8 @@ export const POST: RequestHandler = async ({ request }) => {
       const {
         familyMemberLastName,
         email,
-        slug
+        slug,
+        isDuplicate
       } = data.formData;
 
       // Prepare data for customer email
@@ -34,7 +35,8 @@ export const POST: RequestHandler = async ({ request }) => {
         familyLastName: familyMemberLastName || 'Valued',
         tributeLink: slug
           ? `https://tributestream.com/celebration-of-life-for-${slug}`
-          : 'https://tributestream.com/celebration-of-life-preview'
+          : 'https://tributestream.com/celebration-of-life-preview',
+        isDuplicate: isDuplicate || false
       };
       
       console.log('👤 Customer email data:', JSON.stringify(customerData, null, 2));

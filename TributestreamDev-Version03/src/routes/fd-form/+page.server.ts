@@ -374,7 +374,10 @@ export const actions = {
                     
                     // Metadata
                     submissionDate: new Date().toISOString(),
-                    ipAddress: request.headers.get('x-forwarded-for') || 'unknown'
+                    ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+                    
+                    // Add the isDuplicate flag from the registration result
+                    isDuplicate: registrationResult.isDuplicate || false
                 };
 
                 // Send both emails using the new API endpoint with dual email functionality

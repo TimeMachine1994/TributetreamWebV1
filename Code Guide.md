@@ -108,3 +108,20 @@ I need to seehow this is set and see why it is not being set correctly.
 
  # Possible Fix
  The log message matches the third condition of our if else statement inside of send-email api endpoint. 
+ ### BUG ANALYSIS
+ Current Behavior: when a FD FORM is submitted, the ssytem tries to register the user in wordpress. if the user already exists, the registerWordpressUserFunction sets isDuplicate: true. In the registration result. 
+ Then, the form handler checksd thjis flag and processes the form differentl. 
+ When sending emails, isDuplicate flag is not passed to the email API. 
+ /api/send-emai/ only checks data.type === dual.\
+ So far the issues seems to be a missing flag when sent to the api endpoint, no condition in the api endpoint, and no second template. 
+
+We need to implement the the passing of isDuplicate via the fd-form/+page.server.ts to the api endpoint. At line 341 we get a emailFormData object but we dont include the isDuplicat flag.
+Also, int he api/send-email/+server.ts file we need to add a cidion ot check the isDupolciate flag.
+Finally, we we need to add a template for this new email in the email-server.
+
+It seems like "data.formData" is not sending isDuplicate. Where is this data supposed to come from? the request?
+
+Looks like we got it fixed by simply editing the wp-user-service and if else just simplified to do the other email. same function, less redundancy. 
+
+## New Focus: /contact-us page.
+When we click send-message, we want to cleawr the form and show a green box up top. And of course send two emails, one to me and one to the user to confirm we got the email, and one to us with the email itself. 
