@@ -1,14 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { accessControlService } from '$lib/services/access-control-service';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { loginSchema, portalSubscriptionSchema } from '$lib/utils/form-schemas';
- 
+ import { getUserFromCookie } from '$lib/utils/cookie-auth';
 import { setAuthCookies, getUserFromCookies } from '$lib/utils/auth-helpers';
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
   // Check if user is already authenticated
-  const user = getUserFromCookies(cookies);
+  const user = getUserFromCookie(cookies);
   
   // Initialize the login form
   const loginForm = await superValidate(zod(loginSchema));
@@ -71,13 +72,24 @@ export const actions = {
         });
       }
       
-      // Set authentication cookies
-      setAuthCookies(cookies, data);
+      // The API endpoint already sets the cookies
       
-      // Return success message
-      return message(loginForm, 'Login successful', {
-        status: 'success'
-      });
+      // Check if user has admin access using server-side method
+      const isAdmin = accessControlService.hasAdminAccessFromCookies(cookies);
+      
+      // Add debug logging
+      console.log('Login successful for user:', data.user_display_name);
+      console.log('User ID:', data.user_id);
+      console.log('Is admin:', isAdmin);
+      
+      // Redirect to appropriate dashboard based on user role
+      if (isAdmin) {
+        console.log('Redirecting to admin dashboard');
+        throw redirect(303, '/dashboard/admin');
+      } else {
+        console.log('Redirecting to regular dashboard');
+        throw redirect(303, '/dashboard');
+      }
     } catch (error) {
       console.error('Login error:', error);
       return message(loginForm, 'An unexpected error occurred', {

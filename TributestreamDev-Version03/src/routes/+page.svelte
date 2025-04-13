@@ -155,6 +155,11 @@
             searchTerm = nameToUse;
         }
         
+        // Reset form fields to ensure a clean form
+        creatorFullName = '';
+        creatorPhone = '';
+        creatorEmail = '';
+        
         // Only show form if there's a name to use
         if (searchTerm.trim()) {
             showQuickCreateForm = true;
@@ -165,6 +170,10 @@
             showQuickCreateForm = true;
             formState = 'creating';
         }
+        
+        // Clear any previous errors
+        formError = null;
+        errors = {};
     }
     
     // Handle form submission with field-specific error handling
@@ -259,10 +268,133 @@
         
         <!-- Main content area -->
         <div class="w-full max-w-lg">
-            {#if formState === 'initial'}
+            {#if formState === 'creating' || showQuickCreateForm}
+                <!-- Enhanced Create Memorial Form with transitions -->
+                <div
+                    class="bg-black bg-opacity-30 p-6 rounded-lg shadow-lg"
+                    transition:slide={{ duration: 300, easing: quintOut }}
+                >
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Create a Memorial</h2>
+                        <button
+                            on:click={handleGoBack}
+                            class="text-white hover:text-gray-300 focus:outline-none"
+                            aria-label="Close form"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form
+                        method="POST"
+                        action="?/createMemorial"
+                        use:enhance={() => {
+                            handleMemorialSubmit();
+                            return ({ update }) => {
+                                update({ reset: false });
+                                isSubmitting = false;
+                            };
+                        }}
+                        class="space-y-4"
+                    >
+                        <!-- Hidden field for loved one's name - using the search term -->
+                        <input type="hidden" name="lovedOneName" value={searchTerm} />
+                        
+                        <!-- Prominently display the loved one's name from the search field -->
+                        <div class="bg-gray-800 p-4 rounded-md mb-6 border-l-4 border-[#D5BA7F]">
+                            <h3 class="text-2xl font-semibold text-white mb-1">In Memory of</h3>
+                            <p class="text-[#D5BA7F] text-2xl font-bold">{searchTerm}</p>
+                        </div>
+                        
+                        <div>
+                            <label for="creatorFullName" class="block text-sm font-medium text-gray-300 mb-1">
+                                Your Full Name *
+                            </label>
+                            <input
+                                type="text"
+                                id="creatorFullName"
+                                name="creatorFullName"
+                                placeholder="Your full name"
+                                class={getInputClass(!!errors?.creatorFullName)}
+                                bind:value={creatorFullName}
+                                required
+                            />
+                            {#if !isCreatorNameValid && creatorFullName !== ''}
+                                <p class="text-red-500 text-xs mt-1">Full name is required</p>
+                            {/if}
+                        </div>
+                        
+                        <div>
+                            <label for="creatorPhone" class="block text-sm font-medium text-gray-300 mb-1">
+                                Your Phone Number *
+                            </label>
+                            <input
+                                type="tel"
+                                id="creatorPhone"
+                                name="creatorPhone"
+                                placeholder="(555) 123-4567"
+                                class={getInputClass(!!errors?.creatorPhone)}
+                                bind:value={creatorPhone}
+                                required
+                            />
+                            {#if !isPhoneValid && creatorPhone !== ''}
+                                <p class="text-red-500 text-xs mt-1">Valid phone number is required</p>
+                            {/if}
+                        </div>
+                        
+                        <div>
+                            <label for="creatorEmail" class="block text-sm font-medium text-gray-300 mb-1">
+                                Your Email *
+                            </label>
+                            <input
+                                type="email"
+                                id="creatorEmail"
+                                name="creatorEmail"
+                                placeholder="your.email@example.com"
+                                class={getInputClass(!!errors?.creatorEmail)}
+                                bind:value={creatorEmail}
+                                required
+                            />
+                            {#if !isEmailValid && creatorEmail !== ''}
+                                <p class="text-red-500 text-xs mt-1">Valid email address is required</p>
+                            {/if}
+                            <p class="text-xs text-gray-400 mt-1">
+                                Used to create your account and manage the memorial page.
+                            </p>
+                        </div>
+                        
+                        <!-- Preview of memorial page URL -->
+                        {#if searchTerm}
+                            <div class="bg-gray-800 p-3 rounded-md text-sm overflow-hidden border border-gray-700">
+                                <p class="text-gray-400 mb-1">Memorial page URL:</p>
+                                <p class="text-[#D5BA7F] truncate font-mono">{customLink}</p>
+                            </div>
+                        {/if}
+                        
+                        <!-- Submit button -->
+                        <button
+                            type="submit"
+                            class={`${button} w-full mt-4`}
+                            disabled={isSubmitting || !isQuickFormValid}
+                        >
+                            {isSubmitting ? 'Creating Memorial...' : 'Create Memorial'}
+                        </button>
+                    </form>
+                </div>
+                
+            {:else if formState === 'submitting'}
+                <!-- Submitting state - Loading indicator -->
+                <div class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                    <p class="mt-4 text-xl">Creating your memorial page...</p>
+                </div>
+                
+            {:else if formState === 'initial'}
                 <!-- Initial state - Name input form and actions -->
                 <p class="text-center mb-8 text-lg md:text-xl">
-                    Tributestream broadcasts high quality audio and video of your loved one's celebration of life. <br> 
+                    Tributestream broadcasts high quality audio and video of your loved one's celebration of life. <br>
                     Enter your loved one's name below to search, or create a new memorial.
                 </p>
                 
@@ -285,7 +417,7 @@
                     />
                     
                     <div class="flex space-x-4 justify-center">
-                        <button 
+                        <button
                             type="button"
                             on:click={handleCreateMemorial}
                             class={button}
