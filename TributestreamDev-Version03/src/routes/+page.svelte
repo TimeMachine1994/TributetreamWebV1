@@ -673,18 +673,7 @@
                 </div>
             {/if}
             
-            <!-- Optional - Search results from server -->
-            {#if form?.search && !showQuickCreateForm && formState !== 'creating'}
-                <div class="mt-8 text-center">
-                    <p class="text-gray-300 mb-2">Don't see what you're looking for?</p>
-                    <button 
-                        on:click={handleCreateMemorial}
-                        class={button}
-                    >
-                        Create a New Memorial
-                    </button>
-                </div>
-            {/if}
+            <!-- Removed "Don't see what you're looking for?" section -->
         </div>
     </div>
 </section>
