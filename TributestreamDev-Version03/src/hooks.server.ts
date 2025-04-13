@@ -1,4 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
+import { getTokenFromCookie, getUserFromCookie, validateToken, clearAuthCookies } from '$lib/utils/cookie-auth';
 
 /**
  * Server hook for handling authentication state
@@ -6,37 +7,26 @@ import type { Handle } from '@sveltejs/kit';
  */
 export const handle: Handle = async ({ event, resolve }) => {
     // Get JWT token from cookies
-    const jwt = event.cookies.get('jwt_token'); // Note: Using the jwt_token name as in auth-helpers.ts
+    const token = getTokenFromCookie(event.cookies);
     
-    if (jwt) {
+    if (token) {
         try {
             // Validate token with WordPress endpoint
-            const response = await fetch('https://wp.tributestream.com/wp-json/jwt-auth/v1/token/validate', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${jwt}`
-                }
-            });
+            const isValid = await validateToken(token);
             
-            if (response.ok) {
+            if (isValid) {
                 // If token is valid, set authenticated status in locals
                 event.locals.authenticated = true;
-                event.locals.token = jwt;
+                event.locals.token = token;
                 
                 // Also set user info if available
-                const userCookie = event.cookies.get('user');
-                if (userCookie) {
-                    try {
-                        const userData = JSON.parse(userCookie);
-                        event.locals.user = userData;
-                    } catch (error) {
-                        console.error('Error parsing user cookie:', error);
-                    }
+                const user = getUserFromCookie(event.cookies);
+                if (user) {
+                    event.locals.user = user;
                 }
             } else {
                 // If token validation fails, clear the cookies
-                event.cookies.delete('jwt_token', { path: '/' });
-                event.cookies.delete('user', { path: '/' });
+                clearAuthCookies(event.cookies);
             }
         } catch (error) {
             console.error('Error validating JWT token:', error);

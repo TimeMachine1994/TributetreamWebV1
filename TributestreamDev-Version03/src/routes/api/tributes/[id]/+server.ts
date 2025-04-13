@@ -1,73 +1,139 @@
+// src/routes/api/tributes/[id]/+server.ts
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { ApiErrorResponse, Tribute } from '$lib/types/tribute';
+import { getTokenFromCookie } from '$lib/utils/cookie-auth';
+
+// Base WordPress API URL
+const WP_API_BASE = 'https://wp.tributestream.com/wp-json/funeral/v2';
 
 /**
- * GET /api/tributes/[id]
- * Retrieves a tribute by its ID
+ * GET handler for a specific tribute by ID
+ * Forwards the request to the WordPress API and returns the response
  */
-export const GET: RequestHandler = async ({ params, fetch, request }) => {
-  try {
-    const id = params.id;
+export const GET: RequestHandler = async ({ params, cookies }) => {
+    console.log(`🚀 [Tributes API] GET request received for tribute ID: ${params.id}`);
     
-    console.log(`🔍 [Tribute By ID API] Fetching tribute with ID: ${id}`);
+    // Get token from cookies
+    const token = getTokenFromCookie(cookies);
     
-    if (!id || isNaN(Number(id))) {
-      console.warn(`⚠️ [Tribute By ID API] Invalid tribute ID: ${id}`);
-      return json({
-        error: true,
-        message: 'Invalid tribute ID',
-        status: 400
-      } as ApiErrorResponse, { status: 400 });
-    }
-    
-    // Attempt to get authorization token (optional for this endpoint)
-    const authHeader = request.headers.get('Authorization');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ [Tribute By ID API] Authorization token included in request');
-    } else {
-      console.log('ℹ️ [Tribute By ID API] No authorization token provided - accessing public data only');
-    }
-    
-    // Forward request to WordPress API
-    const response = await fetch(`https://wp.tributestream.com/wp-json/tributestream/v1/tributes/${id}`, {
-      headers
-    });
-    
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      console.error('❌ [Tribute By ID API] WordPress API returned an error:', responseData);
-      
-      if (response.status === 404) {
+    try {
+        // Make request to WordPress API
+        const response = await fetch(`${WP_API_BASE}/tribute-pages/${params.id}`, {
+            headers: token ? {
+                'Authorization': `Bearer ${token}`
+            } : {}
+        });
+        
+        // Get response data
+        const data = await response.json();
+        
+        // Handle error responses
+        if (!response.ok) {
+            console.error('❌ [Tributes API] WordPress returned an error:', data);
+            return json({ message: data.message || 'Failed to fetch tribute' }, { status: response.status });
+        }
+        
+        // Return success response
         return json({
-          error: true,
-          message: 'Tribute not found',
-          status: 404
-        } as ApiErrorResponse, { status: 404 });
-      }
-      
-      return json({
-        error: true,
-        message: responseData.message || 'Failed to fetch tribute',
-        status: response.status
-      } as ApiErrorResponse, { status: response.status });
+            success: true,
+            ...data.data
+        });
+    } catch (error) {
+        console.error('🚨 [Tributes API] Error occurred while fetching tribute:', error);
+        return json({ message: 'Internal server error' }, { status: 500 });
+    }
+};
+
+/**
+ * PUT handler for updating a specific tribute by ID
+ * Forwards the request to the WordPress API and returns the response
+ */
+export const PUT: RequestHandler = async ({ params, request, cookies }) => {
+    console.log(`🚀 [Tributes API] PUT request received for tribute ID: ${params.id}`);
+    
+    // Get token from cookies
+    const token = getTokenFromCookie(cookies);
+    
+    // Check if user is authenticated
+    if (!token) {
+        return json({ message: 'Authentication required' }, { status: 401 });
     }
     
-    console.log(`✅ [Tribute By ID API] Successfully fetched tribute: ${responseData.loved_one_name || 'Unknown'}`);
-    return json(responseData as Tribute);
-  } catch (error) {
-    console.error('🚨 [Tribute By ID API] Unexpected error:', error);
-    return json({
-      error: true,
-      message: error instanceof Error ? error.message : 'An unexpected error occurred',
-      status: 500
-    } as ApiErrorResponse, { status: 500 });
-  }
+    try {
+        // Parse request body
+        const requestBody = await request.json();
+        
+        // Make request to WordPress API
+        const response = await fetch(`${WP_API_BASE}/tribute-pages/${params.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        // Get response data
+        const data = await response.json();
+        
+        // Handle error responses
+        if (!response.ok) {
+            console.error('❌ [Tributes API] WordPress returned an error:', data);
+            return json({ message: data.message || 'Failed to update tribute' }, { status: response.status });
+        }
+        
+        // Return success response
+        return json({
+            success: true,
+            tribute_id: data.data?.tribute_id,
+            slugified_name: data.data?.slugified_name
+        });
+    } catch (error) {
+        console.error('🚨 [Tributes API] Error occurred while updating tribute:', error);
+        return json({ message: 'Internal server error' }, { status: 500 });
+    }
+};
+
+/**
+ * DELETE handler for removing a specific tribute by ID
+ * Forwards the request to the WordPress API and returns the response
+ */
+export const DELETE: RequestHandler = async ({ params, cookies }) => {
+    console.log(`🚀 [Tributes API] DELETE request received for tribute ID: ${params.id}`);
+    
+    // Get token from cookies
+    const token = getTokenFromCookie(cookies);
+    
+    // Check if user is authenticated
+    if (!token) {
+        return json({ message: 'Authentication required' }, { status: 401 });
+    }
+    
+    try {
+        // Make request to WordPress API
+        const response = await fetch(`${WP_API_BASE}/tribute-pages/${params.id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        // Get response data
+        const data = await response.json();
+        
+        // Handle error responses
+        if (!response.ok) {
+            console.error('❌ [Tributes API] WordPress returned an error:', data);
+            return json({ message: data.message || 'Failed to delete tribute' }, { status: response.status });
+        }
+        
+        // Return success response
+        return json({
+            success: true,
+            deleted_id: params.id
+        });
+    } catch (error) {
+        console.error('🚨 [Tributes API] Error occurred while deleting tribute:', error);
+        return json({ message: 'Internal server error' }, { status: 500 });
+    }
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type HTMLAttributes } from 'svelte/elements';
+  import type { HTMLAttributes } from 'svelte/elements';
   import PageBackground from '$lib/components/ui/PageBackground.svelte';
   import { page } from '$app/stores';
 

@@ -1,8 +1,9 @@
 // src/routes/api/auth/+server.ts
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { setAuthCookie, formatUserData } from '$lib/utils/cookie-auth';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
     console.log('🚀 [Auth API] POST request received.');
   
     // Step 1: Parse incoming JSON request
@@ -60,21 +61,20 @@ export const POST: RequestHandler = async ({ request }) => {
             return json({ message: data.message || 'Authentication failed' }, { status: response.status });
         }
   
-        // Step 6: Return successful response to the client
-        console.log('✅ [Auth API] Authentication successful. Returning token and user info...');
+        // Step 6: Set auth cookies and return successful response
+        console.log('✅ [Auth API] Authentication successful. Setting cookies and returning user info...');
+        
+        // Format user data
+        const userData = formatUserData(data);
+        
+        // Set auth cookies
+        setAuthCookie(cookies, data.token, userData);
+        
+        // Return success response (without token since it's now in the cookie)
         return json({
-            token: data.token,
-            user_id: data.user_id || data.id,
-            user_display_name: data.user_display_name,
-            user_email: data.user_email,
-            user_nicename: data.user_nicename,
-            roles: data.roles || [],
-            capabilities: data.capabilities || {},
-            meta_result: data.meta_result || null
-        }, 
-        
-        
-        { status: 200 });
+            success: true,
+            user: userData
+        }, { status: 200 });
     } catch (error) {
         console.error('🚨 [Auth API] Error occurred while authenticating with WordPress:', error);
         return json({ message: 'Internal server error' }, { status: 500 });

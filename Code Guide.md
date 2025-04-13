@@ -125,3 +125,16 @@ Looks like we got it fixed by simply editing the wp-user-service and if else jus
 
 ## New Focus: /contact-us page.
 When we click send-message, we want to cleawr the form and show a green box up top. And of course send two emails, one to me and one to the user to confirm we got the email, and one to us with the email itself. 
+
+
+## LLM IS WRONG
+It thinks that it knows the fix but it has nothing to do with our wordpress installation and everything to do with how many damn helper files and utilites it creawted. data is being losed along the way. 
+
+WHyen we request a tribute id. it should 1) go right to the api/tribute/[id]/server.ts,  which will handle settgin the headers and gettign the data.
+
+
+The issue is, there are too many helper files with little direction or rhyme or eason. 
+We need to identify what helper files, utilit files, and components, are supurfluous. 
+
+#### Current Situation: dashboard is 500
+We want 
