@@ -15,49 +15,24 @@ function generateSlug(name: string): string {
 }
 
 export const load: PageServerLoad = async () => {
-  // Create default data
-  const defaultData = {
-    name: "John Doe",
-    email: "test@example.com",
-    phone: "555-123-4567",
-    serviceDate: new Date().toISOString().split('T')[0], // Today's date
-    serviceTime: "14:00", // 2:00 PM
-    serviceLocation: "Memorial Chapel",
-    serviceType: "memorial",
-    preferredContactMethod: "email",
-    attendees: "50",
-    additionalInfo: "This is a test submission."
-  };
-  
-  console.log('Default data:', defaultData);
-  
-  // Initialize the form with default values
-  const form = await superValidate(defaultData, zod(scheduleSchema));
-  
-  // Debug: Check if the form is valid with our default data
-  console.log('Is form valid with default data?', form.valid);
-  if (!form.valid) {
-    console.log('Validation errors with default data:', form.errors);
-  }
-  
-  // Debug: Log the form data being sent to the client
-  console.log('Form data being sent to client:', form);
+  // Initialize the form with empty values
+  const form = await superValidate(zod(scheduleSchema));
   return { form };
 };
 
 export const actions = {
   submit: async ({ request, fetch }) => {
-    console.log('🚀 Starting schedule-now form action.');
-    console.log('⏱️ Timestamp:', new Date().toISOString());
+    // Starting schedule-now form action
+    // Form submission timestamp
     
     try {
       // Get the form data
       const rawFormData = await request.formData();
       const formDataObj = Object.fromEntries(rawFormData.entries());
-      console.log('📦 Raw form data received:', formDataObj);
+      // Raw form data received
       
       // Validate the form data using superValidate
-      console.log('📝 Parsing and validating form data...');
+      // Parsing and validating form data
       const form = await superValidate(rawFormData, zod(scheduleSchema));
       
       // Check if form is valid

@@ -6,8 +6,7 @@
   
   export let data: PageData;
   
-  // Debug: Log the form data received from the server
-  console.log('Form data received from server:', data.form);
+  // Initialize form data
   
   // State for success modal
   let showSuccessModal = false;
@@ -21,7 +20,7 @@
     },
     // Form is valid and was successfully submitted
     onUpdate: ({ form }) => {
-      console.log('Form updated:', form);
+      // Form updated after submission
       
       // Check if the form was successfully submitted
       if ($message) {
@@ -34,7 +33,7 @@
     // Scroll to the top of the form after submission
     scrollToError: true,
     onSubmit: ({ formData, cancel }) => {
-      console.log('Form submission started with data:', Object.fromEntries(formData));
+      // Form submission started
       
       // Add all form fields to the formData
       for (const [key, value] of Object.entries($form)) {
@@ -43,12 +42,12 @@
         }
       }
       
-      console.log('Enhanced form data:', Object.fromEntries(formData));
+      // Form data prepared for submission
       // Don't cancel the submission
       return;
     },
     onResult: ({ result }) => {
-      console.log('Form submission result:', result);
+      // Process form submission result
     }
   });
   

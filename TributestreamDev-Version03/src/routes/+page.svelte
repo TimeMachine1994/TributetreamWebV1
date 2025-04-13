@@ -1,5 +1,6 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import { invalidateAll } from '$app/navigation';
     import { goto } from '$app/navigation';
     import { slide } from 'svelte/transition';
     import { quintOut } from 'svelte/easing';
@@ -16,6 +17,7 @@
     
     // Form fields - Search
     let searchTerm = $state('');
+    let currentPage = $state(1);
     
     // Form fields - Memorial creation (using fd-form simplified fields)
     let creatorFullName = $state('');
@@ -115,6 +117,10 @@
             if (form.term) {
                 searchTerm = form.term;
             }
+            
+            if (form.currentPage) {
+                currentPage = form.currentPage;
+            }
         }
     });
     
@@ -134,7 +140,10 @@
         formState = 'initial';
         searchTerm = '';
         isSearching = false;
+        currentPage = 1;
     }
+    
+    // This function is no longer needed as we're using direct form submissions
     
     // Handle create memorial button click with an event parameter to fix TypeScript error
     function handleCreateMemorial(event: MouseEvent | null = null, nameToUse?: string) {
@@ -264,6 +273,7 @@
                         isSearching = false;
                     };
                 }} class="w-full">
+                    <input type="hidden" name="page" value={currentPage} />
                     <input
                         type="text"
                         id="searchTerm"
@@ -329,10 +339,200 @@
                         </div>
                         
                         {#if form.totalPages > 1}
-                            <div class="mt-4 flex justify-center space-x-2">
-                                <span class="text-gray-300">
-                                    Page {form.currentPage} of {form.totalPages}
-                                </span>
+                            <!-- Pagination forms will be inline -->
+                            <style>
+                                /* Make forms display inline */
+                                form.pagination-form {
+                                    display: inline-block;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                
+                                /* Ensure no extra spacing between forms */
+                                form.pagination-form + form.pagination-form {
+                                    margin-left: 0.5rem;
+                                }
+                            </style>
+                            
+                            <div class="mt-4 flex justify-center items-center space-x-2">
+                                <!-- Previous page button with form -->
+                                <form
+                                    method="POST"
+                                    action="?/search"
+                                    use:enhance={() => {
+                                        // Pre-submission
+                                        isSearching = true;
+                                        formState = 'searching';
+                                        
+                                        return ({ update }) => {
+                                            // Post-submission
+                                            update({ reset: false });
+                                            isSearching = false;
+                                        };
+                                    }}
+                                    class="pagination-form"
+                                >
+                                    <input type="hidden" name="searchTerm" value={searchTerm} />
+                                    <input type="hidden" name="page" value={form.currentPage - 1} />
+                                    
+                                    <button
+                                        type="submit"
+                                        class="px-3 py-1 rounded-md bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={form.currentPage <= 1}
+                                        aria-label="Previous page"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </form>
+                                
+                                <!-- Page numbers -->
+                                {#if form.totalPages <= 5}
+                                    {#each Array(form.totalPages) as _, i}
+                                        <form
+                                            method="POST"
+                                            action="?/search"
+                                            use:enhance={() => {
+                                                isSearching = true;
+                                                formState = 'searching';
+                                                return ({ update }) => {
+                                                    update({ reset: false });
+                                                    isSearching = false;
+                                                };
+                                            }}
+                                            class="pagination-form"
+                                        >
+                                            <input type="hidden" name="searchTerm" value={searchTerm} />
+                                            <input type="hidden" name="page" value={i + 1} />
+                                            
+                                            <button
+                                                type="submit"
+                                                class="px-3 py-1 rounded-md {form.currentPage === i + 1 ? 'bg-[#D5BA7F] text-black font-bold' : 'bg-gray-700 text-white hover:bg-gray-600'}"
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        </form>
+                                    {/each}
+                                {:else}
+                                    <!-- First page -->
+                                    <form
+                                        method="POST"
+                                        action="?/search"
+                                        use:enhance={() => {
+                                            isSearching = true;
+                                            formState = 'searching';
+                                            return ({ update }) => {
+                                                update({ reset: false });
+                                                isSearching = false;
+                                            };
+                                        }}
+                                        class="pagination-form"
+                                    >
+                                        <input type="hidden" name="searchTerm" value={searchTerm} />
+                                        <input type="hidden" name="page" value={1} />
+                                        
+                                        <button
+                                            type="submit"
+                                            class="px-3 py-1 rounded-md {form.currentPage === 1 ? 'bg-[#D5BA7F] text-black font-bold' : 'bg-gray-700 text-white hover:bg-gray-600'}"
+                                        >
+                                            1
+                                        </button>
+                                    </form>
+                                    
+                                    <!-- Ellipsis or page numbers -->
+                                    {#if form.currentPage > 3}
+                                        <span class="text-gray-400">...</span>
+                                    {/if}
+                                    
+                                    <!-- Pages around current page -->
+                                    {#each Array(3) as _, i}
+                                        {#if form.currentPage - 1 + i > 1 && form.currentPage - 1 + i < form.totalPages}
+                                            <form
+                                                method="POST"
+                                                action="?/search"
+                                                use:enhance={() => {
+                                                    isSearching = true;
+                                                    formState = 'searching';
+                                                    return ({ update }) => {
+                                                        update({ reset: false });
+                                                        isSearching = false;
+                                                    };
+                                                }}
+                                                class="pagination-form"
+                                            >
+                                                <input type="hidden" name="searchTerm" value={searchTerm} />
+                                                <input type="hidden" name="page" value={form.currentPage - 1 + i} />
+                                                
+                                                <button
+                                                    type="submit"
+                                                    class="px-3 py-1 rounded-md {form.currentPage === form.currentPage - 1 + i ? 'bg-[#D5BA7F] text-black font-bold' : 'bg-gray-700 text-white hover:bg-gray-600'}"
+                                                >
+                                                    {form.currentPage - 1 + i}
+                                                </button>
+                                            </form>
+                                        {/if}
+                                    {/each}
+                                    
+                                    <!-- Ellipsis or page numbers -->
+                                    {#if form.currentPage < form.totalPages - 2}
+                                        <span class="text-gray-400">...</span>
+                                    {/if}
+                                    
+                                    <!-- Last page -->
+                                    <form
+                                        method="POST"
+                                        action="?/search"
+                                        use:enhance={() => {
+                                            isSearching = true;
+                                            formState = 'searching';
+                                            return ({ update }) => {
+                                                update({ reset: false });
+                                                isSearching = false;
+                                            };
+                                        }}
+                                        class="pagination-form"
+                                    >
+                                        <input type="hidden" name="searchTerm" value={searchTerm} />
+                                        <input type="hidden" name="page" value={form.totalPages} />
+                                        
+                                        <button
+                                            type="submit"
+                                            class="px-3 py-1 rounded-md {form.currentPage === form.totalPages ? 'bg-[#D5BA7F] text-black font-bold' : 'bg-gray-700 text-white hover:bg-gray-600'}"
+                                        >
+                                            {form.totalPages}
+                                        </button>
+                                    </form>
+                                {/if}
+                                
+                                <!-- Next page button -->
+                                <form
+                                    method="POST"
+                                    action="?/search"
+                                    use:enhance={() => {
+                                        isSearching = true;
+                                        formState = 'searching';
+                                        return ({ update }) => {
+                                            update({ reset: false });
+                                            isSearching = false;
+                                        };
+                                    }}
+                                    class="pagination-form"
+                                >
+                                    <input type="hidden" name="searchTerm" value={searchTerm} />
+                                    <input type="hidden" name="page" value={form.currentPage + 1} />
+                                    
+                                    <button
+                                        type="submit"
+                                        class="px-3 py-1 rounded-md bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={form.currentPage >= form.totalPages}
+                                        aria-label="Next page"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </form>
                             </div>
                         {/if}
                         

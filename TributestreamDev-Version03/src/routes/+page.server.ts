@@ -14,6 +14,7 @@ export const actions = {
         try {
             const formData = await request.formData();
             const searchTerm = formData.get('searchTerm');
+            const page = formData.get('page') || '1';
             
             // Validate search term
             if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim() === '') {
@@ -25,8 +26,10 @@ export const actions = {
             }
             
             // Call WordPress API through our proxy
-            console.log(`🔍 Searching for: "${searchTerm}"`);
-            const response = await fetch(`/api/tributes?search=${encodeURIComponent(searchTerm.trim())}`);
+            console.log(`🔍 Searching for: "${searchTerm}" (page ${page})`);
+            
+            const apiUrl = `/api/tributes?search=${encodeURIComponent(searchTerm.trim())}&page=${page}`;
+            const response = await fetch(apiUrl);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));

@@ -54,7 +54,8 @@
 				</div>
 				
 				<div>
-					<label for="email" class="label">
+    	<!-- Check if form is valid -->
+    	<label for="email" class="label" style="color: black;">
 						<span class="label-text">Email Address</span>
 						<input 
 							type="email" 
@@ -122,12 +123,12 @@
 				<div>
 					<h3 class="h3 mb-2">Contact Information</h3>
 					<p class="mb-2">
-						<span class="text-primary-500 mr-2">Phone:</span>
-						<a href="tel:+14072215922" class="anchor">+1 (407) 221-5922</a>
+						<span class="text-primary-100 mr-2">Phone:</span>
+						<a href="tel:+14072215922" class="anchor text-primary-100 ">+1 (407) 221-5922</a>
 					</p>
 					<p>
-						<span class="text-primary-500 mr-2">Email:</span>
-						<a href="mailto:Contact@tributestream.com" class="anchor">Contact@tributestream.com</a>
+						<span class="text-primary-100 mr-2">Email:</span>
+						<a href="mailto:Contact@tributestream.com" class="anchor text-primary-100 ">Contact@tributestream.com</a>
 					</p>
 				</div>
 				
