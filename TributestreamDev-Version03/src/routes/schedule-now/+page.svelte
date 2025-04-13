@@ -78,8 +78,8 @@
     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
       <!-- Booking Form -->
-      <div class="col-span-2 bg-zinc-900 p-8 rounded-lg border border-[#D4AF37]/20">
-        <h2 class="text-2xl text-[#D4AF37] font-semibold mb-6">Request a Consultation</h2>
+      <div class="col-span-2 bg-zinc-900 p-8 rounded-lg border border-[#D5BA7F]/20">
+        <h2 class="text-2xl text-[#D5BA7F] font-semibold mb-6">Request a Consultation</h2>
         
         {#if $message}
           <div class="bg-emerald-900/30 p-4 rounded-md mb-6 border border-emerald-500/30 transition-all duration-300 animate-in fade-in slide-in-from-top-4">
@@ -109,7 +109,7 @@
                 bind:value={$form.name}
                 aria-invalid={$errors.name ? 'true' : undefined}
                 {...$constraints.name}
-                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
               />
             </div>
             
@@ -121,7 +121,7 @@
                 bind:value={$form.phone}
                 aria-invalid={$errors.phone ? 'true' : undefined}
                 {...$constraints.phone}
-                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@
               bind:value={$form.email}
               aria-invalid={$errors.email ? 'true' : undefined}
               {...$constraints.email}
-              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
             />
           </div>
           
@@ -146,7 +146,7 @@
                   type="radio" 
                   bind:group={$form.preferredContactMethod}
                   value="email"
-                  class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
+                  class="form-radio text-[#D5BA7F] focus:ring-[#D5BA7F]"
                 />
                 <span class="ml-2">Email</span>
               </label>
@@ -155,7 +155,7 @@
                   type="radio" 
                   bind:group={$form.preferredContactMethod}
                   value="phone"
-                  class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
+                  class="form-radio text-[#D5BA7F] focus:ring-[#D5BA7F]"
                 />
                 <span class="ml-2">Phone</span>
               </label>
@@ -164,7 +164,7 @@
                   type="radio" 
                   bind:group={$form.preferredContactMethod}
                   value="text"
-                  class="form-radio text-[#D4AF37] focus:ring-[#D4AF37]"
+                  class="form-radio text-[#D5BA7F] focus:ring-[#D5BA7F]"
                 />
                 <span class="ml-2">Text</span>
               </label>
@@ -175,7 +175,7 @@
           
           <!-- Service Details -->
           <div>
-            <h3 class="text-lg font-medium mb-4 text-[#D4AF37]">Event Details</h3>
+            <h3 class="text-lg font-medium mb-4 text-[#D5BA7F]">Event Details</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -187,7 +187,7 @@
                   aria-invalid={$errors.serviceDate ? 'true' : undefined}
                   {...$constraints.serviceDate}
                   min={dateOptions.min}
-                  class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+                  class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
                 />
               </div>
               
@@ -199,7 +199,7 @@
                   bind:value={$form.serviceTime}
                   aria-invalid={$errors.serviceTime ? 'true' : undefined}
                   {...$constraints.serviceTime}
-                  class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+                  class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
                 />
               </div>
             </div>
@@ -213,7 +213,7 @@
                 bind:value={$form.serviceLocation}
                 aria-invalid={$errors.serviceLocation ? 'true' : undefined}
                 {...$constraints.serviceLocation}
-                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+                class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
               />
             </div>
           </div>
@@ -228,7 +228,7 @@
               {...$constraints.attendees}
               placeholder="Approximate number"
               min="0"
-              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
             />
           </div>
           
@@ -239,7 +239,7 @@
               bind:value={$form.serviceType}
               aria-invalid={$errors.serviceType ? 'true' : undefined}
               {...$constraints.serviceType}
-              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
             >
               <option value="funeral">Funeral Service</option>
               <option value="memorial">Memorial Service</option>
@@ -258,7 +258,7 @@
               {...$constraints.additionalInfo}
               rows="4"
               placeholder="Please share any special requests or questions you may have."
-              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent"
+              class="w-full bg-black border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#D5BA7F] focus:border-transparent"
             ></textarea>
           </div>
           
@@ -280,8 +280,8 @@
       
       <!-- Sidebar Information -->
       <div>
-        <div class="bg-zinc-900 p-6 rounded-lg border border-[#D4AF37]/20 mb-8">
-          <h3 class="text-xl text-[#D4AF37] font-medium mb-4">Our Process</h3>
+        <div class="bg-zinc-900 p-6 rounded-lg border border-[#D5BA7F]/20 mb-8">
+          <h3 class="text-xl text-[#D5BA7F] font-medium mb-4">Our Process</h3>
           <ol class="space-y-4 pl-6 list-decimal">
             <li>Fill out the scheduling request form</li>
             <li>Receive a confirmation call or email within 24 hours</li>
@@ -291,11 +291,11 @@
           </ol>
         </div>
         
-        <div class="bg-zinc-900 p-6 rounded-lg border border-[#D4AF37]/20">
-          <h3 class="text-xl text-[#D4AF37] font-medium mb-4">Need Help?</h3>
+        <div class="bg-zinc-900 p-6 rounded-lg border border-[#D5BA7F]/20">
+          <h3 class="text-xl text-[#D5BA7F] font-medium mb-4">Need Help?</h3>
           <p class="mb-4">If you prefer to schedule by phone or have immediate questions, please call us directly:</p>
           <p class="text-xl">
-            <a href="tel:+14072215922" class="hover:text-[#D4AF37] transition-colors">+1 (407) 221-5922</a>
+            <a href="tel:+14072215922" class="hover:text-[#D5BA7F] transition-colors">+1 (407) 221-5922</a>
           </p>
           <p class="mt-4 text-sm text-gray-400">
             Available Monday – Friday: 10:00AM – 5:00PM EST<br>

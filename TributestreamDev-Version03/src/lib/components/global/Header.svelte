@@ -18,22 +18,22 @@
            <ul class="flex space-x-4 items-center">
              <!-- Navigation Links -->
              <li>
-               <a href="/why-tributestream" class="text-white hover:text-[#D4AF37]">
+               <a href="/why-tributestream" class="text-white hover:text-[#D5BA7F]">
                  Why Tributestream?
                </a>
              </li>
              <li>
-               <a href="/how-does-it-work" class="text-white hover:text-[#D4AF37]">
+               <a href="/how-does-it-work" class="text-white hover:text-[#D5BA7F]">
                  How Does It Work?
                </a>
              </li>
              <li>
-               <a href="/contact-us" class="text-white hover:text-[#D4AF37]">
+               <a href="/contact-us" class="text-white hover:text-[#D5BA7F]">
                  Contact Us
                </a>
              </li>
              <li>
-               <a href="/schedule-now" class="text-white hover:text-[#D4AF37]">
+               <a href="/schedule-now" class="text-white hover:text-[#D5BA7F]">
                  Schedule Now
                </a>
              </li>

@@ -2,6 +2,7 @@
   import LoginForm from '$lib/components/auth/login-form.svelte';
   import ForgotPassword from '$lib/components/auth/forgot-password.svelte';
   import TributeGrid from '$lib/components/tributes/tribute-grid.svelte';
+  import PageBackground from '$lib/components/ui/PageBackground.svelte';
   import type { Tribute } from '$lib/types/tribute';
   import type { SuperValidated } from 'sveltekit-superforms';
   
@@ -28,21 +29,27 @@
   <meta name="description" content="Access your Tributestream account and manage your tributes." />
 </svelte:head>
 
-<div class="container min-h-screen px-4 py-16 mx-auto flex flex-col items-center justify-center">
+<!-- Add the PageBackground component with my-portal variant -->
+<PageBackground variant="my-portal" opacity={0.95} />
+
+<!-- Add a decorative gradient overlay -->
+<div class="fixed inset-0 -z-5 bg-gradient-to-tr from-blue-900/20 via-transparent to-indigo-900/20"></div>
+
+<div class="container min-h-screen px-4 py-16 mx-auto flex flex-col items-center justify-center relative z-10">
   <div class="max-w-4xl w-full">
     {#if data.user}
       <!-- Authenticated user view -->
-      <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
-        <div class="p-6 md:p-8">
+      <div class="bg-surface-100/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-blue-900/20">
+        <div class="p-6 md:p-8 bg-gradient-to-b from-transparent to-blue-50/30">
           <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold" style="color: #D5BA7F;">
               My Tributes
             </h1>
             
             <form method="POST" action="?/logout">
-              <button 
+              <button
                 type="submit"
-                class="px-4 py-2 bg-surface-200 text-surface-600 rounded-md hover:bg-surface-300 transition-colors"
+                class="btn preset-filled-primary-500"
               >
                 Log Out
               </button>
@@ -61,9 +68,9 @@
       </div>
     {:else}
       <!-- Unauthenticated user view -->
-      <div class="bg-surface-100 rounded-lg shadow-lg overflow-hidden">
-        <div class="p-6 md:p-8">
-          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center" style="color: #D5BA7F;">
+      <div class="bg-surface-100/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-blue-900/20">
+        <div class="p-6 md:p-8 bg-gradient-to-b from-transparent to-blue-50/30">
+          <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center" style="color: black;">
             {showForgotPassword ? 'Reset Your Password' : 'My Portal'}
           </h1>
           
@@ -79,9 +86,9 @@
             <LoginForm form={data.loginForm} />
             
             <div class="mt-8 text-center">
-              <button 
-                type="button" 
-                class="hover:underline" style="color: #D5BA7F;"
+              <button
+                type="button"
+                class="btn preset-filled-primary-500"
                 on:click={toggleForgotPassword}
               >
                 Forgot your password?
