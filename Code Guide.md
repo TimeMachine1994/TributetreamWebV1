@@ -251,3 +251,11 @@ For the audit logging feature, what specific actions should be logged and how sh
 Just changes and saves to the db and timestamp and who made it. . 
 it be more user-friendly with a modern design.
 
+
+## 4/14/2025
+*New Things* We are working on focusing in on understanding our login page, making it robust, so when we start to let users login it's easy to work with. For example we want to return the user role, so we can frwward the user to the corect page. 
+
+Right now I'm looking at our login form. 
+
+This is what happens: 
+When we login we call /api/auth. When we submit the form actin, it's over before we can use the data so we can't use the form action to check. We need to somehow go from form actin -> backend -> returns correct data.
