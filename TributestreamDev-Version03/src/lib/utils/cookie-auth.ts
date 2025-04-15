@@ -63,12 +63,26 @@ export function getTokenFromCookie(cookies: Cookies): string | null {
  */
 export function getUserFromCookie(cookies: Cookies): User | null {
   const userCookie = cookies.get('user');
-  if (!userCookie) return null;
+  if (!userCookie) {
+    console.log('No user cookie found');
+    return null;
+  }
+  
+  console.log('Raw user cookie value:', userCookie);
   
   try {
+    // Check if the cookie value is URL-encoded
+    if (userCookie.includes('%')) {
+      console.log('Cookie appears to be URL-encoded, attempting to decode');
+      const decodedCookie = decodeURIComponent(userCookie);
+      console.log('Decoded cookie value:', decodedCookie);
+      return JSON.parse(decodedCookie) as User;
+    }
+    
     return JSON.parse(userCookie) as User;
   } catch (error) {
     console.error('Error parsing user cookie:', error);
+    console.log('Cookie value that failed to parse:', userCookie);
     return null;
   }
 }

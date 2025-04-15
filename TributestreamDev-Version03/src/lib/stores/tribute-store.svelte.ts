@@ -4,13 +4,9 @@
  * This module provides a state machine for managing Tribute models.
  * It uses Svelte 5 runes for reactivity and integrates with Backbone models.
  */
-
 import { setContext, getContext } from 'svelte';
 import type { Tribute } from '$lib/types/wp-models';
-import { modelRegistry, ModelTypes } from '$lib/backbone/model-registry';
-import { validateTribute } from '$lib/backbone/validation';
-import { TributesCollection } from '$lib/models/wp-backbone';
-import { createPaginatedCollection } from '$lib/backbone/ssr-collection';
+import { validateTribute } from '$lib/utils/tribute-validation';
 
 /**
  * Define the possible states for the tribute store
@@ -111,19 +107,41 @@ export class TributeStore {
    */
   async fetchTribute(id: number | string): Promise<Tribute | null> {
     try {
+      console.log('[tribute-store] fetchTribute called with id:', id);
+      console.log('[tribute-store] ID type:', typeof id);
       this.state = TributeStoreStates.LOADING;
       this.error = null;
       
       // Convert id to number if it's a string
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      console.log('[tribute-store] Converted numericId:', numericId);
+      console.log('[tribute-store] Converted numericId type:', typeof numericId);
       
-      const tribute = await modelRegistry.fetchModel<Tribute>(ModelTypes.TRIBUTE, numericId);
+      // Use direct fetch to the API instead of Backbone.js
+      console.log('[tribute-store] Fetching tribute from API');
+      const apiUrl = `/api/tributes/${numericId}`;
+      console.log('[tribute-store] API URL:', apiUrl);
+      const response = await fetch(apiUrl, {
+        credentials: 'include' // Include cookies in the request
+      });
       
-      this.currentTribute = tribute;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tribute: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[tribute-store] API response:', data);
+      
+      if (!data.success || !data.tribute) {
+        throw new Error('Failed to fetch tribute: Invalid response format');
+      }
+      
+      this.currentTribute = data.tribute;
       this.state = TributeStoreStates.SUCCESS;
       
-      return tribute;
+      return data.tribute;
     } catch (error) {
+      console.error('[tribute-store] Error in fetchTribute:', error);
       this.state = TributeStoreStates.ERROR;
       this.error = error instanceof Error ? error.message : 'Failed to fetch tribute';
       return null;
@@ -219,28 +237,36 @@ export class TributeStore {
    */
   async getTributes(page: number = 1, perPage: number = 10): Promise<TributeSearchResults> {
     try {
+      console.log('[tribute-store] getTributes called with page:', page, 'perPage:', perPage);
       this.state = TributeStoreStates.LOADING;
       this.error = null;
       
-      const { collection, pagination } = await createPaginatedCollection<Tribute>(
-        TributesCollection,
-        page,
-        perPage
-      );
+      // Use direct fetch to the API instead of Backbone.js
+      console.log('[tribute-store] Fetching tributes from API');
+      const response = await fetch(`/api/tributes?page=${page}&per_page=${perPage}`, {
+        credentials: 'include' // Include cookies in the request
+      });
       
-      const tributes = collection.toJSON();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tributes: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[tribute-store] API response:', data);
       
       const results: TributeSearchResults = {
-        tributes,
-        total_pages: pagination.totalPages,
-        currentPage: pagination.page
+        tributes: data.tributes || [],
+        total_pages: data.total_pages || 1,
+        currentPage: data.current_page || page
       };
       
+      console.log('[tribute-store] Search results:', results);
       this.searchResults = results;
       this.state = TributeStoreStates.SUCCESS;
       
       return results;
     } catch (error) {
+      console.error('[tribute-store] Error in getTributes:', error);
       this.state = TributeStoreStates.ERROR;
       this.error = error instanceof Error ? error.message : 'Failed to fetch tributes';
       
@@ -260,6 +286,8 @@ export class TributeStore {
    */
   async createTribute(tributeData: Partial<Tribute>): Promise<Tribute | null> {
     try {
+      console.log('[tribute-store] createTribute called with data:', tributeData);
+      
       // Validate the tribute data
       const validationErrors = validateTribute(tributeData);
       if (validationErrors) {
@@ -273,13 +301,50 @@ export class TributeStore {
       this.error = null;
       this.validationErrors = null;
       
-      const tribute = await modelRegistry.saveModel<Tribute>(ModelTypes.TRIBUTE, tributeData);
+      // Use direct fetch to the API instead of Backbone.js
+      console.log('[tribute-store] Creating tribute via API');
+      const response = await fetch('/api/tributes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Include cookies in the request
+        body: JSON.stringify(tributeData)
+      });
       
-      this.currentTribute = tribute;
+      if (!response.ok) {
+        throw new Error(`Failed to create tribute: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[tribute-store] API response:', data);
+      
+      if (!data.success) {
+        throw new Error('Failed to create tribute: Invalid response format');
+      }
+      
+      // Handle inconsistent ID field naming between API endpoints
+      // The create API returns tribute_id, but we need to handle both id and tribute_id
+      const tributeId = data.tribute_id || data.id;
+      console.log('[tribute-store] Create response tribute ID:', tributeId);
+      
+      if (!tributeId) {
+        throw new Error('Failed to create tribute: No tribute ID returned');
+      }
+      
+      // Fetch the newly created tribute to get the full data
+      const newTribute = await this.fetchTribute(tributeId);
+      
+      if (!newTribute) {
+        throw new Error('Failed to fetch newly created tribute');
+      }
+      
+      this.currentTribute = newTribute;
       this.state = TributeStoreStates.SUCCESS;
       
-      return tribute;
+      return newTribute;
     } catch (error) {
+      console.error('[tribute-store] Error in createTribute:', error);
       this.state = TributeStoreStates.ERROR;
       this.error = error instanceof Error ? error.message : 'Failed to create tribute';
       return null;
@@ -295,6 +360,8 @@ export class TributeStore {
    */
   async updateTribute(id: number | string, tributeData: Partial<Tribute>): Promise<Tribute | null> {
     try {
+      console.log('[tribute-store] updateTribute called with id:', id, 'data:', tributeData);
+      
       // Validate the tribute data
       const validationErrors = validateTribute({ ...this.currentTribute, ...tributeData });
       if (validationErrors) {
@@ -311,16 +378,34 @@ export class TributeStore {
       // Convert id to number if it's a string
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
       
-      const tribute = await modelRegistry.saveModel<Tribute>(ModelTypes.TRIBUTE, {
-        id: numericId,
-        ...tributeData
+      // Use direct fetch to the API instead of Backbone.js
+      console.log('[tribute-store] Updating tribute via API');
+      const response = await fetch(`/api/tributes/${numericId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Include cookies in the request
+        body: JSON.stringify(tributeData)
       });
       
-      this.currentTribute = tribute;
+      if (!response.ok) {
+        throw new Error(`Failed to update tribute: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[tribute-store] API response:', data);
+      
+      if (!data.success || !data.tribute) {
+        throw new Error('Failed to update tribute: Invalid response format');
+      }
+      
+      this.currentTribute = data.tribute;
       this.state = TributeStoreStates.SUCCESS;
       
-      return tribute;
+      return data.tribute;
     } catch (error) {
+      console.error('[tribute-store] Error in updateTribute:', error);
       this.state = TributeStoreStates.ERROR;
       this.error = error instanceof Error ? error.message : 'Failed to update tribute';
       return null;
@@ -335,16 +420,31 @@ export class TributeStore {
    */
   async deleteTribute(id: number | string): Promise<boolean> {
     try {
+      console.log('[tribute-store] deleteTribute called with id:', id);
       this.state = TributeStoreStates.DELETING;
       this.error = null;
       
       // Convert id to number if it's a string
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
       
-      await modelRegistry.deleteModel(ModelTypes.TRIBUTE, numericId);
+      // Use direct fetch to the API instead of Backbone.js
+      console.log('[tribute-store] Deleting tribute via API');
+      const response = await fetch(`/api/tributes/${numericId}`, {
+        method: 'DELETE',
+        credentials: 'include' // Include cookies in the request
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete tribute: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[tribute-store] API response:', data);
       
       // Clear current tribute if it's the one being deleted
-      if (this.currentTribute.id === id) {
+      // Handle both id and tribute_id fields for v2 API compatibility
+      const currentId = this.currentTribute.id || this.currentTribute.tribute_id;
+      if (currentId === id) {
         this.currentTribute = {
           loved_one_name: '',
           phone_number: '',
@@ -356,6 +456,7 @@ export class TributeStore {
       
       return true;
     } catch (error) {
+      console.error('[tribute-store] Error in deleteTribute:', error);
       this.state = TributeStoreStates.ERROR;
       this.error = error instanceof Error ? error.message : 'Failed to delete tribute';
       return false;

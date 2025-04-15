@@ -58,6 +58,15 @@ export interface Tribute extends WPEntity {
   custom_html?: string;
   number_of_streams?: number;
   extended_data?: Record<string, any>;
+  // Add v2 API fields for compatibility
+  tribute_id?: number; // v2 API uses tribute_id instead of id
+  slugified_name?: string; // v2 API uses slugified_name instead of slug
+  point_of_contact_user_id?: number; // v2 API specific field
+  created_by_user_id?: number; // v2 API specific field
+  page_html?: string; // v2 API equivalent of custom_html
+  loved_ones_name?: string; // v2 API equivalent of loved_one_name
+  loved_ones_dob?: string; // v2 API specific field
+  loved_ones_dod?: string; // v2 API specific field
 }
 
 /**

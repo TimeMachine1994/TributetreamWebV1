@@ -24,8 +24,8 @@ export const accessControlService = {
       return false;
     }
     
-    // Check if user has administrator role
-    return (user.roles || []).includes('administrator');
+    // Check if user has administrator role or is user ID 1
+    return (user.roles || []).includes('administrator') || user.id === 1 || user.id === '1';
   },
   
   /**
@@ -34,15 +34,22 @@ export const accessControlService = {
    * @returns boolean indicating if the user has admin access
    */
   hasAdminAccessFromCookies: (cookies: Cookies): boolean => {
+    console.log('[access-control] Checking admin access from cookies');
     const user = getUserFromCookies(cookies);
     
     if (!user) {
+      console.log('[access-control] No user found in cookies');
       return false;
     }
     
-    // For now, we're assuming admin users have ID 1
-    // This should be replaced with proper role checking when available
-    return user.id === '1';
+    console.log('[access-control] User from cookies:', user);
+    console.log('[access-control] User ID:', user.id, 'Type:', typeof user.id);
+    
+    // Check if user is admin by ID or roles
+    // The WordPress plugin considers user ID 1 as admin
+    const isAdmin = user.id === 1 || user.id === '1' || (Array.isArray(user.roles) && user.roles.includes('administrator'));
+    console.log('[access-control] Is admin check - ID:', user.id, 'Roles:', user.roles, 'Result:', isAdmin);
+    return isAdmin;
   },
   
   /**

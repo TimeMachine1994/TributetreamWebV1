@@ -4,6 +4,9 @@ import { accessControlService } from '$lib/services/access-control-service';
 import { getTokenFromCookie } from '$lib/utils/cookie-auth';
 import { auditLogService } from '$lib/services/audit-log-service';
 
+// Base WordPress API URL - Using v2 API consistently
+const WP_API_BASE = 'https://wp.tributestream.com/wp-json/funeral/v2';
+
 /**
  * GET handler for fetching tribute HTML content
  */
@@ -29,8 +32,8 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
       }, { status: 401 });
     }
     
-    // Fetch tribute from WordPress API
-    const response = await fetch(`${process.env.WP_API_URL}/wp/v2/tributes/${tributeId}?_embed=true`, {
+    // Fetch tribute from WordPress API using v2 API
+    const response = await fetch(`${WP_API_BASE}/tribute-pages/${tributeId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -51,13 +54,17 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
     // Parse response data
     const wpTribute = await response.json();
     
-    // Extract HTML content
-    const htmlContent = wpTribute.content?.rendered || '';
+    // Extract HTML content - handle both v1 and v2 API field names
+    const htmlContent = wpTribute.data?.page_html || wpTribute.data?.custom_html || wpTribute.content?.rendered || '';
+    
+    // Add id field for backward compatibility
+    const tributeIdFromResponse = wpTribute.data?.tribute_id || wpTribute.id;
     
     return json({
       success: true,
       html: htmlContent,
-      tribute_id: wpTribute.id
+      tribute_id: tributeIdFromResponse,
+      id: tributeIdFromResponse // Add id field for backward compatibility
     });
   } catch (error) {
     console.error(`Error fetching tribute HTML ${params.id}:`, error);
@@ -105,8 +112,8 @@ export const PUT: RequestHandler = async ({ params, request, cookies }) => {
       }, { status: 401 });
     }
     
-    // Fetch original tribute for audit log
-    const originalResponse = await fetch(`${process.env.WP_API_URL}/wp/v2/tributes/${tributeId}`, {
+    // Fetch original tribute for audit log using v2 API
+    const originalResponse = await fetch(`${WP_API_BASE}/tribute-pages/${tributeId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -126,15 +133,16 @@ export const PUT: RequestHandler = async ({ params, request, cookies }) => {
     
     const originalTribute = await originalResponse.json();
     
-    // Update tribute in WordPress
-    const response = await fetch(`${process.env.WP_API_URL}/wp/v2/tributes/${tributeId}`, {
+    // Update tribute in WordPress using v2 API
+    const response = await fetch(`${WP_API_BASE}/tribute-pages/${tributeId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        content: body.html
+        page_html: body.html, // v2 API field name
+        custom_html: body.html // v1 API field name for compatibility
       })
     });
     
@@ -154,10 +162,14 @@ export const PUT: RequestHandler = async ({ params, request, cookies }) => {
       { content: { from: '(HTML content)', to: '(HTML content updated)' } }
     );
     
+    // Add id field for backward compatibility
+    const updatedTributeId = wpTribute.data?.tribute_id || wpTribute.id;
+    
     return json({
       success: true,
       message: 'HTML content updated successfully',
-      tribute_id: wpTribute.id
+      tribute_id: updatedTributeId,
+      id: updatedTributeId // Add id field for backward compatibility
     });
   } catch (error) {
     console.error(`Error updating tribute HTML ${params.id}:`, error);

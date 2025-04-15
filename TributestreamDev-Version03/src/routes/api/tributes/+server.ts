@@ -2,9 +2,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getTokenFromCookie } from '$lib/utils/cookie-auth';
+import type { Tribute } from '$lib/types/tribute';
 
-// Base WordPress API URL - Updated to use tributestream/v1 endpoint
-const WP_API_BASE = 'https://wp.tributestream.com/wp-json/tributestream/v1';
+// Base WordPress API URL - Updated to use funeral/v2 endpoint
+const WP_API_BASE = 'https://wp.tributestream.com/wp-json/funeral/v2';
 
 /**
  * GET handler for tributes list
@@ -47,8 +48,8 @@ export const GET: RequestHandler = async ({ request, cookies, url }) => {
         // 3. Get token from cookies for authenticated requests
         const token = getTokenFromCookie(cookies);
         
-        // 4. Build the WordPress API URL - Updated to use /tributes endpoint
-        const wpApiUrl = `${WP_API_BASE}/tributes${wpQueryParams.toString() ? '?' + wpQueryParams.toString() : ''}`;
+        // 4. Build the WordPress API URL - Updated to use /tribute-pages endpoint
+        const wpApiUrl = `${WP_API_BASE}/tribute-pages${wpQueryParams.toString() ? '?' + wpQueryParams.toString() : ''}`;
         console.log(`🔗 [Tributes API] Requesting: ${wpApiUrl}`);
         
         // 5. Make request to WordPress API
@@ -72,11 +73,25 @@ export const GET: RequestHandler = async ({ request, cookies, url }) => {
         }
         
         // 8. Format the successful response
-        // Extract data from the v1 API response
-        const tributes = Array.isArray(data.tributes) ? data.tributes : [];
-        const totalPages = data.total_pages || 1;
-        const currentPage = data.current_page || 1;
-        const totalItems = data.total_items || 0;
+        // Extract data from the v2 API response
+        // Map the v2 API response structure to match what our frontend expects
+        const tributes = Array.isArray(data.data?.tributes) ? data.data.tributes.map((tribute: any) => {
+            // Transform tribute_id to id for backward compatibility
+            return {
+                ...tribute,
+                id: tribute.tribute_id
+            };
+        }) : [];
+        const totalPages = data.data?.total_pages || 1;
+        const currentPage = data.data?.current_page || 1;
+        const totalItems = data.data?.total_items || 0;
+        
+        // Log the first tribute to see its structure
+        if (tributes && tributes.length > 0) {
+            console.log('[Tributes API] First tribute structure:', JSON.stringify(tributes[0], null, 2));
+            console.log('[Tributes API] First tribute ID field:', tributes[0].id);
+            console.log('[Tributes API] First tribute tribute_id field:', tributes[0].tribute_id);
+        }
         
         const result = {
             success: true,
@@ -123,8 +138,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         const requestBody = await request.json();
         console.log('📦 [Tributes API] Processing tribute creation request');
         
-        // 4. Make request to WordPress API - Updated to use v1 endpoint
-        const wpApiUrl = `${WP_API_BASE}/tributes`;
+        // 4. Make request to WordPress API - Updated to use v2 endpoint
+        const wpApiUrl = `${WP_API_BASE}/tribute-pages`;
         console.log(`🔗 [Tributes API] Posting to: ${wpApiUrl}`);
         
         const response = await fetch(wpApiUrl, {
@@ -148,11 +163,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
             }, { status: response.status });
         }
         
-        // 7. Format the successful response for v1 API
+        // 7. Format the successful response for v2 API
         const result = {
             success: true,
-            tribute_id: data.id || data.tribute_id || null,
-            slugified_name: data.slug || data.slugified_name || null
+            tribute_id: data.data?.tribute_id || null,
+            id: data.data?.tribute_id || null, // Add id field for backward compatibility
+            slugified_name: data.data?.slugified_name || null
         };
         
         console.log(`✅ [Tributes API] Tribute created successfully with ID: ${result.tribute_id}`);

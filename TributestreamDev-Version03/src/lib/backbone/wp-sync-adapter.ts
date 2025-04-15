@@ -20,11 +20,11 @@ export function initializeWPSyncAdapter(): void {
   // Skip initialization during SSR
   if (!isBrowser) return;
   
-  console.log('Initializing WordPress Sync Adapter...');
+  console.log('[wp-sync-adapter] Initializing WordPress Sync Adapter...');
   
   // Replace Backbone.sync with our custom implementation
   Backbone.sync = function(method: string, model: any, options: any = {}): Promise<any> {
-    console.log(`WP Sync Adapter: ${method} request to ${options.url || model.url}`);
+    console.log(`[wp-sync-adapter] ${method} request to ${options.url || model.url}`);
     
     // Map Backbone's CRUD operations to HTTP methods
     const methodMap: Record<string, string> = {
@@ -39,7 +39,7 @@ export function initializeWPSyncAdapter(): void {
     const url = options.url || (typeof model.url === 'function' ? model.url() : model.url);
     
     if (!url) {
-      console.error('No URL specified for Backbone.sync');
+      console.error('[wp-sync-adapter] No URL specified for Backbone.sync');
       return Promise.reject(new Error('No URL specified'));
     }
     
@@ -73,9 +73,14 @@ export function initializeWPSyncAdapter(): void {
     }
     
     // Make the request
+    console.log(`[wp-sync-adapter] Making fetch request to ${url} with options:`, fetchOptions);
     return fetch(url, fetchOptions)
-      .then(response => {
+      .then(async response => {
+        console.log(`[wp-sync-adapter] Response status:`, response.status);
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[wp-sync-adapter] HTTP error! status: ${response.status}, body:`, errorText);
           const error = new Error(`HTTP error! status: ${response.status}`);
           if (options.error) options.error(error);
           throw error;
@@ -83,6 +88,7 @@ export function initializeWPSyncAdapter(): void {
         return response.json();
       })
       .then(data => {
+        console.log(`[wp-sync-adapter] Response data:`, data);
         if (options.success) options.success(data);
         
         // Add response interceptors
@@ -93,7 +99,7 @@ export function initializeWPSyncAdapter(): void {
         return data;
       })
       .catch(error => {
-        console.error('WordPress sync error:', error);
+        console.error('[wp-sync-adapter] WordPress sync error:', error);
         if (options.error) options.error(error);
         throw error;
       });

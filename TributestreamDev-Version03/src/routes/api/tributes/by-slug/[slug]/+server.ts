@@ -32,11 +32,16 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
             console.error('❌ [Tributes API] WordPress returned an error:', data);
             return json({ message: data.message || 'Failed to fetch tribute by slug' }, { status: response.status });
         }
-        
         // Return success response
+        // Add id field for backward compatibility
+        const tributeData = data.data ? {
+            ...data.data,
+            id: data.data.tribute_id
+        } : null;
+        
         return json({
             success: true,
-            tribute: data.data
+            tribute: tributeData
         });
     } catch (error) {
         console.error('🚨 [Tributes API] Error occurred while fetching tribute by slug:', error);

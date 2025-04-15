@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getTokenFromCookie } from '$lib/utils/cookie-auth';
 
-// Base WordPress API URL
+// Base WordPress API URL - Using v2 API consistently
 const WP_API_BASE = 'https://wp.tributestream.com/wp-json/funeral/v2';
 
 /**
@@ -33,10 +33,18 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
             return json({ message: data.message || 'Failed to fetch tribute' }, { status: response.status });
         }
         
-        // Return success response
+        // Return success response with tribute property
+        console.log('✅ [Tributes API] Successfully fetched tribute:', data.data);
+        
+        // Add id field for backward compatibility
+        const tributeData = {
+            ...data.data,
+            id: data.data.tribute_id
+        };
+        
         return json({
             success: true,
-            ...data.data
+            tribute: tributeData
         });
     } catch (error) {
         console.error('🚨 [Tributes API] Error occurred while fetching tribute:', error);
@@ -82,10 +90,37 @@ export const PUT: RequestHandler = async ({ params, request, cookies }) => {
             return json({ message: data.message || 'Failed to update tribute' }, { status: response.status });
         }
         
-        // Return success response
+        // Return success response with tribute property
+        console.log('✅ [Tributes API] Successfully updated tribute:', data.data);
+        
+        // Fetch the updated tribute to return the full data
+        const updatedTributeResponse = await fetch(`${WP_API_BASE}/tribute-pages/${params.id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!updatedTributeResponse.ok) {
+            console.warn('⚠️ [Tributes API] Could not fetch updated tribute data, returning basic success response');
+            return json({
+                success: true,
+                tribute_id: data.data?.tribute_id,
+                slugified_name: data.data?.slugified_name
+            });
+        }
+        
+        const updatedTributeData = await updatedTributeResponse.json();
+        // Add id field for backward compatibility
+        const updatedTribute = {
+            ...updatedTributeData.data,
+            id: updatedTributeData.data.tribute_id
+        };
+        
         return json({
             success: true,
+            tribute: updatedTribute,
             tribute_id: data.data?.tribute_id,
+            id: data.data?.tribute_id, // Add id field for backward compatibility
             slugified_name: data.data?.slugified_name
         });
     } catch (error) {

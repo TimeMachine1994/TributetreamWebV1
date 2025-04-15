@@ -160,15 +160,30 @@ export async function fetchSSRCollection<T extends WPEntity>(
   fetchOptions: any = {},
   initialData: T[] = []
 ): Promise<any> {
+  console.log('[fetchSSRCollection] Called with:', {
+    CollectionClass: CollectionClass?.name || 'Unknown',
+    fetchOptions,
+    initialDataLength: initialData?.length || 0
+  });
+  
   const collection = createSSRCollection<T>(CollectionClass, initialData);
+  console.log('[fetchSSRCollection] Collection created:', collection);
   
   // If we're in the browser, fetch the collection from the API
   if (isBrowser) {
+    console.log('[fetchSSRCollection] In browser environment, fetching data');
     try {
+      console.log('[fetchSSRCollection] Calling collection.fetch with options:', fetchOptions);
       await collection.fetch(fetchOptions);
+      console.log('[fetchSSRCollection] Fetch completed successfully');
+      console.log('[fetchSSRCollection] Collection after fetch:', collection);
+      console.log('[fetchSSRCollection] Collection models after fetch:', collection.models?.length || 'unknown');
+      console.log('[fetchSSRCollection] Collection toJSON after fetch:', collection.toJSON?.());
     } catch (error) {
-      console.error('Error fetching collection:', error);
+      console.error('[fetchSSRCollection] Error fetching collection:', error);
     }
+  } else {
+    console.log('[fetchSSRCollection] In SSR environment, not fetching data');
   }
   
   return collection;
@@ -229,10 +244,20 @@ export async function createPaginatedCollection<T extends WPEntity>(
     totalPages: number;
   }
 }> {
+  console.log('[createPaginatedCollection] Called with:', {
+    CollectionClass: CollectionClass?.name || 'Unknown',
+    page,
+    perPage,
+    totalItems,
+    initialDataLength: initialData?.length || 0
+  });
+  
   // Calculate pagination info
   const totalPages = Math.ceil(totalItems / perPage);
+  console.log('[createPaginatedCollection] Calculated totalPages:', totalPages);
   
   // Create the collection
+  console.log('[createPaginatedCollection] Calling fetchSSRCollection');
   const collection = await fetchSSRCollection<T>(
     CollectionClass,
     {
@@ -243,8 +268,11 @@ export async function createPaginatedCollection<T extends WPEntity>(
     },
     initialData
   );
+  console.log('[createPaginatedCollection] fetchSSRCollection returned:', collection);
+  console.log('[createPaginatedCollection] Collection models length:', collection?.models?.length || 'unknown');
+  console.log('[createPaginatedCollection] Collection toJSON result:', collection?.toJSON?.() || 'method not available');
   
-  return {
+  const result = {
     collection,
     pagination: {
       page,
@@ -253,4 +281,6 @@ export async function createPaginatedCollection<T extends WPEntity>(
       totalPages
     }
   };
+  console.log('[createPaginatedCollection] Returning result:', result);
+  return result;
 }
