@@ -28,10 +28,11 @@
     | "deceased-first-name"
     | "deceased-last-name"
     | "email-address"
-    | "phone-number" 
-    | "location-name" 
-    | "location-address" 
-    | "memorial-time" 
+    | "phone-number"
+    | "contact-preference"
+    | "location-name"
+    | "location-address"
+    | "memorial-time"
     | "memorial-date";
 
   type FormData = Record<FormField, string>;
@@ -54,6 +55,7 @@
     "deceased-last-name": "",
     "email-address": "",
     "phone-number": "",
+    "contact-preference": "follow-up", // Default to follow up
     "location-name": "",
     "location-address": "",
     "memorial-time": "",
@@ -192,10 +194,10 @@
 </script>
 
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <form 
-    method="POST" 
+  <form
+    method="POST"
     class="bg-white shadow-md rounded px-8 pt-6 pb-8 w-full max-w-2xl space-y-4"
-    on:submit={handleSubmit}
+    onsubmit={handleSubmit}
     use:enhance={() => {
       return async ({ result, update }) => {
         // Cast the ActionResult to our FormActionResult type
@@ -222,7 +224,19 @@
       };
     }}
   >
-    <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
+<!-- Black text, sans‑serif font -->
+<p style="font-family: Arial, Helvetica, sans-serif; color:#000; margin:0 0 1em 0;">
+  Please enter your family’s information, and they will receive:
+</p>
+
+<ol style="font-family: Arial, Helvetica, sans-serif; color:#000; padding-left:1.25em;">
+  <li>1. A <b>free</b> custom link so they can preview our platform.</li>
+  <li>2. Downloadable price borchure with detailed informaiton.</li>
+  <li>3. A phone call within 24 hours to answer any questions directly <em>(if desired)</em>.</li>
+</ol>
+
+
+     <h1 class="text-2xl font-bold mb-4 text-gray-800">Memorial Information Form</h1>
     
     {#if formError && !isPartialSuccess}
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -249,6 +263,7 @@
     {/if}
 
     <!-- Director's Name -->
+  
     <div>
       <label class="block text-gray-700 text-sm font-bold mb-2" for="director-first-name">Director's Name</label>
       <div class="flex space-x-4">
@@ -260,8 +275,8 @@
             placeholder="First Name"
             class={getInputClass("director-first-name")}
             bind:value={formData["director-first-name"]}
-            on:blur={() => validateField("director-first-name", formData["director-first-name"])}
-            on:focus={() => markAsTouched("director-first-name")}
+            onblur={() => validateField("director-first-name", formData["director-first-name"])}
+            onfocus={() => markAsTouched("director-first-name")}
             aria-invalid={errors["director-first-name"] ? "true" : "false"}
             aria-describedby={errors["director-first-name"] ? "director-first-name-error" : undefined}
           />
@@ -277,8 +292,8 @@
             placeholder="Last Name"
             class={getInputClass("director-last-name")}
             bind:value={formData["director-last-name"]}
-            on:blur={() => validateField("director-last-name", formData["director-last-name"])}
-            on:focus={() => markAsTouched("director-last-name")}
+            onblur={() => validateField("director-last-name", formData["director-last-name"])}
+            onfocus={() => markAsTouched("director-last-name")}
             aria-invalid={errors["director-last-name"] ? "true" : "false"}
             aria-describedby={errors["director-last-name"] ? "director-last-name-error" : undefined}
           />
@@ -301,8 +316,8 @@
             placeholder="First Name"
             class={getInputClass("family-member-first-name")}
             bind:value={formData["family-member-first-name"]}
-            on:blur={() => validateField("family-member-first-name", formData["family-member-first-name"])}
-            on:focus={() => markAsTouched("family-member-first-name")}
+            onblur={() => validateField("family-member-first-name", formData["family-member-first-name"])}
+            onfocus={() => markAsTouched("family-member-first-name")}
           />
           {#if errors["family-member-first-name"]}
             <p class="text-red-500 text-xs mt-1">{errors["family-member-first-name"]}</p>
@@ -316,8 +331,8 @@
             placeholder="Last Name"
             class={getInputClass("family-member-last-name")}
             bind:value={formData["family-member-last-name"]}
-            on:blur={() => validateField("family-member-last-name", formData["family-member-last-name"])}
-            on:focus={() => markAsTouched("family-member-last-name")}
+            onblur={() => validateField("family-member-last-name", formData["family-member-last-name"])}
+            onfocus={() => markAsTouched("family-member-last-name")}
           />
           {#if errors["family-member-last-name"]}
             <p class="text-red-500 text-xs mt-1">{errors["family-member-last-name"]}</p>
@@ -340,8 +355,8 @@
             placeholder="First Name"
             class={getInputClass("deceased-first-name")}
             bind:value={formData["deceased-first-name"]}
-            on:blur={() => validateField("deceased-first-name", formData["deceased-first-name"])}
-            on:focus={() => markAsTouched("deceased-first-name")}
+            onblur={() => validateField("deceased-first-name", formData["deceased-first-name"])}
+            onfocus={() => markAsTouched("deceased-first-name")}
             aria-invalid={errors["deceased-first-name"] ? "true" : "false"}
             aria-describedby={errors["deceased-first-name"] ? "deceased-first-name-error" : undefined}
           />
@@ -357,8 +372,8 @@
             placeholder="Last Name"
             class={getInputClass("deceased-last-name")}
             bind:value={formData["deceased-last-name"]}
-            on:blur={() => validateField("deceased-last-name", formData["deceased-last-name"])}
-            on:focus={() => markAsTouched("deceased-last-name")}
+            onblur={() => validateField("deceased-last-name", formData["deceased-last-name"])}
+            onfocus={() => markAsTouched("deceased-last-name")}
             aria-invalid={errors["deceased-last-name"] ? "true" : "false"}
             aria-describedby={errors["deceased-last-name"] ? "deceased-last-name-error" : undefined}
           />
@@ -383,8 +398,8 @@
             placeholder="Email Address"
             class={getInputClass("email-address")}
             bind:value={formData["email-address"]}
-            on:blur={() => validateField("email-address", formData["email-address"])}
-            on:focus={() => markAsTouched("email-address")}
+            onblur={() => validateField("email-address", formData["email-address"])}
+            onfocus={() => markAsTouched("email-address")}
             aria-invalid={errors["email-address"] ? "true" : "false"}
             aria-describedby={errors["email-address"] ? "email-address-error" : undefined}
           />
@@ -400,8 +415,8 @@
             placeholder="Phone Number"
             class={getInputClass("phone-number")}
             bind:value={formData["phone-number"]}
-            on:blur={() => validateField("phone-number", formData["phone-number"])}
-            on:focus={() => markAsTouched("phone-number")}
+            onblur={() => validateField("phone-number", formData["phone-number"])}
+            onfocus={() => markAsTouched("phone-number")}
             aria-invalid={errors["phone-number"] ? "true" : "false"}
             aria-describedby={errors["phone-number"] ? "phone-number-error" : undefined}
           />
@@ -410,6 +425,40 @@
           {/if}
         </div>
       </div>
+    </div>
+
+    <!-- Contact Preference - Now positioned above memorial info -->
+    <div>
+      <label class="block text-gray-700 text-sm font-bold mb-2">Contact Preference</label>
+      <div class="flex space-x-6 mb-4">
+        <div class="flex items-center">
+          <input
+            type="radio"
+            id="follow-up"
+            name="contact-preference"
+            value="follow-up"
+            class="mr-2 h-4 w-4 border-gray-300 text-[#d5ba7f] focus:ring-[#d5ba7f]"
+            checked={formData["contact-preference"] === "follow-up"}
+            onclick={() => formData["contact-preference"] = "follow-up"}
+          />
+          <label for="follow-up" class="text-gray-700">Phone call</label>
+        </div>
+        <div class="flex items-center">
+          <input
+            type="radio"
+            id="do-not-contact"
+            name="contact-preference"
+            value="do-not-contact"
+            class="mr-2 h-4 w-4 border-gray-300 text-[#d5ba7f] focus:ring-[#d5ba7f]"
+            checked={formData["contact-preference"] === "do-not-contact"}
+            onclick={() => formData["contact-preference"] = "do-not-contact"}
+          />
+          <label for="do-not-contact" class="text-gray-700">Email Only</label>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600 mb-2">
+  
+      </p>
     </div>
 
     <!-- Memorial Information -->
@@ -424,8 +473,8 @@
             placeholder="Location Name"
             class={getInputClass("location-name")}
             bind:value={formData["location-name"]}
-            on:blur={() => validateField("location-name", formData["location-name"])}
-            on:focus={() => markAsTouched("location-name")}
+            onblur={() => validateField("location-name", formData["location-name"])}
+            onfocus={() => markAsTouched("location-name")}
             aria-required="false"
           />
           {#if errors["location-name"]}
@@ -440,8 +489,8 @@
             placeholder="Location Address (Optional)"
             class={getInputClass("location-address")}
             bind:value={formData["location-address"]}
-            on:blur={() => validateField("location-address", formData["location-address"])}
-            on:focus={() => markAsTouched("location-address")}
+            onblur={() => validateField("location-address", formData["location-address"])}
+            onfocus={() => markAsTouched("location-address")}
             aria-required="false"
           />
           {#if errors["location-address"]}
@@ -459,8 +508,8 @@
           placeholder="Time (Optional)"
           class={getInputClass("memorial-time")}
           bind:value={formData["memorial-time"]}
-          on:blur={() => validateField("memorial-time", formData["memorial-time"])}
-          on:focus={() => markAsTouched("memorial-time")}
+          onblur={() => validateField("memorial-time", formData["memorial-time"])}
+          onfocus={() => markAsTouched("memorial-time")}
           aria-required="false"
         />
         {#if errors["memorial-time"]}
@@ -474,8 +523,8 @@
           id="memorial-date"
           class={getInputClass("memorial-date")}
           bind:value={formData["memorial-date"]}
-          on:blur={() => validateField("memorial-date", formData["memorial-date"])}
-          on:focus={() => markAsTouched("memorial-date")}
+          onblur={() => validateField("memorial-date", formData["memorial-date"])}
+          onfocus={() => markAsTouched("memorial-date")}
           aria-required="false"
         />
         {#if errors["memorial-date"]}

@@ -23,6 +23,7 @@ function parseFormData(formData: FormData) {
         deceasedDOP: formData.get('deceased-dop') as string,
         email: formData.get('email-address') as string,
         phone: formData.get('phone-number') as string,
+        contactPreference: formData.get('contact-preference') as string,
         locationName: formData.get('location-name') as string,
         locationAddress: formData.get('location-address') as string,
         memorialTime: formData.get('memorial-time') as string,
@@ -357,6 +358,7 @@ export const actions = {
                     // Contact information
                     email: data.email,
                     phone: data.phone,
+                    contactPreference: data.contactPreference || 'follow-up',
                     
                     // Memorial information
                     locationName: data.locationName,
@@ -380,15 +382,17 @@ export const actions = {
                     isDuplicate: registrationResult.isDuplicate || false
                 };
 
-                // Send both emails using the new API endpoint with dual email functionality
-                // Include the registration status message
+                // Determine email type based on contact preference
+                const emailType = data.contactPreference === 'do-not-contact' ? 'internal-only' : 'dual';
+                
+                // Send the appropriate emails based on contact preference
                 const emailResponse = await fetch('/api/send-email', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        type: 'dual',
+                        type: emailType,
                         formData: {
                             ...emailFormData,
                             registrationStatus: registrationStatusMessage
