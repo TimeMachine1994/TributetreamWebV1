@@ -1,9 +1,13 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
+import { generateSecurePassword } from '$lib/utils/auth-helpers';
 import { validateFuneralDirectorForm } from '$lib/utils/form-validation';
 import { createTributeSlug } from '$lib/utils/string-helpers';
 import { registerWordPressUser } from '$lib/server/wp-user-service';
+
+/*╔══════════════════════════════════════════════════════════════╗
+  ║                STEP 1: PARSE FORM DATA                       ║
+  ╚══════════════════════════════════════════════════════════════╝*/
 
 /**
  * Parse form data from FormData object
@@ -12,22 +16,22 @@ import { registerWordPressUser } from '$lib/server/wp-user-service';
  */
 function parseFormData(formData: FormData) {
     return {
-        directorFirstName: formData.get('director-first-name') as string,
-        directorLastName: formData.get('director-last-name') as string,
+        directorFirstName:     formData.get('director-first-name')      as string,
+        directorLastName:      formData.get('director-last-name')       as string,
         familyMemberFirstName: formData.get('family-member-first-name') as string,
-        familyMemberLastName: formData.get('family-member-last-name') as string,
-        familyMemberDOB: formData.get('family-member-dob') as string,
-        deceasedFirstName: formData.get('deceased-first-name') as string,
-        deceasedLastName: formData.get('deceased-last-name') as string,
-        deceasedDOB: formData.get('deceased-dob') as string,
-        deceasedDOP: formData.get('deceased-dop') as string,
-        email: formData.get('email-address') as string,
-        phone: formData.get('phone-number') as string,
-        contactPreference: formData.get('contact-preference') as string,
-        locationName: formData.get('location-name') as string,
-        locationAddress: formData.get('location-address') as string,
-        memorialTime: formData.get('memorial-time') as string,
-        memorialDate: formData.get('memorial-date') as string,
+        familyMemberLastName:  formData.get('family-member-last-name')  as string,
+        familyMemberDOB:       formData.get('family-member-dob')        as string,
+        deceasedFirstName:     formData.get('deceased-first-name')      as string,
+        deceasedLastName:      formData.get('deceased-last-name')       as string,
+        deceasedDOB:           formData.get('deceased-dob')             as string,
+        deceasedDOP:           formData.get('deceased-dop')             as string,
+        email:                 formData.get('email-address')            as string,
+        phone:                 formData.get('phone-number')             as string,
+        contactPreference:     formData.get('contact-preference')       as string,
+        locationName:          formData.get('location-name')            as string,
+        locationAddress:       formData.get('location-address')         as string,
+        memorialTime:          formData.get('memorial-time')            as string,
+        memorialDate:          formData.get('memorial-date')            as string,
     };
 }
 
@@ -36,14 +40,19 @@ export const actions = {
         console.log('🚀 Starting fd-form action.');
         let slug = '';
         try {
-            // Step 1: Parse form data
+            /*═════════════════════════════════════════════════════════
+                      STEP 2: PARSE AND VALIDATE FORM DATA
+              ═════════════════════════════════════════════════════════*/
+
+            // Parse form data
             console.log('📝 Parsing form data...');
             const formData = await request.formData();
             const data = parseFormData(formData);
             
-            // Step 2: Validate form data
+            // Validate form data
             console.log('🔍 Validating form data...');
             const validation = validateFuneralDirectorForm(data);
+            
             if (!validation.isValid) {
                 console.error('❌ Validation errors:', validation.errors);
                 
@@ -82,31 +91,37 @@ export const actions = {
                     errors: fieldErrors,
                     // Return the submitted form data to preserve all values
                     formData: {
-                        "director-first-name": data.directorFirstName || "",
-                        "director-last-name": data.directorLastName || "",
+                        "director-first-name":      data.directorFirstName     || "",
+                        "director-last-name":       data.directorLastName      || "",
                         "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name": data.familyMemberLastName || "",
-                        "family-member-dob": data.familyMemberDOB || "",
-                        "deceased-first-name": data.deceasedFirstName || "",
-                        "deceased-last-name": data.deceasedLastName || "",
-                        "deceased-dob": data.deceasedDOB || "",
-                        "deceased-dop": data.deceasedDOP || "",
-                        "email-address": data.email || "",
-                        "phone-number": data.phone || "",
-                        "location-name": data.locationName || "",
-                        "location-address": data.locationAddress || "",
-                        "memorial-time": data.memorialTime || "",
-                        "memorial-date": data.memorialDate || ""
+                        "family-member-last-name":  data.familyMemberLastName  || "",
+                        "family-member-dob":        data.familyMemberDOB       || "",
+                        "deceased-first-name":      data.deceasedFirstName     || "",
+                        "deceased-last-name":       data.deceasedLastName      || "",
+                        "deceased-dob":             data.deceasedDOB           || "",
+                        "deceased-dop":             data.deceasedDOP           || "",
+                        "email-address":            data.email                 || "",
+                        "phone-number":             data.phone                 || "",
+                        "location-name":            data.locationName          || "",
+                        "location-address":         data.locationAddress       || "",
+                        "memorial-time":            data.memorialTime          || "",
+                        "memorial-date":            data.memorialDate          || ""
                     }
                 });
             }
             
-            // Step 3: Generate a secure random password
+            /*═════════════════════════════════════════════════════════
+                      STEP 3: GENERATE SECURE PASSWORD
+              ═════════════════════════════════════════════════════════*/
+
             console.log('🔐 Generating a secure password.');
             const password = generateSecurePassword(16);
             console.log('✅ Password generated successfully');
             
-            // Step 4: Register the user with graceful error handling
+            /*═════════════════════════════════════════════════════════
+                     STEP 4: REGISTER USER WITH WORDPRESS
+              ═════════════════════════════════════════════════════════*/
+
             console.log('🔄 Registering user...');
             let userId: number | undefined;
             let registrationStatusMessage: string | undefined;
@@ -165,7 +180,10 @@ export const actions = {
                 console.error(registrationStatusMessage);
             }
 
-            // Step 5: Authenticate the user (only if registration was successful)
+            /*═════════════════════════════════════════════════════════
+                     STEP 5: AUTHENTICATE THE USER
+              ═════════════════════════════════════════════════════════*/
+
             let authToken: string | undefined;
             let userDisplayName: string | undefined;
             
@@ -199,7 +217,10 @@ export const actions = {
                 console.log('⏩ Skipping authentication for duplicate or failed registration');
             }
 
-            // Step 6: Store the JWT token in cookies (only if authentication was successful)
+            /*═════════════════════════════════════════════════════════
+                     STEP 6: STORE JWT TOKEN IN COOKIES
+              ═════════════════════════════════════════════════════════*/
+
             if (authToken) {
                 console.log('🔐 Storing authentication tokens...');
                 cookies.set('jwt_token', authToken, { // Using jwt_token to match hooks.server.ts
@@ -224,7 +245,10 @@ export const actions = {
                 console.log('⏩ Skipping cookie storage due to missing authentication token');
             }
 
-            // Step 7: Store user metadata (only if we have a user ID and auth token)
+            /*═════════════════════════════════════════════════════════
+                     STEP 7: STORE USER METADATA 
+              ═════════════════════════════════════════════════════════*/
+
             if (userId && authToken) {
                 console.log('📝 Writing user metadata...');
                 const metaPayload = {
@@ -285,7 +309,10 @@ export const actions = {
             }
 
 
-            // Step 8: Create the tribute record
+            /*═════════════════════════════════════════════════════════
+                     STEP 8: CREATE THE TRIBUTE RECORD
+              ═════════════════════════════════════════════════════════*/
+
             console.log('🚀 Creating tribute...');
             
             // Generate the slug
@@ -333,6 +360,9 @@ export const actions = {
                 registrationStatusMessage += ' Tribute record could not be created due to missing authentication.';
             }
             
+            /*═════════════════════════════════════════════════════════
+                     STEP 9: SEND CONFIRMATION EMAILS
+              ═════════════════════════════════════════════════════════*/
             
             // Send both customer confirmation and internal notification emails
             try {
@@ -411,7 +441,10 @@ export const actions = {
                 console.warn('⚠️ Email notification failed, but process continues:', emailError);
             }
             
-            // Step 9: Redirect to the appropriate page
+            /*═════════════════════════════════════════════════════════
+                     STEP 10: REDIRECT TO APPROPRIATE PAGE
+              ═════════════════════════════════════════════════════════*/
+
             if (tributeCreated) {
                 // Redirect to the newly created tribute page
                 console.log('🔀 Redirecting to created tribute page...');
@@ -441,29 +474,28 @@ export const actions = {
             
             console.error('💥 Unexpected error:', error);
             return fail(500, {
-                            error: true,
-                            message: 'An unexpected error occurred. Please try again.',
-                            // For generic errors, we just return a message without form data
-                            // since we can't guarantee data is available in the catch block
-                            formData: {
-                                "director-first-name": "",
-                                "director-last-name": "",
-                                "family-member-first-name": "",
-                                "family-member-last-name": "",
-                                "family-member-dob": "",
-                                "deceased-first-name": "",
-                                "deceased-last-name": "",
-                                "deceased-dob": "",
-                                "deceased-dop": "",
-                                "email-address": "",
-                                "phone-number": "",
-                                "location-name": "",
-                                "location-address": "",
-                                "memorial-time": "",
-                                "memorial-date": ""
-                            }
-                        });
+                error: true,
+                message: 'An unexpected error occurred. Please try again.',
+                // For generic errors, we just return a message without form data
+                // since we can't guarantee data is available in the catch block
+                formData: {
+                    "director-first-name":      "",
+                    "director-last-name":       "",
+                    "family-member-first-name": "",
+                    "family-member-last-name":  "",
+                    "family-member-dob":        "",
+                    "deceased-first-name":      "",
+                    "deceased-last-name":       "",
+                    "deceased-dob":             "",
+                    "deceased-dop":             "",
+                    "email-address":            "",
+                    "phone-number":             "",
+                    "location-name":            "",
+                    "location-address":         "",
+                    "memorial-time":            "",
+                    "memorial-date":            ""
+                }
+            });
         }
-
     }
 } satisfies Actions;
