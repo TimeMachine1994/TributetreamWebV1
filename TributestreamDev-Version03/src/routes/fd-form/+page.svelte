@@ -192,7 +192,9 @@
     return date.toISOString().split('T')[0];
   };
 </script>
-
+<section
+  class="bg-gray-100 min-h-screen flex items-center justify-center p-4 text-xl">
+         text-xl   <!-- 🔸 makes everything two Tailwind steps larger -->
 <section class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
   <form
     method="POST"
@@ -226,13 +228,11 @@
   >
 <!-- Black text, sans‑serif font -->
 <p style="font-family: Arial, Helvetica, sans-serif; color:#000; margin:0 0 1em 0;">
-  Please enter your family’s information, and they will receive:
-</p>
+Upon form completetion, family will receive:</p>
 
 <ol style="font-family: Arial, Helvetica, sans-serif; color:#000; padding-left:1.25em;">
-  <li>1. A <b>free</b> custom link so they can preview our platform.</li>
-  <li>2. Downloadable price borchure with detailed informaiton.</li>
-  <li>3. A phone call within 24 hours to answer any questions directly <em>(if desired)</em>.</li>
+  <li>1. Free Custom Shareable Link for Broadcast</li>
+  <li>2. Email with detailed info brochure</li>
 </ol>
 
 
@@ -546,4 +546,5 @@
       </button>
     </div>
   </form>
+</section>
 </section>
