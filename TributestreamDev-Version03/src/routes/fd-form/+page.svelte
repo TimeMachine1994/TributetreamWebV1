@@ -446,14 +446,14 @@
         <div class="flex items-center">
           <input
             type="radio"
-            id="do-not-contact"
+            id="email-only"
             name="contact-preference"
-            value="do-not-contact"
+            value="dual"
             class="mr-2 h-4 w-4 border-gray-300 text-[#d5ba7f] focus:ring-[#d5ba7f]"
-            checked={formData["contact-preference"] === "do-not-contact"}
-            onclick={() => formData["contact-preference"] = "do-not-contact"}
+            checked={formData["contact-preference"] === "dual"}
+            onclick={() => formData["contact-preference"] = "dual"}
           />
-          <label for="do-not-contact" class="text-gray-700">Email Only</label>
+          <label for="email-only" class="text-gray-700">Email Only</label>
         </div>
       </div>
       <p class="text-sm text-gray-600 mb-2">
