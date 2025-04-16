@@ -15,7 +15,9 @@ import { registerWordPressUser } from '$lib/server/wp-user-service';
  * @returns Parsed form data object
  */
 function parseFormData(formData: FormData) {
+    // Return both camelCase and hyphenated field names for compatibility
     return {
+        // Camel case properties for internal use
         directorName:       formData.get('director-name')       as string,
         familyMemberName:   formData.get('family-member-name')  as string,
         lovedOneName:       formData.get('loved-one-name')      as string,
@@ -26,6 +28,18 @@ function parseFormData(formData: FormData) {
         locationAddress:    formData.get('location-address')    as string,
         memorialTime:       formData.get('memorial-time')       as string,
         memorialDate:       formData.get('memorial-date')       as string,
+        
+        // Hyphenated properties for validation function
+        'director-name':    formData.get('director-name')       as string,
+        'family-member-name': formData.get('family-member-name') as string,
+        'loved-one-name':   formData.get('loved-one-name')      as string,
+        'email-address':    formData.get('email-address')       as string,
+        'phone-number':     formData.get('phone-number')        as string,
+        'contact-preference': formData.get('contact-preference') as string,
+        'location-name':    formData.get('location-name')       as string,
+        'location-address': formData.get('location-address')    as string,
+        'memorial-time':    formData.get('memorial-time')       as string,
+        'memorial-date':    formData.get('memorial-date')       as string,
     };
 }
 
@@ -43,9 +57,24 @@ export const actions = {
             const formData = await request.formData();
             const data = parseFormData(formData);
             
+            // Debug log to check parsed data structure
+            console.log('🔍 DEBUG - Parsed form data:', {
+                directorName: data.directorName,
+                'director-name': data['director-name'],
+                lovedOneName: data.lovedOneName,
+                'loved-one-name': data['loved-one-name'],
+                email: data.email
+            });
+            
             // Validate form data
             console.log('🔍 Validating form data...');
             const validation = validateFuneralDirectorForm(data);
+            
+            // Debug log for validation result
+            console.log('🔍 DEBUG - Validation result:', {
+                isValid: validation.isValid,
+                errors: validation.errors
+            });
             
             if (!validation.isValid) {
                 console.error('❌ Validation errors:', validation.errors);
@@ -344,6 +373,8 @@ export const actions = {
                 
                 // Create a comprehensive formData object with all relevant information
                 const emailFormData = {
+                    // Add familyMemberLastName for email service
+                    familyMemberLastName: data.familyMemberName ? data.familyMemberName.split(" ").slice(1).join(" ") : '',
                     // Director information
                     directorName: data.directorName,
                     
@@ -356,7 +387,7 @@ export const actions = {
                     // Contact information
                     email: data.email,
                     phone: data.phone,
-                    contactPreference: data.contactPreference || 'follow-up',
+                    contactPreference: data.contactPreference || 'phone-call',
                     
                     // Memorial information
                     locationName: data.locationName,
@@ -380,8 +411,18 @@ export const actions = {
                     isDuplicate: registrationResult.isDuplicate || false
                 };
 
-                // Determine email type based on contact preference
-                const emailType = data.contactPreference === 'do-not-contact' ? 'internal-only' : 'dual';
+                // Determine email type - always send both emails regardless of contact preference
+                // The contact preference is just for the admin to know how to follow up
+                const emailType = 'dual';
+                
+                // Debug log for email data
+                console.log('📧 DEBUG - Email form data:', {
+                    familyMemberLastName: emailFormData.familyMemberLastName,
+                    directorName: emailFormData.directorName,
+                    lovedOneName: emailFormData.lovedOneName,
+                    email: emailFormData.email,
+                    slug: emailFormData.slug
+                });
                 
                 // Send the appropriate emails based on contact preference
                 const emailResponse = await fetch('/api/send-email', {

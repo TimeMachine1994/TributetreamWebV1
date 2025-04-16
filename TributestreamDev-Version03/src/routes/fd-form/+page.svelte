@@ -49,7 +49,7 @@
     "loved-one-name": "",
     "email-address": "",
     "phone-number": "",
-    "contact-preference": "follow-up", // Default to follow up
+    "contact-preference": "phone-call", // Default to phone call
     "location-name": "",
     "location-address": "",
     "memorial-time": "",
@@ -495,24 +495,24 @@
                     <div class="flex items-center">
                       <input
                         type="radio"
-                        id="follow-up"
+                        id="phone-call"
                         name="contact-preference"
-                        value="follow-up"
+                        value="phone-call"
                         class="mr-2 h-5 w-5 border-gray-300 text-[#d5ba7f] focus:ring-[#d5ba7f]"
-                        checked={formData["contact-preference"] === "follow-up"}
-                        onclick={() => formData["contact-preference"] = "follow-up"}
+                        checked={formData["contact-preference"] === "phone-call"}
+                        onclick={() => formData["contact-preference"] = "phone-call"}
                       />
-                      <label for="follow-up" class="text-gray-700 text-lg">Phone call</label>
+                      <label for="phone-call" class="text-gray-700 text-lg">Phone call</label>
                     </div>
                     <div class="flex items-center">
                       <input
                         type="radio"
                         id="email-only"
                         name="contact-preference"
-                        value="dual"
+                        value="email-only"
                         class="mr-2 h-5 w-5 border-gray-300 text-[#d5ba7f] focus:ring-[#d5ba7f]"
-                        checked={formData["contact-preference"] === "dual"}
-                        onclick={() => formData["contact-preference"] = "dual"}
+                        checked={formData["contact-preference"] === "email-only"}
+                        onclick={() => formData["contact-preference"] = "email-only"}
                       />
                       <label for="email-only" class="text-gray-700 text-lg">Email Only</label>
                     </div>
