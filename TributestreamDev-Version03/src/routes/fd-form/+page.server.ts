@@ -16,22 +16,16 @@ import { registerWordPressUser } from '$lib/server/wp-user-service';
  */
 function parseFormData(formData: FormData) {
     return {
-        directorFirstName:     formData.get('director-first-name')      as string,
-        directorLastName:      formData.get('director-last-name')       as string,
-        familyMemberFirstName: formData.get('family-member-first-name') as string,
-        familyMemberLastName:  formData.get('family-member-last-name')  as string,
-        familyMemberDOB:       formData.get('family-member-dob')        as string,
-        deceasedFirstName:     formData.get('deceased-first-name')      as string,
-        deceasedLastName:      formData.get('deceased-last-name')       as string,
-        deceasedDOB:           formData.get('deceased-dob')             as string,
-        deceasedDOP:           formData.get('deceased-dop')             as string,
-        email:                 formData.get('email-address')            as string,
-        phone:                 formData.get('phone-number')             as string,
-        contactPreference:     formData.get('contact-preference')       as string,
-        locationName:          formData.get('location-name')            as string,
-        locationAddress:       formData.get('location-address')         as string,
-        memorialTime:          formData.get('memorial-time')            as string,
-        memorialDate:          formData.get('memorial-date')            as string,
+        directorName:       formData.get('director-name')       as string,
+        familyMemberName:   formData.get('family-member-name')  as string,
+        lovedOneName:       formData.get('loved-one-name')      as string,
+        email:              formData.get('email-address')       as string,
+        phone:              formData.get('phone-number')        as string,
+        contactPreference:  formData.get('contact-preference')  as string,
+        locationName:       formData.get('location-name')       as string,
+        locationAddress:    formData.get('location-address')    as string,
+        memorialTime:       formData.get('memorial-time')       as string,
+        memorialDate:       formData.get('memorial-date')       as string,
     };
 }
 
@@ -61,14 +55,10 @@ export const actions = {
                 
                 validation.errors.forEach(error => {
                     // Map backend field names to form field names
-                    if (error.includes("Director's first name")) {
-                        fieldErrors["director-first-name"] = error;
-                    } else if (error.includes("Director's last name")) {
-                        fieldErrors["director-last-name"] = error;
-                    } else if (error.includes("Deceased's first name")) {
-                        fieldErrors["deceased-first-name"] = error;
-                    } else if (error.includes("Deceased's last name")) {
-                        fieldErrors["deceased-last-name"] = error;
+                    if (error.includes("Director's name")) {
+                        fieldErrors["director-name"] = error;
+                    } else if (error.includes("Loved one's name")) {
+                        fieldErrors["loved-one-name"] = error;
                     } else if (error.includes("Email address")) {
                         fieldErrors["email-address"] = error;
                     } else if (error.includes("phone number")) {
@@ -76,10 +66,6 @@ export const actions = {
                     // Memorial location name is no longer required, but we'll keep the mapping for other error types
                     } else if (error.includes("Memorial location")) {
                         fieldErrors["location-name"] = error;
-                    } else if (error.includes("deceased date of birth")) {
-                        fieldErrors["deceased-dob"] = error;
-                    } else if (error.includes("deceased date of passing")) {
-                        fieldErrors["deceased-dop"] = error;
                     } else if (error.includes("memorial date")) {
                         fieldErrors["memorial-date"] = error;
                     }
@@ -91,15 +77,9 @@ export const actions = {
                     errors: fieldErrors,
                     // Return the submitted form data to preserve all values
                     formData: {
-                        "director-first-name":      data.directorFirstName     || "",
-                        "director-last-name":       data.directorLastName      || "",
-                        "family-member-first-name": data.familyMemberFirstName || "",
-                        "family-member-last-name":  data.familyMemberLastName  || "",
-                        "family-member-dob":        data.familyMemberDOB       || "",
-                        "deceased-first-name":      data.deceasedFirstName     || "",
-                        "deceased-last-name":       data.deceasedLastName      || "",
-                        "deceased-dob":             data.deceasedDOB           || "",
-                        "deceased-dop":             data.deceasedDOP           || "",
+                        "director-name":       data.directorName     || "",
+                        "family-member-name":  data.familyMemberName || "",
+                        "loved-one-name":      data.lovedOneName     || "",
                         "email-address":            data.email                 || "",
                         "phone-number":             data.phone                 || "",
                         "location-name":            data.locationName          || "",
@@ -129,8 +109,8 @@ export const actions = {
             // Use our new registerWordPressUser function
             const registrationResult = await registerWordPressUser({
                 email: data.email,
-                firstName: data.familyMemberFirstName || data.directorFirstName,
-                lastName: data.familyMemberLastName || data.directorLastName,
+                firstName: (data.familyMemberName || data.directorName).split(" ")[0],
+                lastName: (data.familyMemberName || data.directorName).split(" ").slice(1).join(" "),
                 username: data.email,
                 password: password
             });
@@ -256,19 +236,13 @@ export const actions = {
                     meta_key: 'memorial_form_data',
                     meta_value: JSON.stringify({
                         director: {
-                            firstName: data.directorFirstName,
-                            lastName: data.directorLastName
+                            fullName: data.directorName
                         },
                         familyMember: {
-                            firstName: data.familyMemberFirstName,
-                            lastName: data.familyMemberLastName,
-                            dob: data.familyMemberDOB
+                            fullName: data.familyMemberName
                         },
-                        deceased: {
-                            firstName: data.deceasedFirstName,
-                            lastName: data.deceasedLastName,
-                            dob: data.deceasedDOB,
-                            dop: data.deceasedDOP
+                        lovedOne: {
+                            fullName: data.lovedOneName
                         },
                         contact: {
                             email: data.email,
@@ -316,7 +290,7 @@ export const actions = {
             console.log('🚀 Creating tribute...');
             
             // Generate the slug
-            slug = createTributeSlug(`${data.deceasedFirstName} ${data.deceasedLastName}`);
+            slug = createTributeSlug(data.lovedOneName);
 
             // We can create a tribute even without a user ID in some cases
             let tributeCreated = false;
@@ -324,7 +298,7 @@ export const actions = {
             if (authToken) {
                 // Prepare the tribute payload
                 const tributePayload = {
-                    loved_one_name: `${data.deceasedFirstName} ${data.deceasedLastName}`,
+                    loved_one_name: data.lovedOneName,
                     slug,
                     user_id: userId, // This might be undefined for duplicate users
                     phone_number: data.phone || '000-000-0000' // Ensure we have a phone number
@@ -371,19 +345,13 @@ export const actions = {
                 // Create a comprehensive formData object with all relevant information
                 const emailFormData = {
                     // Director information
-                    directorFirstName: data.directorFirstName,
-                    directorLastName: data.directorLastName,
+                    directorName: data.directorName,
                     
                     // Family member information
-                    familyMemberFirstName: data.familyMemberFirstName,
-                    familyMemberLastName: data.familyMemberLastName,
-                    familyMemberDOB: data.familyMemberDOB,
+                    familyMemberName: data.familyMemberName,
                     
-                    // Deceased information
-                    deceasedFirstName: data.deceasedFirstName,
-                    deceasedLastName: data.deceasedLastName,
-                    deceasedDOB: data.deceasedDOB,
-                    deceasedDOP: data.deceasedDOP,
+                    // Loved one information
+                    lovedOneName: data.lovedOneName,
                     
                     // Contact information
                     email: data.email,
@@ -479,21 +447,15 @@ export const actions = {
                 // For generic errors, we just return a message without form data
                 // since we can't guarantee data is available in the catch block
                 formData: {
-                    "director-first-name":      "",
-                    "director-last-name":       "",
-                    "family-member-first-name": "",
-                    "family-member-last-name":  "",
-                    "family-member-dob":        "",
-                    "deceased-first-name":      "",
-                    "deceased-last-name":       "",
-                    "deceased-dob":             "",
-                    "deceased-dop":             "",
-                    "email-address":            "",
-                    "phone-number":             "",
-                    "location-name":            "",
-                    "location-address":         "",
-                    "memorial-time":            "",
-                    "memorial-date":            ""
+                    "director-name":       "",
+                    "family-member-name":  "",
+                    "loved-one-name":      "",
+                    "email-address":       "",
+                    "phone-number":        "",
+                    "location-name":       "",
+                    "location-address":    "",
+                    "memorial-time":       "",
+                    "memorial-date":       ""
                 }
             });
         }

@@ -16,10 +16,17 @@ export function validateFuneralDirectorForm(data: any): ValidationResult {
     
     // Required fields
     if (!data.email) errors.push('Email address is required');
-    if (!data.directorFirstName) errors.push('Director\'s first name is required');
-    if (!data.directorLastName) errors.push('Director\'s last name is required');
-    if (!data.deceasedFirstName) errors.push('Deceased\'s first name is required');
-    if (!data.deceasedLastName) errors.push('Deceased\'s last name is required');
+    
+    // Check both new and old field names for director
+    if (!data['director-name'] && !(data.directorFirstName || data.directorLastName)) {
+        errors.push('Director\'s name is required');
+    }
+    
+    // Check both new and old field names for deceased
+    if (!data['loved-one-name'] && !(data.deceasedFirstName || data.deceasedLastName)) {
+        errors.push('Loved one\'s name is required');
+    }
+    
     if (!data.phone) errors.push('Phone number is required');
     
     // Email validation

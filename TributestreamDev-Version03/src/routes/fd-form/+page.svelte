@@ -129,7 +129,7 @@
   
   // Get input class based on error state
   function getInputClass(fieldName: FormField): string {
-    const baseClass = "w-full py-3 px-4 text-lg rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#d5ba7f]";
+    const baseClass = "w-full py-3 px-4 text-lg rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#d5ba7f] text-black";
     return touched[fieldName] && errors[fieldName] 
       ? `${baseClass} border-red-500 focus:ring-red-500` 
       : baseClass;
@@ -192,29 +192,36 @@
     <div class="bg-white shadow-xl rounded-xl overflow-hidden">
       <!-- Header Section with Benefits -->
       <div class="bg-gradient-to-r from-[#d5ba7f] to-[#e9d7a7] p-6 text-white">
-        <h1 class="text-3xl font-bold mb-4">Memorial Information Form</h1>
-        
-        <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-2">
-          <div class="flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <div>
-            <h2 class="text-2xl font-semibold">Free Custom Shareable Link</h2>
-            <p class="text-lg opacity-90">Easily share with family and friends</p>
-          </div>
+        <div class="text-center mb-6">
+          <h1 class="text-3xl font-bold mb-2">Memorial Information Form</h1>
+          <p class="text-lg opacity-90">You will receive two things after this form has been filled out:</p>
         </div>
         
-        <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div class="flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <!-- Left Column: Free Custom -->
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-2xl font-semibold">Free Custom Shareable Link</h2>
+              <p class="text-lg opacity-90">Easily share with family and friends</p>
+            </div>
           </div>
-          <div>
-            <h2 class="text-2xl font-semibold">Detailed Information Email</h2>
-            <p class="text-lg opacity-90">Complete guide and resources sent to your inbox</p>
+          
+          <!-- Right Column: Detailed Info Email -->
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-2xl font-semibold">Detailed Information Email</h2>
+              <p class="text-lg opacity-90">Complete guide and resources sent to your inbox</p>
+            </div>
           </div>
         </div>
       </div>
@@ -280,7 +287,7 @@
           <div class="space-y-6">
             <!-- Director's Information -->
             <div class="border-b border-gray-200 pb-6">
-              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Director Information</h2>
+              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Director's Full Name</h2>
               
               <div class="space-y-4">
                 <div>
@@ -306,7 +313,7 @@
 
             <!-- Family Member Information -->
             <div class="border-b border-gray-200 pb-6">
-              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Family Member Information</h2>
+              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Family Member's Full Name</h2>
               
               <div class="space-y-4">
                 <div>
@@ -379,7 +386,7 @@
           <div class="space-y-6">
             <!-- Loved One Information -->
             <div class="border-b border-gray-200 pb-6">
-              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Loved One Information</h2>
+              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Loved One's Full Name</h2>
               
               <div class="space-y-4">
                 <div>
@@ -516,13 +523,13 @@
           </div>
         </div>
 
-        <!-- Hidden fields to map to server-side field names -->
+        <!-- Hidden fields to map to server-side field names - keeping these for backward compatibility -->
         <input type="hidden" name="director-first-name" value={formData["director-name"].split(" ")[0] || ""} />
         <input type="hidden" name="director-last-name" value={formData["director-name"].split(" ").slice(1).join(" ") || ""} />
         <input type="hidden" name="family-member-first-name" value={formData["family-member-name"].split(" ")[0] || ""} />
         <input type="hidden" name="family-member-last-name" value={formData["family-member-name"].split(" ").slice(1).join(" ") || ""} />
-        <input type="hidden" name="loved-one-first-name" value={formData["loved-one-name"].split(" ")[0] || ""} />
-        <input type="hidden" name="loved-one-last-name" value={formData["loved-one-name"].split(" ").slice(1).join(" ") || ""} />
+        <input type="hidden" name="deceased-first-name" value={formData["loved-one-name"].split(" ")[0] || ""} />
+        <input type="hidden" name="deceased-last-name" value={formData["loved-one-name"].split(" ").slice(1).join(" ") || ""} />
 
         <!-- Submit Button Area -->
         <div class="mt-8 flex justify-center">

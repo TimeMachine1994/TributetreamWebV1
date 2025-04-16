@@ -18,6 +18,12 @@ interface CustomerEmailData {
  * Interface for form data (all fields from the memorial form)
  */
 interface FormData {
+  // New full name fields
+  "director-name"?: string;
+  "family-member-name"?: string;
+  "loved-one-name"?: string;
+  
+  // Old field names for backwards compatibility
   directorFirstName?: string;
   directorLastName?: string;
   familyMemberFirstName?: string;

@@ -42,14 +42,20 @@ export const creatorSchema = z.object({
 
 // Funeral Director form schema
 export const fdFormSchema = z.object({
-  "director-first-name": z.string().min(1, "First name is required"),
-  "director-last-name": z.string().min(1, "Last name is required"),
-  "family-member-first-name": z.string().min(1, "First name is required"),
-  "family-member-last-name": z.string().min(1, "Last name is required"),
-  "family-member-dob": z.string().min(1, "Date of birth is required"),
-  "deceased-first-name": z.string().min(1, "First name is required"),
-  "deceased-last-name": z.string().min(1, "Last name is required"),
-  "deceased-dob": z.string().min(1, "Date of birth is required"),
+  // New full name fields that replaced first/last name fields
+  "director-name": z.string().min(1, "Director's name is required"),
+  "family-member-name": z.string().optional(),
+  "loved-one-name": z.string().min(1, "Loved one's name is required"),
+  
+  // Support for legacy field names in forms
+  "director-first-name": z.string().optional(),
+  "director-last-name": z.string().optional(),
+  "family-member-first-name": z.string().optional(),
+  "family-member-last-name": z.string().optional(),
+  "family-member-dob": z.string().optional(),
+  "deceased-first-name": z.string().optional(),
+  "deceased-last-name": z.string().optional(),
+  "deceased-dob": z.string().optional(),
   "deceased-dop": z.string().min(1, "Date of passing is required"),
   "email-address": z.string().email("Invalid email format"),
   "phone-number": z.string().min(1, "Phone number is required"),

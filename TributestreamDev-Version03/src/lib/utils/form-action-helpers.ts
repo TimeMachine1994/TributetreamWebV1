@@ -55,6 +55,14 @@ export function processFormActionResult(
 
   // Update different sections of the master store based on the data
   if (form.data.directorInfo) {
+    // Handle potential new field naming format
+    if (form.data.directorInfo["director-name"] && !form.data.directorInfo.directorFirstName) {
+      // Split the full name into first and last name for compatibility with existing code
+      const nameParts = form.data.directorInfo["director-name"].split(' ');
+      form.data.directorInfo.directorFirstName = nameParts[0] || '';
+      form.data.directorInfo.directorLastName = nameParts.slice(1).join(' ') || '';
+    }
+    
     masterStore.updateDirectorInfo(form.data.directorInfo);
   }
 
