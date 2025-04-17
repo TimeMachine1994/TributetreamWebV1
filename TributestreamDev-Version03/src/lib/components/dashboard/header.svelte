@@ -5,7 +5,7 @@
   // Handle logout
   function handleLogout() {
     authStore.logout();
-    goto('/login');
+    goto('/my-portal');
   }
 </script>
 
@@ -18,11 +18,11 @@
     <div class="user-menu">
       {#if $authStore.isAuthenticated && $authStore.user}
         <div class="user-info">
-          <span class="user-name">{$authStore.user.display_name}</span>
+          <span class="user-name">{$authStore.user.display_name || $authStore.user.name || 'User'}</span>
           <div class="dropdown">
             <button class="dropdown-toggle">
               <span class="avatar">
-                {$authStore.user.display_name.charAt(0).toUpperCase()}
+                {($authStore.user.display_name || $authStore.user.name || 'U').charAt(0).toUpperCase()}
               </span>
               <span class="caret">▼</span>
             </button>
@@ -33,7 +33,7 @@
           </div>
         </div>
       {:else}
-        <a href="/login" class="login-button">Login</a>
+        <a href="/my-portal" class="login-button">Login</a>
       {/if}
     </div>
   </div>

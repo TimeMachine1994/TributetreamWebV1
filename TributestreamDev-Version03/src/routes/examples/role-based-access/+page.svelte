@@ -34,7 +34,7 @@
         </div>
     {:else}
         <div class="bg-yellow-50 p-4 rounded-md mb-6">
-            <p>You are not logged in. Please <a href="/login" class="text-blue-600 underline">log in</a> to see the role-based content.</p>
+            <p>You are not logged in. Please <a href="/my-portal" class="text-blue-600 underline">log in</a> to see the role-based content.</p>
         </div>
     {/if}
     

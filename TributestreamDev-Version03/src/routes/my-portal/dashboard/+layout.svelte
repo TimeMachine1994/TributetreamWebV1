@@ -19,9 +19,9 @@
       if (!$authStore.isAuthenticated) {
         const isAuthenticated = await authStore.checkAuth();
         
-        // If still not authenticated, redirect to login
+        // If still not authenticated, redirect to my-portal (our login page)
         if (!isAuthenticated) {
-          goto('/login?redirect=/dashboard');
+          goto('/my-portal?redirect=/my-portal/dashboard');
         }
       }
     }

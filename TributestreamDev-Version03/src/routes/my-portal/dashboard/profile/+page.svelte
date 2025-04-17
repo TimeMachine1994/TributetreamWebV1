@@ -43,7 +43,7 @@
   // Handle logout
   function handleLogout() {
     authStore.logout();
-    window.location.href = '/login';
+    window.location.href = '/my-portal';
   }
 </script>
 

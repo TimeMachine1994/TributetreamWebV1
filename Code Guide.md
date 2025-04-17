@@ -262,3 +262,14 @@ When we login we call /api/auth. When we submit the form actin, it's over before
 *new things*
 There are two thigns top of mind right now. When a user submits a form on the home page, we want to 1)send one of two emails to the familyh, regardless of success, such as with our fd-form. we also want to 2)iterate a repeated name. eventually wew wawnt to craete alink for someone with a duplicate emial. i tink we dcan do that easyu....
 
+
+# 4.17.2025 Authentcation flow and V2 API
+The Authentication Flow
+Based on this file, here's the likely authentication flow:
+
+User logs in → JWT token is obtained from WordPress
+Token is stored in cookies via setAuthCookie function
+On subsequent requests, token is retrieved via getTokenFromCookie
+Token is validated using validateToken function
+If valid, user is considered authenticated and can access protected resources
+To get a complete picture of how this function is used in your application, I'd need to see where it's called. Would you like me to search for references to this function in your codebase?

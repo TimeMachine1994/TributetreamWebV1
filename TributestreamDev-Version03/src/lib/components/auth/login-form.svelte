@@ -1,6 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms';
   import { message } from 'sveltekit-superforms/client';
+  import { applyAction } from '$app/forms';
   import type { SuperValidated } from 'sveltekit-superforms';
 
   // Props
@@ -19,11 +20,25 @@
     onResult: ({ result }) => {
       console.log('🔍 [Login Form] Form submission result:', result.type);
       isSubmitting = false;
-      if (result.type === 'success') {
+      
+      // Handle different result types
+      if (result.type === 'redirect') {
+        console.log('🚀 [Login Form] Redirect detected, navigating to:', result.location);
+        // Apply the redirect action
+        applyAction(result);
+      } else if (result.type === 'success') {
         console.log('✅ [Login Form] Authentication successful');
-        // Authentication successful - handled by the server
-      } else {
+        // For non-redirect success, we can still apply the action
+        // This will update form data and handle any other default behaviors
+        applyAction(result);
+      } else if (result.type === 'failure') {
         console.log('❌ [Login Form] Authentication failed:', result);
+        // Apply the failure action to update form state
+        applyAction(result);
+      } else if (result.type === 'error') {
+        console.log('❌ [Login Form] Error occurred:', result.error);
+        // Apply the error action to show error boundary
+        applyAction(result);
       }
     }
   });
