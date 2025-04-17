@@ -5,7 +5,7 @@
 /**
  * Base response interface for all API responses
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: ApiError;
@@ -20,7 +20,7 @@ export interface ApiResponse<T = any> {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   status: number;
 }
 
@@ -51,4 +51,8 @@ export interface ListQueryParams {
   search?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
+  status?: string;
+  author_id?: number;
+  funeral_director_id?: number;
+  [key: string]: unknown;
 }

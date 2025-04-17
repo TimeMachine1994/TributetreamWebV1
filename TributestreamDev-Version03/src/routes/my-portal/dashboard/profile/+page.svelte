@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '$lib/services/auth-service';
-  import { tributeService } from '$lib/services/wp-backbone-service';
-  import type { Tribute } from '$lib/types/wp-models';
+  import { tributeService } from '$lib/services/tribute-service';
+  import type { Tribute } from '$lib/types/tribute';
   
   // State
   let userTributes: Tribute[] = [];
@@ -29,7 +29,7 @@
       
       // Filter tributes by user ID
       userTributes = (allTributes as Tribute[]).filter(
-        tribute => tribute.user_id === $authStore.user?.id
+        tribute => tribute.user_id === Number($authStore.user?.id)
       );
       
       loading = false;
@@ -72,7 +72,7 @@
         
         <div class="info-row">
           <div class="info-label">Username</div>
-          <div class="info-value">{$authStore.user.nicename}</div>
+          <div class="info-value">{$authStore.user.email}</div>
         </div>
         
         <div class="info-row">
@@ -117,7 +117,7 @@
             {#each userTributes as tribute (tribute.id)}
               <div class="tribute-item">
                 <h3>{tribute.loved_one_name}</h3>
-                <p class="date">Created: {new Date(tribute.date || '').toLocaleDateString()}</p>
+                <p class="date">Created: {new Date(tribute.created_at || '').toLocaleDateString()}</p>
                 <div class="status-badge status-{tribute.status || 'draft'}">{tribute.status || 'Draft'}</div>
                 <div class="tribute-actions">
                   <a href="/dashboard/tributes/{tribute.id}" class="view-button">View</a>

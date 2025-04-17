@@ -15,6 +15,7 @@ export interface Tribute {
   custom_html?: string;
   phone_number: string;
   number_of_streams: number;
+  status?: string;
 }
 
 /**

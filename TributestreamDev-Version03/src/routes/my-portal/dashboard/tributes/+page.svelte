@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { tributeService } from '$lib/services/wp-backbone-service';
-  import type { Tribute } from '$lib/types/wp-models';
+  import { tributeService } from '$lib/services/tribute-service';
+  import type { Tribute } from '$lib/types/tribute';
   
   // State
   let tributes: Tribute[] = [];
@@ -11,7 +11,7 @@
   
   // Filtering and sorting state
   let searchQuery = '';
-  let sortField: 'loved_one_name' | 'date' | 'status' = 'date';
+  let sortField: 'loved_one_name' | 'created_at' | 'status' = 'created_at';
   let sortDirection: 'asc' | 'desc' = 'desc';
   
   // Pagination state
@@ -26,14 +26,15 @@
       
       // Fetch all tributes
       const result = await tributeService.getTributes();
-      tributes = result.tributes as Tribute[];
       
-      // Update pagination from API response
-      if (result.total_pages) {
-        totalPages = result.total_pages;
-      }
-      if (result.current_page) {
-        currentPage = result.current_page;
+      // Handle both array and collection formats
+      if (Array.isArray(result)) {
+        tributes = result;
+        totalPages = Math.ceil(result.length / itemsPerPage);
+      } else {
+        tributes = result.tributes;
+        totalPages = result.total_pages || Math.ceil(result.tributes.length / itemsPerPage);
+        currentPage = result.current_page || 1;
       }
       
       // Apply initial filtering and sorting
@@ -65,9 +66,9 @@
       
       if (sortField === 'loved_one_name') {
         comparison = a.loved_one_name.localeCompare(b.loved_one_name);
-      } else if (sortField === 'date') {
-        const dateA = a.date ? new Date(a.date).getTime() : 0;
-        const dateB = b.date ? new Date(b.date).getTime() : 0;
+      } else if (sortField === 'created_at') {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
         comparison = dateA - dateB;
       } else if (sortField === 'status') {
         comparison = (a.status || '').localeCompare(b.status || '');
@@ -90,7 +91,7 @@
   }
   
   // Handle sort
-  function handleSort(field: 'loved_one_name' | 'date' | 'status') {
+  function handleSort(field: 'loved_one_name' | 'created_at' | 'status') {
     if (sortField === field) {
       sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -180,9 +181,9 @@
                 <span class="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
               {/if}
             </th>
-            <th on:click={() => handleSort('date')}>
+            <th on:click={() => handleSort('created_at')}>
               Created
-              {#if sortField === 'date'}
+              {#if sortField === 'created_at'}
                 <span class="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
               {/if}
             </th>
@@ -199,7 +200,7 @@
           {#each paginatedTributes as tribute ((tribute as any).tribute_id || tribute.id)}
             <tr>
               <td>{tribute.loved_one_name}</td>
-              <td>{new Date((tribute as any).created_at || tribute.date || '').toLocaleDateString()}</td>
+              <td>{new Date(tribute.created_at || '').toLocaleDateString()}</td>
               <td>
                 <span class="status-badge status-{tribute.status || 'draft'}">{tribute.status || 'Draft'}</span>
               </td>

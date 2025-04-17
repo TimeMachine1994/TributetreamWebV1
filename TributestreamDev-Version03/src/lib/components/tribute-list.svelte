@@ -1,26 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { initializeBackbone, tributeService } from '$lib/services/wp-backbone-service';
+  import { initializeTributeService, tributeService } from '$lib/services/tribute-service';
   import { authStore } from '$lib/services/auth-service';
-  import type { Tribute } from '$lib/types/wp-models';
-  // Also import the TributeCollection type from tribute.ts for debugging
-  import type { TributeCollection } from '$lib/types/tribute';
+  import type { Tribute, TributeCollection } from '$lib/types/tribute';
 
   // State
   let tributes: Tribute[] = [];
   let loading = true;
   let error: string | null = null;
-  let backboneInitialized = false;
+  let serviceInitialized = false;
 
-  // Initialize Backbone.js when the component mounts
+  // Initialize the tribute service when the component mounts
   onMount(async () => {
     try {
-      // Initialize Backbone.js only in browser
-      if (!backboneInitialized && browser) {
-        console.log('Initializing Backbone in tribute-list component');
-        initializeBackbone();
-        backboneInitialized = true;
+      // Initialize service only in browser
+      if (!serviceInitialized && browser) {
+        console.log('Initializing tribute service in tribute-list component');
+        initializeTributeService();
+        serviceInitialized = true;
       }
       
       // Check if the user is authenticated
@@ -40,28 +38,15 @@
       // Check if result has a tributes property (TributeCollection format)
       if (result && 'tributes' in result) {
         console.log('Found tributes array in response:', result.tributes);
-        
-        // Map the API response to match our expected Tribute interface
-        tributes = result.tributes.map((tribute: any) => ({
-          id: tribute.tribute_id ? parseInt(tribute.tribute_id) : 0,
-          user_id: tribute.user_id ? parseInt(tribute.user_id) : 0,
-          loved_one_name: tribute.loved_one_name || '',
-          phone_number: tribute.phone_number || '',
-          status: tribute.status || 'draft',
-          custom_html: tribute.custom_html || '',
-          number_of_streams: tribute.number_of_streams || 0,
-          // Store original data for debugging
-          _original: tribute
-        }));
+        tributes = result.tributes;
       } else {
         console.log('Using result directly as tributes array');
         tributes = result as Tribute[];
       }
       
-      // Log the mapped tributes
+      // Log the tributes
       if (tributes.length > 0) {
-        console.log('First mapped tribute:', tributes[0]);
-        console.log('Original data:', (tributes[0] as any)._original);
+        console.log('First tribute:', tributes[0]);
       }
       
       loading = false;
@@ -101,12 +86,12 @@
       {#each tributes as tribute (tribute.id)}
         <li>
           <h3>{tribute.loved_one_name}</h3>
-          <p>Created: {(tribute as any)._original?.created_at ?
-                       new Date((tribute as any)._original.created_at).toLocaleDateString() :
+          <p>Created: {tribute.created_at ? 
+                       new Date(tribute.created_at).toLocaleDateString() : 
                        'Date not available'}</p>
           
           <div class="actions">
-            <a href="/celebration-of-life-for-{(tribute as any)._original?.slug || ''}" class="btn-view">View</a>
+            <a href="/celebration-of-life-for-{tribute.slug || ''}" class="btn-view">View</a>
             {#if $authStore.isAuthenticated}
               <a href="/dashboard/tributes/{tribute.id}/edit" class="btn-edit">Edit</a>
               <button

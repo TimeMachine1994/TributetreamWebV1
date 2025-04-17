@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { authStore } from '$lib/services/auth-service';
-  import { initializeBackbone } from '$lib/services/wp-backbone-service';
+  import { initializeTributeService } from '$lib/services/tribute-service';
   import Header from '$lib/components/dashboard/header.svelte';
   import Sidebar from '$lib/components/dashboard/sidebar.svelte';
   import Footer from '$lib/components/dashboard/footer.svelte';
@@ -12,8 +12,8 @@
   onMount(async () => {
     // Skip initialization during SSR
     if (browser) {
-      // Initialize Backbone.js
-      initializeBackbone();
+      // Initialize tribute service
+      initializeTributeService();
       
       // Check if user is authenticated
       if (!$authStore.isAuthenticated) {

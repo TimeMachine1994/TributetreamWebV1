@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import { tributeService } from '$lib/services/wp-backbone-service';
+  import { tributeService } from '$lib/services/tribute-service';
   import { authStore } from '$lib/services/auth-service';
-  import { initializeBackbone } from '$lib/services/wp-backbone-service';
-  import type { Tribute } from '$lib/types/wp-models';
+  import type { Tribute } from '$lib/types/tribute';
   
   // State
   let tributes: Tribute[] = [];
@@ -12,18 +11,14 @@
   let totalTributes = 0;
   let loading = true;
   let error: string | null = null;
-  let backboneInitialized = false;
+  let serviceInitialized = false;
   
   // Fetch data
   onMount(async () => {
     try {
       loading = true;
       
-      // Initialize Backbone if not already done
-      if (!backboneInitialized) {
-        initializeBackbone();
-        backboneInitialized = true;
-      }
+      // Service is initialized in the layout
       
       // Fetch all tributes
       const result = await tributeService.getTributes();
@@ -33,8 +28,8 @@
       // Get recent tributes (last 5)
       recentTributes = [...tributes]
         .sort((a, b) => {
-          const dateA = a.date ? new Date(a.date).getTime() : 0;
-          const dateB = b.date ? new Date(b.date).getTime() : 0;
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
           return dateB - dateA;
         })
         .slice(0, 5);
@@ -89,7 +84,7 @@
           {#each recentTributes as tribute (tribute.id)}
             <div class="tribute-card">
               <h3>{tribute.loved_one_name}</h3>
-              <p class="date">Created: {new Date(tribute.date || '').toLocaleDateString()}</p>
+              <p class="date">Created: {new Date(tribute.created_at || '').toLocaleDateString()}</p>
               <div class="actions">
                 <a href="/dashboard/tributes/{tribute.id}" class="view-button">View</a>
                 <a href="/dashboard/tributes/{tribute.id}/edit" class="edit-button">Edit</a>
