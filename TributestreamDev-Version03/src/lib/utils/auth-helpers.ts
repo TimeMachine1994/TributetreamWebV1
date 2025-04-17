@@ -14,6 +14,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  display_name?: string;
+  roles?: string[];
+  capabilities?: Record<string, boolean>;
 }
 
 /**
@@ -43,6 +46,12 @@ export function generateSecurePassword(length = 12): string {
  * @param authResponse The response from the auth API
  */
 export function setAuthCookies(cookies: any, authResponse: any): void {
+  console.log('🔍 [Auth Helpers] Setting auth cookies with data:', JSON.stringify(authResponse).substring(0, 500));
+  
+  // Check if we're getting data directly or from the user property
+  const userData = authResponse.user || authResponse;
+  console.log('🔍 [Auth Helpers] User data structure:', Object.keys(userData));
+  
   // Set JWT token cookie (httpOnly for security)
   cookies.set('jwt_token', authResponse.token, {
     path: '/',
@@ -52,12 +61,20 @@ export function setAuthCookies(cookies: any, authResponse: any): void {
     maxAge: 60 * 60 * 24 * 7 // 1 week
   });
   
+  // Create user object for cookie
+  const userObject = {
+    id: userData.user_id || userData.id,
+    name: userData.user_display_name || userData.name,
+    email: userData.user_email || userData.email,
+    display_name: userData.user_display_name || userData.display_name,
+    roles: userData.roles || [],
+    capabilities: userData.capabilities || {}
+  };
+  
+  console.log('🔍 [Auth Helpers] Setting user cookie with:', JSON.stringify(userObject));
+  
   // Set user info cookie (not httpOnly so client JS can access)
-  cookies.set('user', JSON.stringify({
-    id: authResponse.user_id,
-    name: authResponse.user_display_name,
-    email: authResponse.user_email
-  }), {
+  cookies.set('user', JSON.stringify(userObject), {
     path: '/',
     httpOnly: false,
     sameSite: 'strict',

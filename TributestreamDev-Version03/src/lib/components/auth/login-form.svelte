@@ -13,12 +13,17 @@
     resetForm: false,
     taintedMessage: false,
     onSubmit: () => {
+      console.log('🔍 [Login Form] Form submission started');
       isSubmitting = true;
     },
     onResult: ({ result }) => {
+      console.log('🔍 [Login Form] Form submission result:', result.type);
       isSubmitting = false;
       if (result.type === 'success') {
+        console.log('✅ [Login Form] Authentication successful');
         // Authentication successful - handled by the server
+      } else {
+        console.log('❌ [Login Form] Authentication failed:', result);
       }
     }
   });
@@ -75,7 +80,7 @@
           <button 
             type="button" 
             class="absolute inset-y-0 right-0 pr-3 flex items-center text-surface-600 hover:text-surface-950"
-            on:click={togglePasswordVisibility}
+            on:click={() => togglePasswordVisibility()}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {#if showPassword}

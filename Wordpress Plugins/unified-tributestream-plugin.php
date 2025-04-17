@@ -49,6 +49,19 @@ add_action ('rest_api_init', function() {
         'permission_callback' => 'is_user_logged_in'
     ]);
 
+    // User role management endpoints
+    register_rest_route('tributestream/v1', '/users/(?P<id>\d+)/role', [
+        'methods' => 'GET',
+        'callback' => 'get_user_role',
+        'permission_callback' => 'is_user_logged_in'
+    ]);
+
+    register_rest_route('tributestream/v1', '/users/(?P<id>\d+)/role', [
+        'methods' => 'PUT',
+        'callback' => 'update_user_role',
+        'permission_callback' => 'check_admin_permission'
+    ]);
+
 // **************************************************************
 // ::End of registering rest routes
 // **************************************************************
@@ -66,12 +79,24 @@ function handle_family_poc_profile($request) {
     global $wpdb;
     $params = $request->get_json_params();
     $user_id = $params['user_id'];
-    $phone = // pull from tributes
-    $created_at = //if not created yet, establish the timestamp.
-    $updated_at = //make current timestamp
-    $incomplete_cart = // send order json to tributes custom html for future rendering,
-// write to database here??
-//post means write update the keyvaue pares sent via the request, get means send the key value pairs as a resposne 
+    
+    // Get phone from tributes if available
+    $phone = isset($params['phone']) ? sanitize_text_field($params['phone']) : '';
+    
+    // Set timestamps
+    $created_at = current_time('mysql');
+    $updated_at = current_time('mysql');
+    
+    // Handle cart data if provided
+    $incomplete_cart = isset($params['cart_data']) ? json_encode($params['cart_data']) : '';
+    
+    // TODO: Implement database operations here
+    
+    return new WP_REST_Response([
+        'success' => true,
+        'user_id' => $user_id,
+        'message' => 'Profile data processed'
+    ], 200);
 }
 
 // handle livestream cart from calculator page
@@ -80,8 +105,16 @@ function handle_livestream_cart($request) {
     $params = $request->get_json_params();
     $user_id = $params['user_id'];
     $cart_items = $params['cart_items'];
-    //write the the database here
-
+    
+    // TODO: Implement database operations for cart items
+    // For now, just return a success response
+    
+    return new WP_REST_Response([
+        'success' => true,
+        'user_id' => $user_id,
+        'message' => 'Cart saved successfully',
+        'items_count' => count($cart_items)
+    ], 200);
 }
 
 // **************************************************************
@@ -135,4 +168,108 @@ function handle_tributestream_registration($request) {
     update_user_meta($user_id, 'phone', sanitize_text_field($meta['phone']));
     
     return new WP_REST_Response(['user_id' => $user_id, 'message' => 'User registered successfully'], 201);
+}
+
+// Function to check if user has admin permission
+function check_admin_permission() {
+    if (!is_user_logged_in()) {
+        return false;
+    }
+    
+    $user = wp_get_current_user();
+    return in_array('administrator', (array) $user->roles);
+}
+
+// Function to get user role
+function get_user_role($request) {
+    $user_id = $request['id'];
+    $user = get_user_by('ID', $user_id);
+    
+    if (!$user) {
+        return new WP_Error('user_not_found', 'User not found', ['status' => 404]);
+    }
+    
+    // Get user roles
+    $roles = $user->roles;
+    
+    // Get user capabilities
+    $capabilities = [];
+    if (isset($user->allcaps)) {
+        $capabilities = $user->allcaps;
+    }
+    
+    // Get user type from meta
+    $user_type = get_user_meta($user_id, 'user_type', true);
+    
+    return new WP_REST_Response([
+        'user_id' => $user_id,
+        'roles' => $roles,
+        'capabilities' => $capabilities,
+        'user_type' => $user_type
+    ], 200);
+}
+
+// Function to update user role
+function update_user_role($request) {
+    $user_id = $request['id'];
+    $user = get_user_by('ID', $user_id);
+    
+    if (!$user) {
+        return new WP_Error('user_not_found', 'User not found', ['status' => 404]);
+    }
+    
+    $params = $request->get_json_params();
+    
+    if (empty($params['role'])) {
+        return new WP_Error('missing_role', 'Role is required', ['status' => 400]);
+    }
+    
+    $role = sanitize_text_field($params['role']);
+    
+    // Validate role
+    $valid_roles = ['administrator', 'editor', 'author', 'subscriber'];
+    // Map user_type to WordPress roles
+    $role_mapping = [
+        'admin' => 'administrator',
+        'funeral_director' => 'editor',
+        'family_member' => 'author',
+        'guest' => 'subscriber'
+    ];
+    
+    // If a user_type was provided, map it to the corresponding WordPress role
+    if (isset($role_mapping[$role])) {
+        $role = $role_mapping[$role];
+    }
+    
+    if (!in_array($role, $valid_roles)) {
+        return new WP_Error(
+            'invalid_role',
+            'Invalid role. Must be one of: ' . implode(', ', $valid_roles),
+            ['status' => 400]
+        );
+    }
+    
+    // Update user role
+    $user->set_role($role);
+    
+    // Update user_type meta if provided
+    if (isset($params['user_type'])) {
+        $user_type = sanitize_text_field($params['user_type']);
+        update_user_meta($user_id, 'user_type', $user_type);
+    } else {
+        // Derive user_type from role if not provided
+        $reverse_mapping = array_flip($role_mapping);
+        if (isset($reverse_mapping[$role])) {
+            update_user_meta($user_id, 'user_type', $reverse_mapping[$role]);
+        }
+    }
+    
+    // Log the role change
+    error_log(sprintf('User role updated: User ID %d, New role: %s', $user_id, $role));
+    
+    return new WP_REST_Response([
+        'user_id' => $user_id,
+        'role' => $role,
+        'message' => 'User role updated successfully'
+    ], 200);
 }

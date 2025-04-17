@@ -89,7 +89,7 @@
               <button
                 type="button"
                 class="btn preset-filled-primary-500"
-                on:click={toggleForgotPassword}
+                on:click={() => toggleForgotPassword()}
               >
                 Forgot your password?
               </button>

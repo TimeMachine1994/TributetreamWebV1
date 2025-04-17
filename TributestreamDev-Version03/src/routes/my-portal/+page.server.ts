@@ -50,6 +50,7 @@ export const actions = {
     }
     
     try {
+      console.log('🔄 [Page Server] Sending authentication request to API');
       // Send authentication request to API
       const response = await fetch('/api/auth', {
         method: 'POST',
@@ -62,27 +63,53 @@ export const actions = {
         })
       });
       
+      console.log('🛬 [Page Server] Received response from API:', response.status);
       const data = await response.json();
+      console.log('📝 [Page Server] Parsed response data:', JSON.stringify(data).substring(0, 200) + '...');
       
       // Handle authentication failure
       if (!response.ok) {
-        return message(loginForm, data.message || 'Authentication failed', {
-          status: 'error'
-        });
+        return message(loginForm, data.message || 'Authentication failed');
       }
       
+      console.log('🔑 [Page Server] Setting authentication cookies');
       // Set authentication cookies
       setAuthCookies(cookies, data);
+      console.log('✅ [Page Server] Authentication cookies set');
       
-      // Return success message
-      return message(loginForm, 'Login successful', {
-        status: 'success'
-      });
+      // Check if user is an administrator
+      const user = getUserFromCookies(cookies);
+      console.log('👤 [Page Server] User from cookies:', user ? JSON.stringify(user).substring(0, 200) + '...' : 'null');
+      console.log('🔑 [Page Server] User roles:', user?.roles);
+      console.log('🔑 [Page Server] User capabilities:', user?.capabilities);
+      console.log('🔑 [Page Server] Username:', user?.name);
+      
+      // Check for admin role, capabilities, or specific admin username
+      const isAdmin = user && (
+        (user.roles && user.roles.includes('administrator')) ||
+        (user.capabilities && user.capabilities.manage_options) ||
+        // Temporary solution: Allow specific usernames to access admin dashboard
+        (user.name === 'admints' || user.display_name === 'admints') // Check both name and display_name
+      );
+      console.log('🔍 [Page Server] Admin check result:', isAdmin);
+      
+      if (isAdmin) {
+        // Redirect administrators to the dashboard
+        console.log('🚀 [Page Server] Redirecting to dashboard');
+        // Don't wrap redirect in try/catch - it's not an error but a control flow mechanism
+        throw redirect(302, '/my-portal/dashboard');
+      }
+      
+      // Return success message for regular users
+      return message(loginForm, 'Login successful');
     } catch (error) {
+      // If this is a redirect response, just pass it through
+      if (error instanceof Response || (typeof error === 'object' && error !== null && 'status' in error)) {
+        throw error;
+      }
+      
       console.error('Login error:', error);
-      return message(loginForm, 'An unexpected error occurred', {
-        status: 'error'
-      });
+      return message(loginForm, 'An unexpected error occurred');
     }
   },
   

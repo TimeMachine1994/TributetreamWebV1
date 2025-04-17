@@ -58,7 +58,7 @@
         <button
           type="button"
           class="flex-1 py-3 px-6 bg-surface-200 text-surface-950 font-medium rounded-md hover:bg-surface-300 focus:outline-none focus:ring-2 focus:ring-surface-200 focus:ring-offset-2 transition-colors"
-          on:click={onCancel}
+          onclick={() => onCancel()}
           disabled={isSubmitting}
         >
           Back to Login
@@ -68,8 +68,8 @@
           type="submit"
           class="flex-1 py-3 px-6 text-surface-950 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors"
           style="background-color: #D5BA7F; --tw-ring-color: #D5BA7F;"
-          on:mouseover={(e) => e.currentTarget.style.backgroundColor = '#C5AA6F'}
-          on:mouseout={(e) => e.currentTarget.style.backgroundColor = '#D5BA7F'}
+          onmouseover={(e) => e.currentTarget.style.backgroundColor = '#C5AA6F'}
+          onmouseout={(e) => e.currentTarget.style.backgroundColor = '#D5BA7F'}
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Sending...' : 'Send Reset Link'}
