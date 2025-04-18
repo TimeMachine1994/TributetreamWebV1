@@ -1,0 +1,17 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tributes",
+  "info": {
+    "singularName": "tribute",
+    "pluralName": "tributes",
+    "displayName": "Tribute"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "TributeID": {
+      "type": "uid"
+    }
+  }
+}
