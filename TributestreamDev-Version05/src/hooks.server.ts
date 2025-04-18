@@ -1,6 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
 import { JWT_AUTH_URL } from '$lib/utils/env';
-import type { JWTValidationResponse } from '$lib/types/auth.types';
 
 /**
  * SvelteKit server hook for handling authentication
@@ -27,8 +26,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   // If there's a token, validate it
   if (token) {
     try {
-      // Make the validation request to the WordPress REST API
-      const response = await fetch(`${JWT_AUTH_URL}/token/validate`, {
+      // Make the validation request to the WordPress REST API using SvelteKit's event.fetch
+      const response = await event.fetch(`${JWT_AUTH_URL}/token/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

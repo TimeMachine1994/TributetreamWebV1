@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { JWT_AUTH_URL } from '$lib/utils/env';
-import { ApiError, AuthError } from '$lib/utils/error-handlers';
-import type { JWTAuthResponse, LoginCredentials, User } from '$lib/types/auth.types';
+import { AuthError } from '$lib/utils/error-handlers';
+import type { LoginCredentials, User } from '$lib/types/auth.types';
 import { BaseApiClient } from '../base-api.client';
 
 /**
@@ -39,6 +39,7 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<User> {
     try {
       // Make the login request to the SvelteKit server endpoint
+      // Using relative URL which will be handled by SvelteKit's fetch
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: {
@@ -100,6 +101,7 @@ export class AuthService {
   async validateToken(): Promise<boolean> {
     try {
       // Make the validation request to the SvelteKit server endpoint
+      // Using relative URL which will be handled by SvelteKit's fetch
       const response = await fetch('/api/auth/validate', {
         method: 'POST',
         credentials: 'include' // Include cookies for authentication
@@ -130,7 +132,7 @@ export class AuthService {
     
     try {
       return JSON.parse(userData) as User;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -157,6 +159,7 @@ export class AuthService {
   }): Promise<User> {
     try {
       // Make the registration request to the SvelteKit server endpoint
+      // Using relative URL which will be handled by SvelteKit's fetch
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -201,6 +204,7 @@ export class AuthService {
   async requestPasswordReset(email: string): Promise<string> {
     try {
       // Make the password reset request to the SvelteKit server endpoint
+      // Using relative URL which will be handled by SvelteKit's fetch
       const response = await fetch('/api/auth/password-reset', {
         method: 'POST',
         headers: {
@@ -243,6 +247,7 @@ export class AuthService {
   async resetPassword(key: string, login: string, password: string): Promise<string> {
     try {
       // Make the password reset confirmation request to the SvelteKit server endpoint
+      // Using relative URL which will be handled by SvelteKit's fetch
       const response = await fetch('/api/auth/password-reset/confirm', {
         method: 'POST',
         headers: {

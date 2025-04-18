@@ -1,2 +1,3 @@
-# Initial Plan
-The LLM looks at the package.json, then our home page. It recognizes that 
+## Figuring out login issue
+We are exporting the interface JWTAuthResponse which is a tokenr, user_email, usern_nicename_ and dispayname. 
+What is wordpress dishing out?

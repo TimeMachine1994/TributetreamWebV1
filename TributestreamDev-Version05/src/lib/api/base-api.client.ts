@@ -1,6 +1,5 @@
-import { browser } from '$app/environment';
 import { WP_API_URL, WP_API_NAMESPACE } from '$lib/utils/env';
-import { ApiError, AuthError, parseErrorResponse, handleFetchError } from '$lib/utils/error-handlers';
+import { AuthError, parseErrorResponse, handleFetchError } from '$lib/utils/error-handlers';
 
 /**
  * Request options interface extending the standard RequestInit
@@ -90,7 +89,7 @@ export class BaseApiClient {
    */
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     try {
-      const { params, withAuth = true, ...fetchOptions } = options;
+      const { params, ...fetchOptions } = options;
       
       // Get the full URL with query parameters
       const url = this.addQueryParams(this.getUrl(endpoint), params);
@@ -113,7 +112,8 @@ export class BaseApiClient {
         credentials: 'include', // Include cookies for authentication
       };
       
-      // Make the request
+      // Make the request using fetch
+      // SvelteKit will handle this appropriately in both client and server contexts
       const response = await fetch(url, requestOptions);
       
       // Handle error responses
@@ -169,7 +169,7 @@ export class BaseApiClient {
    */
   async post<T>(
     endpoint: string, 
-    data?: any, 
+    data?: unknown, 
     options: Omit<RequestOptions, 'body'> = {}
   ): Promise<T> {
     return this.request<T>(endpoint, {
@@ -188,7 +188,7 @@ export class BaseApiClient {
    */
   async put<T>(
     endpoint: string, 
-    data?: any, 
+    data?: unknown, 
     options: Omit<RequestOptions, 'body'> = {}
   ): Promise<T> {
     return this.request<T>(endpoint, {
@@ -207,7 +207,7 @@ export class BaseApiClient {
    */
   async patch<T>(
     endpoint: string, 
-    data?: any, 
+    data?: unknown, 
     options: Omit<RequestOptions, 'body'> = {}
   ): Promise<T> {
     return this.request<T>(endpoint, {
