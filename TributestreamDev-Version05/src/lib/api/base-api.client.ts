@@ -53,8 +53,12 @@ export class BaseApiClient {
     // If the endpoint starts with a slash, remove it
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     
-    // Construct the full URL
-    return `${this.baseUrl}/${this.namespace}/${cleanEndpoint}`;
+    // Construct the full URL, handling empty namespace
+    if (this.namespace) {
+      return `${this.baseUrl}/${this.namespace}/${cleanEndpoint}`;
+    } else {
+      return `${this.baseUrl}/${cleanEndpoint}`;
+    }
   }
   
   /**
@@ -90,6 +94,9 @@ export class BaseApiClient {
       
       // Get the full URL with query parameters
       const url = this.addQueryParams(this.getUrl(endpoint), params);
+      
+      // Debug log
+      console.log('API Request URL:', url);
       
       // Set up headers
       const headers = new Headers(fetchOptions.headers);
@@ -228,4 +235,6 @@ export class BaseApiClient {
 }
 
 // Create and export a singleton instance
-export const apiClient = new BaseApiClient();
+// Force using the correct WordPress URL
+console.log('Creating new BaseApiClient with URL:', 'https://wp.tributestream.com/wp-json');
+export const apiClient = new BaseApiClient('https://wp.tributestream.com/wp-json', WP_API_NAMESPACE);

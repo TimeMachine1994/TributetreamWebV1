@@ -65,10 +65,48 @@ export class PostsService {
       query.byStatus(options.status);
     }
     
+    // Make the request to the SvelteKit server endpoint
+    const url = new URL('/api/posts', window.location.origin);
+    
+    // Add query parameters
+    url.searchParams.set('page', page.toString());
+    url.searchParams.set('per_page', perPage.toString());
+    
+    // Add search if provided
+    if (options.search) {
+      url.searchParams.set('search', options.search);
+    }
+    
+    // Add categories if provided
+    if (options.categories && options.categories.length > 0) {
+      url.searchParams.set('categories', options.categories.join(','));
+    }
+    
+    // Add tags if provided
+    if (options.tags && options.tags.length > 0) {
+      url.searchParams.set('tags', options.tags.join(','));
+    }
+    
+    // Add author if provided
+    if (options.author) {
+      url.searchParams.set('author', options.author.toString());
+    }
+    
+    // Add order if provided
+    if (options.orderBy) {
+      url.searchParams.set('orderby', options.orderBy.toString());
+      if (options.order) {
+        url.searchParams.set('order', options.order);
+      }
+    }
+    
+    // Add status if provided
+    if (options.status) {
+      url.searchParams.set('status', options.status);
+    }
+    
     // Make the request
-    // We need to use a custom approach to get the headers
-    const url = apiClient.getFullUrl(this.endpoint, query.getParams());
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -81,18 +119,18 @@ export class PostsService {
     }
     
     // Parse the response
-    const data = await response.json() as WPPost[];
+    const responseData = await response.json();
     
-    // Get the total items and total pages from the headers
-    const totalItems = parseInt(response.headers.get('X-WP-Total') || '0', 10);
-    const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '0', 10);
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Failed to fetch posts');
+    }
     
     // Return the paginated response
     return {
-      data,
-      total_items: totalItems,
-      total_pages: totalPages,
-      current_page: page
+      data: responseData.data,
+      total_items: responseData.pagination.total_items,
+      total_pages: responseData.pagination.total_pages,
+      current_page: responseData.pagination.current_page
     };
   }
   
@@ -130,8 +168,28 @@ export class PostsService {
       featured_media: data.featured_media
     };
     
-    // Make the request
-    return apiClient.post<WPPost>(this.endpoint, postData);
+    // Make the request to the SvelteKit server endpoint
+    const response = await fetch('/api/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(postData),
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create post: ${response.statusText}`);
+    }
+    
+    // Parse the response
+    const responseData = await response.json();
+    
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Failed to create post');
+    }
+    
+    return responseData.data;
   }
   
   /**
@@ -152,8 +210,28 @@ export class PostsService {
       featured_media?: number;
     }
   ): Promise<WPPost> {
-    // Make the request
-    return apiClient.put<WPPost>(`${this.endpoint}/${id}`, data);
+    // Make the request to the SvelteKit server endpoint
+    const response = await fetch(`/api/posts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data),
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update post: ${response.statusText}`);
+    }
+    
+    // Parse the response
+    const responseData = await response.json();
+    
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Failed to update post');
+    }
+    
+    return responseData.data;
   }
   
   /**
@@ -163,10 +241,35 @@ export class PostsService {
    * @returns Promise resolving to the deleted post
    */
   async deletePost(id: number, force: boolean = false): Promise<WPSuccessResponse<WPPost>> {
+    // Make the request to the SvelteKit server endpoint
+    const url = new URL(`/api/posts/${id}`, window.location.origin);
+    
+    // Add force parameter if provided
+    if (force) {
+      url.searchParams.set('force', 'true');
+    }
+    
     // Make the request
-    return apiClient.delete<WPSuccessResponse<WPPost>>(`${this.endpoint}/${id}`, {
-      params: { force }
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete post: ${response.statusText}`);
+    }
+    
+    // Parse the response
+    const responseData = await response.json();
+    
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Failed to delete post');
+    }
+    
+    return responseData.data;
   }
 }
 

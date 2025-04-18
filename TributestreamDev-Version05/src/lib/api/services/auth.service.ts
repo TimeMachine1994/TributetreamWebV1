@@ -19,7 +19,16 @@ export class AuthService {
    * @param baseUrl Base URL for the WordPress REST API
    */
   constructor(baseUrl: string = JWT_AUTH_URL) {
-    this.apiClient = new BaseApiClient(baseUrl, '');
+    // Use SvelteKit server endpoint as a proxy instead of direct WordPress API
+    // This avoids CORS issues when making requests from the browser
+    const proxyUrl = '/api/auth';
+    
+    // Create API client with the proxy URL
+    this.apiClient = new BaseApiClient(proxyUrl, '');
+    
+    // Debug log
+    console.log('Auth Service initialized with proxy URL:', proxyUrl);
+    console.log('Original WordPress API URL:', baseUrl);
   }
   
   /**
@@ -29,29 +38,45 @@ export class AuthService {
    */
   async login(credentials: LoginCredentials): Promise<User> {
     try {
-      // Make the login request
-      const response = await this.apiClient.post<JWTAuthResponse>('token', credentials);
+      // Make the login request to the SvelteKit server endpoint
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials),
+        credentials: 'include' // Include cookies for authentication
+      });
+      
+      // Parse the response
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new AuthError(
+          data.message || 'Authentication failed',
+          response.status,
+          data
+        );
+      }
       
       // Extract user data from the response
-      const user: User = {
-        email: response.user_email,
-        nicename: response.user_nicename,
-        displayName: response.user_display_name
-      };
+      const user: User = data.user;
       
-      // Store the token and user data
+      // Store user data in localStorage for client-side access
       if (browser) {
-        // Store token in HttpOnly cookie (handled by the server)
-        // Store user data in localStorage for client-side access
         localStorage.setItem(this.userKey, JSON.stringify(user));
       }
       
       return user;
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw new AuthError(error.message, error.status, error.data);
+      console.error('Login error:', error);
+      if (error instanceof AuthError) {
+        throw error;
       }
-      throw error;
+      throw new AuthError(
+        error instanceof Error ? error.message : 'Authentication failed',
+        500
+      );
     }
   }
   
@@ -74,10 +99,16 @@ export class AuthService {
    */
   async validateToken(): Promise<boolean> {
     try {
-      // Make the validation request
-      await this.apiClient.post<any>('token/validate');
-      return true;
+      // Make the validation request to the SvelteKit server endpoint
+      const response = await fetch('/api/auth/validate', {
+        method: 'POST',
+        credentials: 'include' // Include cookies for authentication
+      });
+      
+      // Check if the response is successful
+      return response.ok;
     } catch (error) {
+      console.error('Token validation error:', error);
       return false;
     }
   }
@@ -125,10 +156,25 @@ export class AuthService {
     lastName?: string;
   }): Promise<User> {
     try {
-      // Make the registration request to the WordPress REST API
-      const response = await this.apiClient.post<any>('/wp/v2/users/register', userData, {
-        withAuth: false
+      // Make the registration request to the SvelteKit server endpoint
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData),
+        credentials: 'include' // Include cookies for authentication
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new AuthError(
+          data.message || 'Registration failed',
+          response.status,
+          data
+        );
+      }
       
       // Login with the new credentials
       return this.login({
@@ -136,10 +182,14 @@ export class AuthService {
         password: userData.password
       });
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw new AuthError(error.message, error.status, error.data);
+      console.error('Registration error:', error);
+      if (error instanceof AuthError) {
+        throw error;
       }
-      throw error;
+      throw new AuthError(
+        error instanceof Error ? error.message : 'Registration failed',
+        500
+      );
     }
   }
   
@@ -150,17 +200,36 @@ export class AuthService {
    */
   async requestPasswordReset(email: string): Promise<string> {
     try {
-      // Make the password reset request
-      const response = await this.apiClient.post<any>('/wp/v2/users/lostpassword', { email }, {
-        withAuth: false
+      // Make the password reset request to the SvelteKit server endpoint
+      const response = await fetch('/api/auth/password-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email }),
+        credentials: 'include' // Include cookies for authentication
       });
       
-      return response.message || 'Password reset email sent';
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw new AuthError(error.message, error.status, error.data);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new AuthError(
+          data.message || 'Password reset request failed',
+          response.status,
+          data
+        );
       }
-      throw error;
+      
+      return data.message || 'Password reset email sent';
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        error instanceof Error ? error.message : 'Password reset request failed',
+        500
+      );
     }
   }
   
@@ -173,24 +242,45 @@ export class AuthService {
    */
   async resetPassword(key: string, login: string, password: string): Promise<string> {
     try {
-      // Make the password reset request
-      const response = await this.apiClient.post<any>('/wp/v2/users/resetpassword', {
-        key,
-        login,
-        password
-      }, {
-        withAuth: false
+      // Make the password reset confirmation request to the SvelteKit server endpoint
+      const response = await fetch('/api/auth/password-reset/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          key,
+          login,
+          password
+        }),
+        credentials: 'include' // Include cookies for authentication
       });
       
-      return response.message || 'Password reset successful';
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw new AuthError(error.message, error.status, error.data);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new AuthError(
+          data.message || 'Password reset failed',
+          response.status,
+          data
+        );
       }
-      throw error;
+      
+      return data.message || 'Password reset successful';
+    } catch (error) {
+      console.error('Password reset error:', error);
+      if (error instanceof AuthError) {
+        throw error;
+      }
+      throw new AuthError(
+        error instanceof Error ? error.message : 'Password reset failed',
+        500
+      );
     }
   }
 }
 
 // Create and export a singleton instance
-export const authService = new AuthService();
+// Force using the updated environment variables by recreating the service
+console.log('Creating new AuthService with URL:', JWT_AUTH_URL);
+export const authService = new AuthService(JWT_AUTH_URL);
