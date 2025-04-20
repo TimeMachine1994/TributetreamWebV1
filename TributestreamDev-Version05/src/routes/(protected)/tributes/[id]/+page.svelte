@@ -1,220 +1,265 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-  import { authStore, user } from '$lib/stores/auth.store';
-  import { tributesStore, isLoading, error } from '$lib/stores/tributes.store';
-  import type { Tribute } from '$lib/types/wordpress.types';
+  import { tributeStore } from '$lib/stores/tribute.store';
   
   // Get the tribute ID from the URL
   const tributeId = parseInt($page.params.id);
   
-  // Tribute data
-  let tribute: Tribute | null = null;
+  // State for extended data
+  let showExtendedData = false;
+  let isEditing = false;
+  let editedHtml = '';
   
+  // Load tribute and extended data on mount
   onMount(async () => {
     try {
-      // Load the tribute
-      await tributesStore.loadTribute(tributeId);
+      await tributeStore.loadTributeById(tributeId);
       
-      // Find the tribute in the store
-      const tributes = $tributesStore.tributes;
-      tribute = tributes.find(t => t.tribute_id === tributeId) || null;
-    } catch (err) {
-      console.error('Error loading tribute:', err);
+      // Try to load extended data if tribute loaded successfully
+      if (tributeStore.currentTribute) {
+        try {
+          await tributeStore.loadTributeData(tributeId);
+        } catch (error) {
+          // Extended data might not exist yet, which is fine
+          console.log('No extended data found');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading tribute:', error);
     }
   });
   
-  // Handle edit
-  function handleEdit() {
-    goto(`/tributes/${tributeId}/edit`);
+  // Function to toggle editing mode
+  function toggleEdit() {
+    if (!isEditing && tributeStore.currentTribute) {
+      editedHtml = tributeStore.currentTribute.custom_html || '';
+    }
+    isEditing = !isEditing;
   }
   
-  // Handle delete
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this tribute?')) {
-      return;
-    }
+  // Function to save edited tribute
+  async function saveTribute() {
+    if (!tributeStore.currentTribute) return;
     
     try {
-      await tributesStore.deleteTribute(tributeId);
-      goto('/tributes');
-    } catch (err) {
-      console.error('Error deleting tribute:', err);
+      await tributeStore.updateTribute(tributeId, {
+        custom_html: editedHtml
+      });
+      
+      isEditing = false;
+    } catch (error) {
+      console.error('Error updating tribute:', error);
     }
   }
   
-  // Handle back
-  function handleBack() {
-    goto('/tributes');
+  // Function to delete tribute
+  async function deleteTribute() {
+    if (!confirm('Are you sure you want to delete this tribute?')) return;
+    
+    try {
+      await tributeStore.deleteTribute(tributeId);
+      window.location.href = '/tributes';
+    } catch (error) {
+      console.error('Error deleting tribute:', error);
+    }
+  }
+  
+  // Function to save extended data
+  async function saveExtendedData() {
+    if (!tributeStore.tributeExtendedData) {
+      // Create new extended data
+      const newData = {
+        tribute_reference: tributeId,
+        // Add default fields here
+        notes: '',
+        preferences: {},
+        metadata: {
+          last_updated: new Date().toISOString()
+        }
+      };
+      
+      await tributeStore.createOrReplaceTributeData(tributeId, newData);
+    } else {
+      // Update existing extended data
+      const updatedData = {
+        ...tributeStore.tributeExtendedData,
+        metadata: {
+          ...tributeStore.tributeExtendedData.metadata,
+          last_updated: new Date().toISOString()
+        }
+      };
+      
+      await tributeStore.updateTributeData(tributeId, updatedData);
+    }
   }
 </script>
 
-<svelte:head>
-  <title>{tribute?.loved_ones_name || 'Tribute'} | TributeStream</title>
-  <meta name="description" content="View tribute details" />
-</svelte:head>
-
-<div class="min-h-screen bg-gray-100">
-  <nav class="bg-white shadow-sm">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="flex h-16 justify-between">
-        <div class="flex">
-          <div class="flex flex-shrink-0 items-center">
-            <span class="text-xl font-bold text-blue-600">TributeStream</span>
-          </div>
-          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-            <a href="/dashboard" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              Dashboard
-            </a>
-            <a href="/tributes" class="inline-flex items-center border-b-2 border-blue-500 px-1 pt-1 text-sm font-medium text-gray-900">
-              Tributes
-            </a>
-            <a href="/events" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              Events
-            </a>
-            <a href="/streams" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              Streams
-            </a>
-          </div>
+<div class="container mx-auto p-4">
+  <!-- Back button -->
+  <div class="mb-4">
+    <a href="/tributes" class="text-primary hover:underline flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Tributes
+    </a>
+  </div>
+  
+  <!-- Loading state -->
+  {#if tributeStore.isLoading}
+    <div class="flex justify-center my-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>
+  {:else if tributeStore.error}
+    <!-- Error state -->
+    <div class="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
+      <p>{tributeStore.error}</p>
+    </div>
+  {:else if !tributeStore.currentTribute}
+    <!-- Not found state -->
+    <div class="text-center py-8">
+      <p class="text-muted-foreground">Tribute not found</p>
+    </div>
+  {:else}
+    <!-- Tribute details -->
+    <div class="bg-card text-card-foreground rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex justify-between items-start mb-4">
+        <h1 class="text-3xl font-bold">{tributeStore.currentTribute.loved_one_name}</h1>
+        
+        <div class="flex gap-2">
+          <button
+            on:click={toggleEdit}
+            class="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm"
+          >
+            {isEditing ? 'Cancel' : 'Edit'}
+          </button>
+          
+          <button
+            on:click={deleteTribute}
+            class="px-3 py-1 bg-destructive text-destructive-foreground rounded-md text-sm"
+          >
+            Delete
+          </button>
         </div>
-        <div class="hidden sm:ml-6 sm:flex sm:items-center">
-          <div class="relative ml-3">
-            <div class="flex items-center">
-              <span class="mr-4 text-sm font-medium text-gray-700">
-                Welcome, {$user?.displayName || 'User'}
-              </span>
-            </div>
-          </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <p class="text-sm text-muted-foreground">ID</p>
+          <p>{tributeStore.currentTribute.id}</p>
         </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">Slug</p>
+          <p>{tributeStore.currentTribute.slug}</p>
+        </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">Created At</p>
+          <p>{new Date(tributeStore.currentTribute.created_at).toLocaleString()}</p>
+        </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">Updated At</p>
+          <p>{new Date(tributeStore.currentTribute.updated_at).toLocaleString()}</p>
+        </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">User ID</p>
+          <p>{tributeStore.currentTribute.user_id}</p>
+        </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">Phone Number</p>
+          <p>{tributeStore.currentTribute.phone_number}</p>
+        </div>
+        
+        <div>
+          <p class="text-sm text-muted-foreground">Number of Streams</p>
+          <p>{tributeStore.currentTribute.number_of_streams}</p>
+        </div>
+      </div>
+      
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Custom HTML</h2>
+        
+        {#if isEditing}
+          <div class="mb-4">
+            <textarea
+              bind:value={editedHtml}
+              class="w-full h-64 p-2 border rounded-md font-mono text-sm"
+            ></textarea>
+          </div>
+          
+          <button
+            on:click={saveTribute}
+            class="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            Save Changes
+          </button>
+        {:else}
+          <div class="bg-muted p-4 rounded-md overflow-auto max-h-64">
+            {#if tributeStore.currentTribute.custom_html}
+              <div class="font-mono text-sm whitespace-pre-wrap">
+                {tributeStore.currentTribute.custom_html}
+              </div>
+            {:else}
+              <p class="text-muted-foreground italic">No custom HTML</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+      
+      <!-- Extended Data Section -->
+      <div>
+        <button
+          on:click={() => showExtendedData = !showExtendedData}
+          class="flex items-center gap-1 text-primary"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="transform: rotate({showExtendedData ? '90deg' : '0deg'}); transition: transform 0.2s;"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          Extended Data
+        </button>
+        
+        {#if showExtendedData}
+          <div class="mt-4 p-4 border rounded-md">
+            {#if tributeStore.tributeExtendedData}
+              <pre class="bg-muted p-4 rounded-md overflow-auto max-h-64 text-sm">
+                {JSON.stringify(tributeStore.tributeExtendedData, null, 2)}
+              </pre>
+              
+              <button
+                on:click={saveExtendedData}
+                class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              >
+                Update Extended Data
+              </button>
+            {:else}
+              <p class="text-muted-foreground italic mb-4">No extended data found</p>
+              
+              <button
+                on:click={saveExtendedData}
+                class="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              >
+                Create Extended Data
+              </button>
+            {/if}
+          </div>
+        {/if}
       </div>
     </div>
-  </nav>
-
-  <div class="py-10">
-    <header>
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="md:flex md:items-center md:justify-between">
-          <div class="min-w-0 flex-1">
-            <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-              {tribute?.loved_ones_name || 'Loading tribute...'}
-            </h1>
-          </div>
-          <div class="mt-4 flex md:ml-4 md:mt-0">
-            <button
-              type="button"
-              on:click={handleBack}
-              class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-            >
-              Back to Tributes
-            </button>
-            <button
-              type="button"
-              on:click={handleEdit}
-              class="ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              on:click={handleDelete}
-              class="ml-3 inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
-    <main>
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div class="px-4 py-8 sm:px-0">
-          <!-- Loading Indicator -->
-          {#if $isLoading}
-            <div class="flex justify-center py-8">
-              <svg class="h-8 w-8 animate-spin text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-          <!-- Error Message -->
-          {:else if $error}
-            <div class="rounded-md bg-red-50 p-4">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-red-800">{$error}</h3>
-                </div>
-              </div>
-            </div>
-          <!-- Tribute Details -->
-          {:else if tribute}
-            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
-              <div class="px-4 py-5 sm:px-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900">Tribute Details</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">Details about the tribute for {tribute.loved_ones_name}.</p>
-              </div>
-              <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
-                <dl class="sm:divide-y sm:divide-gray-200">
-                  <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Name</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{tribute.loved_ones_name}</dd>
-                  </div>
-                  <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">URL Slug</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{tribute.slugified_name}</dd>
-                  </div>
-                  <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                      {tribute.loved_ones_dob ? new Date(tribute.loved_ones_dob).toLocaleDateString() : 'Not specified'}
-                    </dd>
-                  </div>
-                  <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Date of Death</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                      {tribute.loved_ones_dod ? new Date(tribute.loved_ones_dod).toLocaleDateString() : 'Not specified'}
-                    </dd>
-                  </div>
-                  <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Page Content</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                      {#if tribute.page_html}
-                        <div class="prose max-w-none">
-                          {@html tribute.page_html}
-                        </div>
-                      {:else}
-                        <p class="italic text-gray-500">No content provided</p>
-                      {/if}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          <!-- No Tribute Found -->
-          {:else}
-            <div class="rounded-md bg-yellow-50 p-4">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-yellow-800">Tribute not found</h3>
-                  <div class="mt-2 text-sm text-yellow-700">
-                    <p>The tribute you're looking for could not be found. It may have been deleted or you may not have permission to view it.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/if}
-        </div>
-      </div>
-    </main>
-  </div>
+  {/if}
 </div>
