@@ -13,6 +13,12 @@ declare global {
 				blocked: boolean;
 				createdAt: string;
 				updatedAt: string;
+				role: {
+					id: number;
+					name: string;
+					description: string;
+					type: string;
+				};
 			};
 			token?: string;
 		}
@@ -20,6 +26,16 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+}
+
+// Vite environment variable type declaration
+interface ImportMetaEnv {
+	VITE_STRAPI_URL: string;
+	// Add other environment variables as needed
+}
+
+interface ImportMeta {
+	readonly env: ImportMetaEnv;
 }
 
 // User authentication types
