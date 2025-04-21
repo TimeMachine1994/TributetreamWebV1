@@ -1,0 +1,195 @@
+## TributeStream API (Strapi 5 + MySQL) — Practical Integration Guide for SvelteKit 5
+
+> **Scope:** Only the parts you actually need in the front‑end—no plugin overrides, no backend plumbing.
+
+---
+
+### 1. Architecture at a Glance
+
+| Layer | Piece | Purpose |
+|-------|-------|---------|
+| **Auth / RBAC** | Strapi core plug‑in **`users‑permissions`** | Local e‑mail + password login, JWT, role matrix |
+| **Data Models** | Collection Types | **User**, **Tribute**, **FuneralHome**, **Package** |
+| | Components | `user.contactInfo`, `memorial-event` |
+| **Database** | MySQL | Strapi auto‑creates tables from the schemas |
+| **Transport** | REST (JSON) | `/api/*` endpoints, bearer JWT |
+
+---
+
+### 2. Key Collection Types & Shapes
+
+```text
+User
+└─ contactInfo { fullName, phoneNumber }      (component, 1‑1)
+
+Tribute
+├─ slug            (UID ⇒ lovedOnesFullName)
+├─ lovedOnesFullName
+├─ lovedOnesDOB    (date)
+├─ dateOfPassing   (date)
+├─ priceTotal      (decimal)
+├─ paymentComplete (boolean)
+├─ package         (relation → Package 1‑1)
+├─ funeralHome     (relation → FuneralHome 1‑1)
+├─ owner           (relation → User 1‑1)
+└─ events[]        (repeatable component memorial-event)
+       ↳ { eventName, locationName, address, startDate, startTime, duration }
+```
+
+---
+
+### 3. Main Endpoints (Out‑of‑the‑box)
+
+| Method | Path | Function | Auth Role |
+|--------|------|----------|-----------|
+| `POST` | `/api/auth/local/register` | Signup (`username`, `email`, `password`) | Public |
+| `POST` | `/api/auth/local` | Login → returns `{ jwt, user }` | Public |
+| `GET`  | `/api/users/me?populate=contactInfo` | Current user | Auth'd |
+| `PUT`  | `/api/users/:id` | Add `contactInfo` after signup | Auth'd (self) |
+| `POST` | `/api/tributes` | Create tribute | Auth'd |
+| `GET`  | `/api/tributes?populate=deep` | List/search tributes | Public (read‑only search) |
+| `PUT`  | `/api/tributes/:id` | Update package / schedule / price | Auth'd (owner or FD via policy) |
+
+*Populate shortcuts:*  
+```text
+?populate=events,funeralHome,package,owner.contactInfo
+```
+
+---
+
+### 4. Auth Flow in SvelteKit 5
+
+```mermaid
+sequenceDiagram
+  participant UI
+  participant API as Strapi
+  note over UI: 1️⃣ Register
+  UI->>API: POST /auth/local/register (username, email, pwd)
+  API-->>UI: { jwt, user }
+  Note over UI: Save JWT in<br>HttpOnly cookie
+
+  note over UI: 2️⃣ Patch profile
+  UI->>API: PUT /users/:id (contactInfo) w/ JWT
+  API-->>UI: { user: {..., contactInfo} }
+```
+
+---
+
+### 5. SvelteKit Helper (`$lib/api.ts`)
+
+```ts
+// minimal fetch wrapper
+export async function api<T = unknown>(
+  endpoint: string,
+  opts: RequestInit = {}
+) {
+  const res = await fetch(import.meta.env.VITE_BACKEND_URL + endpoint, {
+    credentials: 'include',          // send JWT cookie
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<T>;
+}
+```
+
+*Add `VITE_BACKEND_URL=http://localhost:1338` in `.env`.*
+
+---
+
+### 6. Page‑by‑Page Usage
+
+| Page | SvelteKit action | API calls |
+|------|------------------|-----------|
+| **Home → Create** | `+page.server.ts` action `POST /create` | 1. `POST /auth/local/register`  <br>2. `PUT /users/:id` (contactInfo) <br>3. `POST /tributes` (initial data) |
+| **Home → Search** | `load()` fetch | `GET /tributes?filters[lovedOnesFullName][$containsi]=${query}` |
+| **Calculator** | Form actions update tribute | `PUT /tributes/:id` (package, events, price) |
+| **Checkout** | Stripe → webhook → Strapi (separate service) | On webhook success: `PUT /tributes/:id` `{ paymentComplete: true }` |
+| **Family Dashboard** | `load()` with `locals.jwt` | `GET /tributes?filters[owner][id]=$userId&populate=deep` |
+
+---
+
+### 7. Role & Permission Cheatsheet
+
+| Role | Can CREATE / UPDATE Tribute? | Can READ all Tributes? |
+|------|-----------------------------|------------------------|
+| *Family Contact* | **Yes** (own only) | Own tributes |
+| *Funeral Director* | Yes (funeral home match) | Home’s tributes |
+| *Viewer* | No | Search‑only |
+| *Admin* | Full | Full |
+
+Set these in **Admin → Settings → Users & Permissions → Roles**.
+
+---
+
+### 8. Local Dev Tips
+
+1. **CORS** – Add frontend URL to *Settings → Advanced Settings → CORS Origins*.  
+2. **Populate all** – `?populate=deep` fetches every level; great for dev, trim for prod.  
+3. **SQL migrations** – Any field change in GUI auto‑alters MySQL on next restart.  
+4. **Data snapshots** – `strapi export -f dev-snapshot.tar.gz` before major edits.
+
+---
+
+### 9. Minimal Example: Create Tribute on Server Action
+
+```ts
+// src/routes/+page.server.ts
+import type { Actions } from './$types';
+import { api } from '$lib/api';
+
+export const actions: Actions = {
+  createTribute: async ({ request, cookies }) => {
+    const data = Object.fromEntries(await request.formData());
+
+    // 1. register
+    const { jwt, user } = await api('/auth/local/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: data.email,
+        email: data.email,
+        password: data.password
+      })
+    });
+
+    cookies.set('jwt', jwt, { httpOnly: true, path: '/' });
+
+    // 2. patch contactInfo
+    await api(`/users/${user.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        contactInfo: {
+          fullName: data.fullName,
+          phoneNumber: data.phone
+        }
+      })
+    });
+
+    // 3. create tribute
+    const tribute = await api('/tributes', {
+      method: 'POST',
+      body: JSON.stringify({
+        lovedOnesFullName: data.lovedOne,
+        slug: data.lovedOne.toLowerCase().replace(/\s+/g, '-'),
+        owner: user.id
+      })
+    });
+
+    return { tributeSlug: tribute.slug };
+  }
+};
+```
+
+---
+
+### 10. Ready‑for‑Prod Checklist
+
+- [ ] HTTPS behind reverse proxy  
+- [ ] Email provider & confirmation flow configured  
+- [ ] Stripe webhook signature validated  
+- [ ] Role permissions double‑checked  
+- [ ] Weekly `strapi export` cron job for backups
+
+---
+
+*That’s the complete “what our API does, how it’s built, and exactly how to call it from SvelteKit 5” in one file. Share with your devs & run!*

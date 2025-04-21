@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TributeStream API Documentation</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #333;
+      line-height: 1.5;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3, h4 {
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      color: #1a202c;
+    }
+    
+    h1 {
+      font-size: 32px;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: 10px;
+    }
+    
+    h2 {
+      font-size: 24px;
+      border-bottom: 1px solid #edf2f7;
+      padding-bottom: 8px;
+      margin-top: 40px;
+    }
+    
+    section {
+      margin-bottom: 30px;
+    }
+    
+    .endpoint {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      background-color: #f7fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .method {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      color: white;
+      margin-right: 15px;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .get { background-color: #38a169; }
+    .post { background-color: #3182ce; }
+    .put { background-color: #d69e2e; }
+    .delete { background-color: #e53e3e; }
+    
+    .path {
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .endpoint-content {
+      padding: 15px;
+    }
+    
+    .endpoint-content p {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    
+    .endpoint-content h3 {
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-size: 16px;
+      color: #4a5568;
+    }
+    
+    pre {
+      background-color: #f1f5f9;
+      padding: 15px;
+      border-radius: 4px;
+      overflow: auto;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin: 10px 0;
+    }
+    
+    code {
+      background-color: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    
+    .code-block {
+      margin-bottom: 20px;
+    }
+    
+    .code-block h4 {
+      margin-bottom: 5px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    ul {
+      margin-bottom: 20px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+    }
+    
+    a {
+      color: #3182ce;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TributeStream API Documentation</h1>
+    <p>This documentation provides details about the available API endpoints for the TributeStream application.</p>
+
+    <section class="endpoint-section">
+      <h2>Authentication</h2>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="path">/api/auth</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Authenticates a user and returns user data with JWT token in an HTTP-only cookie.</p>
+          <h3>Authentication</h3>
+          <p>Public</p>
+          
+          <h3>Request Body</h3>
+          <pre>{
+  "identifier": "email@example.com", 
+  "password": "password123"
+}</pre>
+          
+          <h3>Response</h3>
+          <pre>{
+  "user": {
+    "id": 1,
+    "username": "username",
+    "email": "email@example.com",
+    ...
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="path">/api/auth/register</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Registers a new user and returns user data with JWT token in an HTTP-only cookie.</p>
+          <h3>Authentication</h3>
+          <p>Public</p>
+          
+          <h3>Request Body</h3>
+          <pre>{
+  "username": "username",
+  "email": "email@example.com",
+  "password": "password123"
+}</pre>
+          
+          <h3>Response</h3>
+          <pre>{
+  "user": {
+    "id": 1,
+    "username": "username",
+    "email": "email@example.com",
+    ...
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="endpoint-section">
+      <h2>Users</h2>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="path">/api/users/me</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Gets the current authenticated user's data.</p>
+          <h3>Authentication</h3>
+          <p>Requires JWT cookie (authenticated user)</p>
+          
+          <h3>Query Parameters</h3>
+          <p><code>?populate=contactInfo</code> - Include related contact information</p>
+          
+          <h3>Response</h3>
+          <pre>{
+  "user": {
+    "id": 1,
+    "username": "username",
+    "email": "email@example.com",
+    "contactInfo": {
+      ...
+    },
+    ...
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="endpoint-section">
+      <h2>Tributes</h2>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="path">/api/tributes</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Gets a list of all tributes, with optional filtering.</p>
+          <h3>Authentication</h3>
+          <p>Public</p>
+          
+          <h3>Query Parameters</h3>
+          <p><code>?populate=deep</code> - Include all related data</p>
+          <p><code>?filters[lovedOnesFullName][$containsi]=John</code> - Filter by name containing "John"</p>
+          <p><code>?filters[owner][id]=1</code> - Filter by owner ID</p>
+          
+          <h3>Response</h3>
+          <pre>{
+  "data": [
+    {
+      "id": 1,
+      "attributes": {
+        "lovedOnesFullName": "Jane Doe",
+        "slug": "jane-doe",
+        ...
+      }
+    },
+    ...
+  ],
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "pageSize": 25,
+      "pageCount": 1,
+      "total": 5
+    }
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="path">/api/tributes</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Creates a new tribute.</p>
+          <h3>Authentication</h3>
+          <p>Requires JWT cookie (authenticated user)</p>
+          
+          <h3>Request Body</h3>
+          <pre>{
+  "data": {
+    "lovedOnesFullName": "Jane Doe",
+    "slug": "jane-doe"
+  }
+}</pre>
+          
+          <h3>Response</h3>
+          <pre>{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "lovedOnesFullName": "Jane Doe",
+      "slug": "jane-doe",
+      ...
+    }
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="path">/api/tributes/:id</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Gets a specific tribute by ID.</p>
+          <h3>Authentication</h3>
+          <p>Public</p>
+          
+          <h3>Path Parameters</h3>
+          <p><code>:id</code> - The ID of the tribute</p>
+          
+          <h3>Query Parameters</h3>
+          <p><code>?populate=deep</code> - Include all related data</p>
+          
+          <h3>Response</h3>
+          <pre>{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "lovedOnesFullName": "Jane Doe",
+      "slug": "jane-doe",
+      ...
+    }
+  },
+  "meta": {}
+}</pre>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method put">PUT</span>
+          <span class="path">/api/tributes/:id</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Updates a specific tribute.</p>
+          <h3>Authentication</h3>
+          <p>Requires JWT cookie (authenticated user)</p>
+          
+          <h3>Path Parameters</h3>
+          <p><code>:id</code> - The ID of the tribute</p>
+          
+          <h3>Request Body</h3>
+          <pre>{
+  "data": {
+    "lovedOnesFullName": "Jane Smith",
+    "paymentComplete": true
+  }
+}</pre>
+          
+          <h3>Response</h3>
+          <pre>{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "lovedOnesFullName": "Jane Smith",
+      "paymentComplete": true,
+      ...
+    }
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method delete">DELETE</span>
+          <span class="path">/api/tributes/:id</span>
+        </div>
+        <div class="endpoint-content">
+          <p>Deletes a specific tribute.</p>
+          <h3>Authentication</h3>
+          <p>Requires JWT cookie (authenticated user)</p>
+          
+          <h3>Path Parameters</h3>
+          <p><code>:id</code> - The ID of the tribute</p>
+          
+          <h3>Response</h3>
+          <pre>{
+  "data": {
+    "id": 1,
+    "attributes": {
+      "lovedOnesFullName": "Jane Doe",
+      ...
+    }
+  },
+  "success": true
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="endpoint-section">
+      <h2>Testing API Endpoints</h2>
+      <p>To test these API endpoints, you can use:</p>
+      <ul>
+        <li>Command line tools like <code>curl</code></li>
+        <li>API testing tools like Postman or Insomnia</li>
+      </ul>
+      
+      <h3>Example curl commands:</h3>
+      
+      <div class="code-block">
+        <h4>Register User:</h4>
+        <pre>curl -X POST http://localhost:5173/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@example.com","password":"test123"}'</pre>
+      </div>
+      
+      <div class="code-block">
+        <h4>Create Tribute:</h4>
+        <pre>curl -X POST http://localhost:5173/api/tributes \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"lovedOnesFullName":"Jane Doe","slug":"jane-doe"}}'</pre>
+      </div>
+      
+      <div class="code-block">
+        <h4>Mark Payment Complete:</h4>
+        <pre>curl -X PUT http://localhost:5173/api/tributes/1 \
+  -H "Content-Type: application/json" \
+  -d '{"data":{"paymentComplete":true}}'</pre>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
