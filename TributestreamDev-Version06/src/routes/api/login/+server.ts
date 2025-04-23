@@ -5,11 +5,17 @@ import { getStrapiUrl } from '$lib/api/client';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
-        const { email, password } = await request.json();
+        const body = await request.json();
+        console.log('[Login API] Received request body:', body);
+        
+        const { email, password } = body;
         
         const strapiUrl = getStrapiUrl('/api/auth/local');
         console.log('[Login API] Attempting login with URL:', strapiUrl);
-        console.log('[Login API] Request payload:', { identifier: email });
+        console.log('[Login API] Request payload to Strapi:', {
+            identifier: email,
+            password: password ? '[REDACTED]' : 'missing'
+        });
 
         // Make request to Strapi auth endpoint
         const response = await fetch(strapiUrl, {
