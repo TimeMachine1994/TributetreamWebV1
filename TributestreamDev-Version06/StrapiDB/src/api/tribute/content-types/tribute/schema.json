@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tributes",
+  "info": {
+    "singularName": "tribute",
+    "pluralName": "tributes",
+    "displayName": "Tribute",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "lovedOnesFullName": {
+      "type": "string"
+    },
+    "paymentComplete": {
+      "type": "boolean"
+    },
+    "customHTML": {
+      "type": "text"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "users_permissions_users": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::users-permissions.user"
+    },
+    "funeral_home": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::funeral-home.funeral-home"
+    },
+    "package": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::package.package"
+    },
+    "events": {
+      "type": "component",
+      "repeatable": true,
+      "component": "memorial-event.memorial-event"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "lovedOnesFullName"
+    },
+    "lovedOnesDOD": {
+      "type": "date"
+    },
+    "lovedOnesDOB": {
+      "type": "date"
+    }
+  }
+}

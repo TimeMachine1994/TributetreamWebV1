@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "add_ons",
+  "info": {
+    "singularName": "add-on",
+    "pluralName": "add-ons",
+    "displayName": "Add On",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "addOnTitle": {
+      "type": "string"
+    },
+    "addOnDescription": {
+      "type": "text"
+    },
+    "addOnPrice": {
+      "type": "decimal"
+    },
+    "addOnSlug": {
+      "type": "string"
+    }
+  }
+}

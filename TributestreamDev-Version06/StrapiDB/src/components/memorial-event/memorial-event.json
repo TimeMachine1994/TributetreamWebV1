@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_memorial_event_memorial_events",
+  "info": {
+    "displayName": "MemorialEvent",
+    "icon": "pinMap"
+  },
+  "options": {},
+  "attributes": {
+    "eventName": {
+      "type": "string"
+    },
+    "locationName": {
+      "type": "string"
+    },
+    "locationAddress": {
+      "type": "string"
+    },
+    "startTime": {
+      "type": "time"
+    },
+    "endTime": {
+      "type": "time"
+    },
+    "startDate": {
+      "type": "date"
+    },
+    "durationMinutes": {
+      "type": "integer"
+    }
+  }
+}

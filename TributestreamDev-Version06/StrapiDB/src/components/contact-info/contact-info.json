@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_contact_info_contact_infos",
+  "info": {
+    "displayName": "contactInfo",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "phoneNumber": {
+      "type": "string",
+      "required": true,
+      "regex": "^[\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6}$"
+    },
+    "fullName": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
