@@ -1,12 +1,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { setAuthCookie } from '$lib/auth/utils';
+import { getStrapiUrl } from '$lib/api/client';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
         const { email, password } = await request.json();
 
         // Make request to Strapi auth endpoint
-        const response = await fetch('http://localhost:1338/api/auth/local', {
+        const response = await fetch(getStrapiUrl('/api/auth/local'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -22,12 +24,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         // If authentication was successful
         if (response.ok && data.jwt) {
             // Store JWT token in an HTTP-only cookie
-            cookies.set('jwt', data.jwt, {
-                path: '/',
-                httpOnly: true,
-                 sameSite: 'strict',
-                maxAge: 60 * 60 * 24 * 7 // 1 week
-            });
+            setAuthCookie(cookies, data.jwt);
 
             return json({
                 success: true,

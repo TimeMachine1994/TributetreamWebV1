@@ -1,7 +1,8 @@
 <script lang="ts">
-	import '../app.css';
+  import { setUser } from '$lib/stores/auth.store.svelte';
+  import { page } from '$app/state';
 
-	let { children } = $props();
+  let { children } = $props();
 </script>
 
-{@render children()}
+ {@render children()}

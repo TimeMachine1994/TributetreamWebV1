@@ -1,14 +1,31 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import { goto } from '$app/navigation';
     import type { ActionData } from './$types';
+    import { setUser } from '$lib/stores/auth.store.svelte';
 
     let { form } = $props<{ form: ActionData }>();
     let loading = $state(false);
 
     function handleSubmit() {
         loading = true;
-        return async ({ update }: { update: () => Promise<void> }) => {
+        return async ({ update, result }: { update: () => Promise<void>, result: { type: string, data?: any } }) => {
             await update();
+            
+            // If login was successful, redirect to profile page
+            if (result.type === 'success' && result.data?.success) {
+                // Update the auth store with user data
+                if (result.data.user) {
+                    setUser({
+                        ...result.data.user,
+                        authenticated: true
+                    });
+                }
+                
+                // Redirect to profile page
+                goto('/protected/profile');
+            }
+            
             loading = false;
         };
     }
