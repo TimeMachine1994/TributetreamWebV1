@@ -28,7 +28,21 @@ export function createAuthFetchOptions(jwt: string | undefined, options: Request
  * @returns Fetch response
  */
 export async function apiFetch(url: string, jwt: string | undefined, options: RequestInit = {}) {
-  const fetchOptions = createAuthFetchOptions(jwt, options);
+  const fetchOptions = createAuthFetchOptions(jwt, {
+    ...options,
+    // Add keepalive and proper timeout settings
+    keepalive: true,
+    signal: AbortSignal.timeout(5000) // 5 second timeout
+  });
+  
+  console.log('[API Client] Making fetch request:', {
+    url,
+    options: {
+      ...fetchOptions,
+      headers: Object.fromEntries(new Headers(fetchOptions.headers).entries())
+    }
+  });
+  
   return fetch(url, fetchOptions);
 }
 
@@ -38,6 +52,13 @@ export async function apiFetch(url: string, jwt: string | undefined, options: Re
  * @returns Full Strapi API URL
  */
 export function getStrapiUrl(path: string): string {
+  // Use 0.0.0.0 instead of localhost for better container compatibility
   const baseUrl = 'http://localhost:1338'; // TODO: Move to environment variables
-  return `${baseUrl}${path}`;
+  const fullUrl = `${baseUrl}${path}`;
+  console.log('[API Client] Constructing Strapi URL:', {
+    baseUrl,
+    path,
+    fullUrl
+  });
+  return fullUrl;
 }

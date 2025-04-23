@@ -6,9 +6,13 @@ import { getStrapiUrl } from '$lib/api/client';
 export const POST: RequestHandler = async ({ request, cookies }) => {
     try {
         const { email, password } = await request.json();
+        
+        const strapiUrl = getStrapiUrl('/api/auth/local');
+        console.log('[Login API] Attempting login with URL:', strapiUrl);
+        console.log('[Login API] Request payload:', { identifier: email });
 
         // Make request to Strapi auth endpoint
-        const response = await fetch(getStrapiUrl('/api/auth/local'), {
+        const response = await fetch(strapiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -20,6 +24,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         });
 
         const data = await response.json();
+        console.log('[Login API] Strapi response status:', response.status);
+        console.log('[Login API] Strapi response:', data);
 
         // If authentication was successful
         if (response.ok && data.jwt) {
@@ -46,7 +52,15 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
             }
         );
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('[Login API] Login error:', error);
+        // Safe error logging for unknown error type
+        if (error instanceof Error) {
+            console.error('[Login API] Error details:', {
+                name: error.name,
+                message: error.message,
+                cause: error.cause
+            });
+        }
         return new Response(
             JSON.stringify({
                 success: false,

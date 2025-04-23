@@ -1,18 +1,25 @@
 <script lang="ts">
   import { isAuthenticated } from '$lib/stores/auth.store.svelte';
   import { goto } from '$app/navigation';
-  let { children } = $props();
 
-  let { redirectTo = '/login' } = $props<{ redirectTo?: string }>();
+  interface Props {
+    children?: any;
+    redirectTo?: string;
+  }
+
+  let { children, redirectTo = '/login' }: Props = $props();
   
-  // Redirect to login if not authenticated
+  let authenticated = $derived(isAuthenticated());
+
   $effect(() => {
-    if (!isAuthenticated()) {
+    console.log('Auth state:', authenticated); // Debug log
+    if (!authenticated) {
+      console.log('Not authenticated, redirecting to:', redirectTo); // Debug log
       goto(redirectTo);
     }
   });
 </script>
 
-{#if isAuthenticated()}
-  <slot />
+{#if authenticated}
+  {@render children?.()}
 {/if}
