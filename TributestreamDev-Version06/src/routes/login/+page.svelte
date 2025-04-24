@@ -12,18 +12,44 @@
         return async ({ update, result }: { update: () => Promise<void>, result: { type: string, data?: any } }) => {
             await update();
             
-            // If login was successful, redirect to profile page
+            // If login was successful, handle role-based routing
             if (result.type === 'success' && result.data?.success) {
+                console.log('🔐 Login successful!', result.data);
+                
                 // Update the auth store with user data
                 if (result.data.user) {
                     setUser({
                         ...result.data.user,
                         authenticated: true
                     });
+                    
+                    // Get user role and determine redirect path
+                    const userRole = result.data.user.role?.name;
+                    console.log('👤 User role:', userRole);
+                    
+                    let redirectPath = '/protected/profile'; // Default path
+                    
+                    // Determine redirect based on role
+                    switch(userRole?.toLowerCase()) {
+                        case 'admin':
+                            redirectPath = '/admin-dashboard';
+                            break;
+                        case 'funeral director':
+                            redirectPath = '/funeral-director-portal';
+                            break;
+                        case 'family contact':
+                            redirectPath = '/family-dashboard';
+                            break;
+                        default:
+                            console.log('⚠️ Unknown or undefined role:', userRole);
+                            // Use default path for unknown roles
+                    }
+                    
+                    console.log('🔄 Redirecting to:', redirectPath);
+                    goto(redirectPath);
                 }
-                
-                // Redirect to profile page
-                goto('/protected/profile');
+            } else {
+                console.log('❌ Login failed:', result);
             }
             
             loading = false;
