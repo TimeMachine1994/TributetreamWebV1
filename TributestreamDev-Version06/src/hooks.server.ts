@@ -4,10 +4,13 @@ import type { UserRole } from '$lib/auth/types';
 
 // Define route access rules
 const routeAccessRules: Record<string, UserRole[]> = {
-    '/admin-dashboard': ['Admin'],
+    '/admin': ['Admin'], // Any path starting with /admin
     '/funeral-director-portal': ['Funeral Director'],
     '/family-dashboard': ['Family Contact']
 };
+
+// Debug current route rules
+console.log('🔐 Route access rules configured:', routeAccessRules);
 
 /**
  * Check if user has access to the requested path
