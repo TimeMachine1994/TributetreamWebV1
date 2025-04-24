@@ -11,6 +11,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         const { email, password } = body;
         
         const strapiUrl = getStrapiUrl('/api/auth/local');
+        const strapiUrl2 = getStrapiUrl('');
+
         console.log('[Login API] Attempting login with URL:', strapiUrl);
         console.log('[Login API] Request payload to Strapi:', {
             identifier: email,
@@ -37,10 +39,17 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         if (response.ok && data.jwt) {
             // Store JWT token in an HTTP-only cookie
             setAuthCookie(cookies, data.jwt);
+            const userRes = await fetch(`${getStrapiUrl}/api/users/${data.user.id}?populate[0]=role&populate[1]=contactInfo`, {
+                headers: {
+                  Authorization: `Bearer ${data.jwt}`
+                }
+              });
+              console.log('[Login API] populate response:', userRes);
 
             return json({
                 success: true,
-                user: data.user
+                user: data.user,
+                userRes
             });
         }
 
