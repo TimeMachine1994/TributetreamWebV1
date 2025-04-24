@@ -39,17 +39,17 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         if (response.ok && data.jwt) {
             // Store JWT token in an HTTP-only cookie
             setAuthCookie(cookies, data.jwt);
-            const userRes = await fetch(`${getStrapiUrl}/api/users/${data.user.id}?populate[0]=role&populate[1]=contactInfo`, {
+            const userRes = await fetch(`${getStrapiUrl('/api/users/')}${data.user.id}?populate[0]=role&populate[1]=contactInfo`, {
                 headers: {
-                  Authorization: `Bearer ${data.jwt}`
+                    Authorization: `Bearer ${data.jwt}`
                 }
-              });
-              console.log('[Login API] populate response:', userRes);
-
+            });
+            const userData = await userRes.json();
+            console.log('[Login API] User data with populated fields:', userData);
             return json({
                 success: true,
                 user: data.user,
-                userRes
+                userData,
             });
         }
 
