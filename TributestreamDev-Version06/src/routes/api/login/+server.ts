@@ -39,6 +39,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         if (response.ok && data.jwt) {
             // Store JWT token in an HTTP-only cookie
             setAuthCookie(cookies, data.jwt);
+            
+            // Fetch user data with populated fields
             const userRes = await fetch(`${getStrapiUrl('/api/users/')}${data.user.id}?populate[0]=role&populate[1]=contactInfo`, {
                 headers: {
                     Authorization: `Bearer ${data.jwt}`
@@ -46,10 +48,36 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
             });
             const userData = await userRes.json();
             console.log('[Login API] User data with populated fields:', userData);
+            
+            // Extract role information
+            let userRole = 'Family Contact'; // Default role
+            
+            if (userData.role && userData.role.type) {
+                userRole = userData.role.type;
+            } else if (userData.role && userData.role.name) {
+                userRole = userData.role.name;
+            } else if (data.user.role && typeof data.user.role === 'string') {
+                userRole = data.user.role;
+            }
+            
+            console.log('[Login API] Extracted user role:', userRole);
+            
+            // Construct a structured user object with role
+            const structuredUser = {
+                id: data.user.id,
+                email: data.user.email,
+                username: data.user.username,
+                name: data.user.username, // Use username as name if not provided
+                role: userRole,
+                authenticated: true
+            };
+            
+            console.log('[Login API] Returning structured user data:', structuredUser);
+            
             return json({
                 success: true,
-                user: data.user,
-                userData,
+                user: structuredUser,
+                userData: userData, // Keep original data for debugging
             });
         }
 

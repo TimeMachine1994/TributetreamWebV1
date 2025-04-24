@@ -9,6 +9,7 @@ import type { UserData } from '$lib/auth/types';
 const DEFAULT_USER: UserData = {
   id: 0,
   email: '',
+  role: 'Family Contact', // Default role as a fallback
   authenticated: false
 };
 
@@ -22,7 +23,16 @@ if (typeof window !== 'undefined' && (window as any).__user) {
     _user.id = windowUser.id || 0;
     _user.email = windowUser.email || '';
     _user.name = windowUser.name;
+    _user.role = windowUser.role || 'Family Contact';
     _user.authenticated = windowUser.authenticated || false;
+    
+    // Log user initialization for debugging
+    console.log('🔐 Initialized user from window.__user:', {
+      id: _user.id,
+      email: _user.email,
+      role: _user.role,
+      authenticated: _user.authenticated
+    });
   }
 }
 
@@ -35,6 +45,7 @@ export function getUser(): UserData {
     id: _user.id,
     email: _user.email,
     name: _user.name,
+    role: _user.role,
     authenticated: _user.authenticated
   };
 }
@@ -47,7 +58,15 @@ export function setUser(userData: UserData): void {
   _user.id = userData.id;
   _user.email = userData.email;
   _user.name = userData.name;
+  _user.role = userData.role;
   _user.authenticated = userData.authenticated;
+  
+  console.log('👤 User data updated:', {
+    id: _user.id,
+    email: _user.email,
+    role: _user.role,
+    authenticated: _user.authenticated
+  });
 }
 
 /**
@@ -73,7 +92,10 @@ export async function logout(): Promise<void> {
     _user.id = 0;
     _user.email = '';
     _user.name = undefined;
+    _user.role = 'Family Contact'; // Reset to default role
     _user.authenticated = false;
+    
+    console.log('🚪 User logged out');
     
     goto('/login');
   } catch (error) {

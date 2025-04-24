@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import type { ActionData } from './$types';
     import { setUser } from '$lib/stores/auth.store.svelte';
+    import type { UserRole } from '$lib/auth/types';
 
     let { form } = $props<{ form: ActionData }>();
     let loading = $state(false);
@@ -12,44 +13,58 @@
         return async ({ update, result }: { update: () => Promise<void>, result: { type: string, data?: any } }) => {
             await update();
             
-            // If login was successful, handle role-based routing
+            console.log('🔄 Processing login result:', result);
+            
             if (result.type === 'success' && result.data?.success) {
-                console.log('🔐 Login successful!', result.data);
+                console.log('✅ Login successful!', {
+                    userId: result.data.user?.id,
+                    email: result.data.user?.email
+                });
                 
-                // Update the auth store with user data
                 if (result.data.user) {
-                    setUser({
-                        ...result.data.user,
-                        authenticated: true
-                    });
+                    // The API now returns a structured user object with role already extracted
+                    console.log('👤 Complete user data:', JSON.stringify(result.data.user, null, 2));
                     
-                    // Get user role and determine redirect path
-                    const userRole = result.data.user.role?.name;
-                    console.log('👤 User role:', userRole);
+                    // Set user in the auth store with the full structured user object
+                    setUser(result.data.user);
+                    
+                    // Get the role directly from the structured response
+                    const userRole = result.data.user.role;
+                    console.log('🎭 User role:', userRole);
                     
                     let redirectPath = '/protected/profile'; // Default path
                     
-                    // Determine redirect based on role
-                    switch(userRole?.toLowerCase()) {
-                        case 'admin':
-                            redirectPath = '/admin-dashboard';
-                            break;
-                        case 'funeral director':
-                            redirectPath = '/funeral-director-portal';
-                            break;
-                        case 'family contact':
-                            redirectPath = '/family-dashboard';
-                            break;
-                        default:
-                            console.log('⚠️ Unknown or undefined role:', userRole);
-                            // Use default path for unknown roles
+                    // Case-insensitive role comparison function
+                    const roleCheck = (role: string) =>
+                        userRole?.toLowerCase() === role.toLowerCase();
+                    
+                    // Map roles to redirect paths
+                    if (roleCheck('admin')) {
+                        console.log('👑 Admin role detected - redirecting to admin dashboard');
+                        redirectPath = '/admin/tributes'; // Admin section with tributes list
+                    } else if (roleCheck('funeral director')) {
+                        console.log('⚰️ Funeral Director role detected - redirecting to funeral director portal');
+                        redirectPath = '/funeral-director-portal';
+                    } else if (roleCheck('family contact')) {
+                        console.log('👨‍👩‍👧‍👦 Family Contact role detected - redirecting to family dashboard');
+                        redirectPath = '/family-dashboard';
+                    } else {
+                        console.warn('⚠️ Unknown or invalid role:', {
+                            role: userRole,
+                            fallbackPath: redirectPath
+                        });
                     }
                     
-                    console.log('🔄 Redirecting to:', redirectPath);
+                    console.log('🔄 Starting redirect to:', redirectPath);
                     goto(redirectPath);
+                } else {
+                    console.error('❌ Login successful but no user data received');
                 }
             } else {
-                console.log('❌ Login failed:', result);
+                console.error('❌ Login failed:', {
+                    resultType: result.type,
+                    error: result.data?.error || 'Unknown error'
+                });
             }
             
             loading = false;
@@ -69,7 +84,7 @@
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                 <input 
-                
+                    type="email"
                     id="email" 
                     name="email" 
                     value={form?.email ?? ''}
