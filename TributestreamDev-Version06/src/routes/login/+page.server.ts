@@ -1,5 +1,6 @@
 import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { loginUser } from '$lib/api/auth.api';
 
 export const actions = {
 	default: async ({ request, fetch, cookies }) => {
@@ -17,7 +18,11 @@ export const actions = {
         }
 
         try {
-            // Call our login API endpoint
+            // We have two options:
+            // 1. Use our API utility directly (simplest but doesn't set cookies)
+            // 2. Call our server API endpoint which uses our auth utility and handles cookies
+
+            // Option 2 - Using our internal API route
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {

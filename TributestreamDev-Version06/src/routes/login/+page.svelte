@@ -7,6 +7,17 @@
 
     let { form } = $props<{ form: ActionData }>();
     let loading = $state(false);
+    let justRegistered = $state(false);
+    
+    // Check if user was just redirected from registration
+    $effect(() => {
+        const url = new URL(window.location.href);
+        justRegistered = url.searchParams.get('registered') === 'true';
+        
+        if (justRegistered) {
+            console.log('🎉 User just registered and was redirected to login');
+        }
+    });
 
     function handleSubmit() {
         loading = true;
@@ -104,6 +115,12 @@
                 />
             </div>
 
+            {#if justRegistered}
+                <div class="text-green-600 text-sm p-2 bg-green-50 rounded border border-green-200 mb-2">
+                    Registration successful! Please sign in with your new account.
+                </div>
+            {/if}
+            
             {#if form?.message}
                 <div class="text-red-500 text-sm">{form.message}</div>
             {/if}
@@ -120,5 +137,10 @@
                 {/if}
             </button>
         </form>
+        
+        <div class="text-center text-sm">
+            <span class="text-gray-600">Don't have an account?</span>
+            <a href="/" class="text-blue-600 hover:text-blue-800 font-medium">Register</a>
+        </div>
     </div>
 </div>

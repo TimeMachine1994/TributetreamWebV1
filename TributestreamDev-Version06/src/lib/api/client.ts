@@ -62,3 +62,28 @@ export function getStrapiUrl(path: string): string {
   });
   return fullUrl;
 }
+
+/**
+ * Mock registration for testing when Strapi is not available
+ * This creates a simulated successful registration response
+ */
+export function mockRegistrationResponse(username: string, email: string): any {
+  console.log('⚠️ [API Client] Using MOCK registration response');
+  
+  // Generate a fake JWT token for testing
+  const mockJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+  
+  return {
+    jwt: mockJwt,
+    user: {
+      id: Math.floor(Math.random() * 1000),
+      username,
+      email,
+      provider: 'local',
+      confirmed: true,
+      blocked: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
