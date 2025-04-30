@@ -1,0 +1,42 @@
+{
+	"/": [],
+	"/api/auth/login": [
+		"src/routes/api/auth/login/+server.ts"
+	],
+	"/api/auth/logout": [
+		"src/routes/api/auth/logout/+server.ts"
+	],
+	"/api/auth/register": [
+		"src/routes/api/auth/register/+server.ts"
+	],
+	"/api/tributes": [
+		"src/routes/api/tributes/+server.ts"
+	],
+	"/api/tributes/[id]": [
+		"src/routes/api/tributes/[id]/+server.ts"
+	],
+	"/funeral-homes": [
+		"src/routes/funeral-homes/+page.server.ts"
+	],
+	"/funeral-homes/[id]": [
+		"src/routes/funeral-homes/[id]/+page.server.ts"
+	],
+	"/memorial-events": [
+		"src/routes/memorial-events/+page.server.ts"
+	],
+	"/memorial-events/[id]": [
+		"src/routes/memorial-events/[id]/+page.server.ts"
+	],
+	"/packages": [
+		"src/routes/packages/+page.server.ts"
+	],
+	"/packages/[id]": [
+		"src/routes/packages/[id]/+page.server.ts"
+	],
+	"/tributes": [
+		"src/routes/tributes/+page.server.ts"
+	],
+	"/tributes/[id]": [
+		"src/routes/tributes/[id]/+page.server.ts"
+	]
+}
