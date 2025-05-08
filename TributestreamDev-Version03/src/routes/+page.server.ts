@@ -1,7 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { generateSecurePassword, setAuthCookies } from '$lib/utils/auth-helpers';
-import { validateSimplifiedMemorialForm } from '$lib/utils/form-validation';
+ 
 import { createTributeSlug } from '$lib/utils/string-helpers';
 
 export const actions = {
