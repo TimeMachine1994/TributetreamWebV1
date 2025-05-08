@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { authStore } from '$lib/services/auth-service';
   import { goto } from '$app/navigation';
   
   // Form state
@@ -19,7 +18,6 @@
       loading = true;
       error = null;
       
-      const success = await authStore.login(username, password);
       
       if (success) {
         // Redirect to tributes page on successful login
